@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SUI Turf Map — Sir Caprice</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0a0a0e;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+#toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:#0f0f15;border-bottom:1px solid #1e1e2e;flex-shrink:0}
+#toolbar h1{font-size:15px;font-weight:500;color:#fff;white-space:nowrap;margin-right:4px}
+button{cursor:pointer;padding:5px 13px;background:#1e1e2e;border:1px solid #333;border-radius:7px;color:#ccc;font-size:12px}
+button:hover{background:#2a2a3e;color:#fff}
+button.primary{background:#185FA5;border-color:#378ADD;color:#fff}
+button.primary:hover{background:#378ADD}
+button:disabled{opacity:0.4;cursor:default}
+.sep{width:1px;height:20px;background:#2a2a3e;flex-shrink:0}
+#status{font-size:11px;color:#555;padding:4px 10px;background:#0f0f15;border:1px solid #1e1e2e;border-radius:6px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#age{font-size:11px;color:#444;white-space:nowrap}
+
+#main{display:flex;flex:1;overflow:hidden}
+
+#map-wrap{flex:1;position:relative;overflow:hidden;background:#080810;cursor:grab}
+#map-wrap.dragging{cursor:grabbing}
+#map{display:block}
+#minimap-canvas{position:absolute;bottom:14px;right:14px;border:1px solid #333;border-radius:6px;background:#0a0a14;cursor:pointer}
+#tip{position:absolute;display:none;background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:8px 12px;font-size:12px;z-index:50;pointer-events:none;line-height:1.7;max-width:240px}
+#tip .tname{font-weight:500;color:#fff;font-size:13px}
+#tip .tpos{color:#888}
+#tip .thq{color:#c4b5fd;font-size:11px}
+#zoom-btns{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:4px}
+#zoom-btns button{width:32px;height:32px;padding:0;font-size:16px;line-height:1}
+#me-btn{position:absolute;top:12px;left:12px}
+
+#sidebar{width:280px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid #1e1e2e;background:#0d0d14;overflow:hidden}
+#sidebar-head{padding:10px 12px;border-bottom:1px solid #1e1e2e;flex-shrink:0}
+.stats-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.stat{background:#1a1a2a;border-radius:6px;padding:5px 10px;font-size:11px;color:#666;flex:1;min-width:60px}
+.stat b{font-size:16px;font-weight:500;color:#ccc;display:block}
+#search{width:100%;background:#0f0f18;color:#ccc;border:1px solid #2a2a3e;border-radius:6px;padding:6px 10px;font-size:12px}
+#search::placeholder{color:#444}
+.filter-row{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.fb{padding:3px 9px;font-size:11px;border-radius:5px;cursor:pointer;border:1px solid #2a2a3e;background:transparent;color:#555}
+.fb.on{border-color:#378ADD;color:#378ADD;background:#081828}
+#player-list{flex:1;overflow-y:auto;font-size:12px}
+#player-list::-webkit-scrollbar{width:4px}
+#player-list::-webkit-scrollbar-track{background:#0a0a0e}
+#player-list::-webkit-scrollbar-thumb{background:#2a2a3e;border-radius:2px}
+.prow{display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:1px solid #0f0f18;cursor:pointer;transition:background 0.1s}
+.prow:hover{background:#141422}
+.prow.active{background:#0c1e30;border-left:2px solid #378ADD}
+.prow.me{border-left:2px solid #7F77DD}
+.prank{color:#333;font-size:10px;width:22px;text-align:right;flex-shrink:0}
+.pdot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.pname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ccc}
+.pname.me{color:#9d8fff}
+.pname.unnamed{color:#444;font-style:italic}
+.ptiles{color:#555;font-size:11px;flex-shrink:0}
+.pbar{width:40px;height:3px;background:#1a1a2a;border-radius:2px;flex-shrink:0}
+.pbar-fill{height:3px;border-radius:2px}
+
+/* Refresh modal */
+#refresh-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;align-items:center;justify-content:center}
+#refresh-modal.open{display:flex}
+#refresh-box{background:#1a1a2e;border:1px solid #444;border-radius:12px;padding:24px;width:400px;max-width:90vw}
+#refresh-box h2{font-size:15px;font-weight:500;margin-bottom:12px;color:#fff}
+#refresh-box p{font-size:12px;color:#888;margin-bottom:12px;line-height:1.7}
+#refresh-box input{width:100%;background:#0f0f18;color:#ccc;border:1px solid #2a2a3e;border-radius:6px;padding:7px 10px;font-size:12px;margin-bottom:10px;font-family:monospace}
+#refresh-box input::placeholder{color:#444}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+#refresh-result{font-size:12px;margin-top:8px;min-height:18px}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>SUI Turf Map</h1>
+  <button class="primary" onclick="loadData()">↺ Reload</button>
+  <button onclick="openRefreshModal()" title="Trigger GitHub Actions to refresh blockchain data" style="border-color:#3a3a1e;color:#FAC775">⚡ Refresh data</button>
+  <div class="sep"></div>
+  <button onclick="exportPNG()">⬇ PNG</button>
+  <button onclick="exportCSV()" id="csvBtn" style="display:none">⬇ CSV</button>
+  <div class="sep"></div>
+  <span id="age"></span>
+  <span id="status">Loading...</span>
+</div>
+
+<div id="main">
+  <div id="map-wrap">
+    <canvas id="map"></canvas>
+    <canvas id="minimap-canvas" width="180" height="180" title="Click to navigate"></canvas>
+    <div id="tip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div></div>
+    <div id="zoom-btns">
+      <button onclick="zoomBy(1.3)" title="Zoom in">+</button>
+      <button onclick="zoomBy(0.77)" title="Zoom out">−</button>
+      <button onclick="resetView()" title="Full overview" style="font-size:11px">⊡</button>
+    </div>
+    <button id="me-btn" onclick="jumpToMe()" title="Jump to my territory" style="font-size:11px">★ Me</button>
+  </div>
+
+  <div id="sidebar">
+    <div id="sidebar-head">
+      <div class="stats-row">
+        <div class="stat"><b id="s-players">—</b>players</div>
+        <div class="stat"><b id="s-tiles">—</b>tiles</div>
+        <div class="stat"><b id="s-unclaimed">—</b>unclaimed</div>
+      </div>
+      <input type="text" id="search" placeholder="Search player..." oninput="filterPlayers()">
+      <div class="filter-row">
+        <button class="fb on" onclick="setFilter('all',this)">All</button>
+        <button class="fb" onclick="setFilter('named',this)">Named</button>
+        <button class="fb" onclick="setFilter('inactive',this)">Inactive</button>
+      </div>
+    </div>
+    <div id="player-list"></div>
+  </div>
+</div>
+
+<!-- Refresh modal -->
+<div id="refresh-modal">
+  <div id="refresh-box">
+    <h2>⚡ Trigger data refresh</h2>
+    <p>This triggers the GitHub Actions workflow to re-fetch all blockchain data. It runs in the background and takes about 10 minutes. The map will update automatically on next reload.</p>
+    <p>Enter your GitHub Personal Access Token (needs <code>workflow</code> scope):<br>
+    <a href="https://github.com/settings/tokens/new?scopes=workflow&description=SUI+Turf+Map" target="_blank" style="color:#378ADD;font-size:11px">Create token on GitHub →</a></p>
+    <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx">
+    <p style="font-size:11px;color:#555">Repository (owner/repo):</p>
+    <input type="text" id="gh-repo" placeholder="your-username/sui-turf-map" value="">
+    <div id="refresh-result"></div>
+    <div class="modal-btns">
+      <button onclick="closeRefreshModal()">Cancel</button>
+      <button class="primary" onclick="triggerRefresh()">▶ Start refresh</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MY_IDS = new Set([
+  '0x857e8e7fc94d43f327bb24388439d0fdcc112a9e5e25264969b27011a233d2f0',
+  '0xdb2b57ea07dae7acd91d56f4c5e20a077313abb50a9924f84529ef67030ab273',
+]);
+const CELL = 12;
+
+let tiles=[], tileMap=new Map(), players=[], filteredPlayers=[];
+let activeFilter='all', highlightPid=null;
+let totalTiles=0, unclaimedTiles=0;
+let minX=0,maxX=0,minY=0,maxY=0;
+let panX=0,panY=0,zoom=1;
+let dragging=false,dragStartX=0,dragStartY=0,dragPanX=0,dragPanY=0;
+
+function status(s){document.getElementById('status').textContent=s;}
+
+// ── LOAD DATA.JSON ────────────────────────────────────────────────────────────
+async function loadData(){
+  status('Loading data.json...');
+  tiles=[]; tileMap.clear(); players=[]; filteredPlayers=[];
+
+  try{
+    const resp = await fetch('data.json?t='+Date.now());
+    if(!resp.ok) throw new Error('data.json not found (HTTP '+resp.status+')');
+    const d = await resp.json();
+
+    // Age indicator
+    const gen = new Date(d.generated);
+    const ageMin = Math.round((Date.now()-gen)/60000);
+    const ageStr = ageMin < 60
+      ? `${ageMin}m ago`
+      : `${Math.round(ageMin/60)}h ago`;
+    document.getElementById('age').textContent = `Data: ${ageStr}`;
+
+    totalTiles    = d.total_tiles || 0;
+    unclaimedTiles= d.unclaimed  || 0;
+    players       = d.players    || [];
+
+    // Build tile array
+    for(const t of (d.tiles||[])){
+      const p = players[t.p];
+      if(!p) continue;
+      const isMe = MY_IDS.has(p.pid);
+      tiles.push({x:t.x, y:t.y, pid:p.pid, isHQ:!!t.hq, isMe, color:p.color});
+      tileMap.set(`${t.x},${t.y}`, tiles.length-1);
+    }
+
+    if(tiles.length){
+      minX=Math.min(...tiles.map(t=>t.x));
+      maxX=Math.max(...tiles.map(t=>t.x));
+      minY=Math.min(...tiles.map(t=>t.y));
+      maxY=Math.max(...tiles.map(t=>t.y));
+    }
+
+    updateStats();
+    filterPlayers();
+    document.getElementById('csvBtn').style.display='';
+    resizeCanvas();
+    jumpToMe();
+    drawMap();
+    drawMinimap();
+    status(`${players.length} players · ${tiles.length} tiles`);
+
+  }catch(e){
+    status('Error: '+e.message);
+    document.getElementById('age').textContent='';
+  }
+}
+
+// ── CANVAS ────────────────────────────────────────────────────────────────────
+function resizeCanvas(){
+  const wrap=document.getElementById('map-wrap');
+  const cv=document.getElementById('map');
+  cv.width=wrap.clientWidth;
+  cv.height=wrap.clientHeight;
+}
+window.addEventListener('resize',()=>{resizeCanvas();drawMap();drawMinimap();});
+
+function worldToScreen(wx,wy){
+  return {sx:(wx-minX)*CELL*zoom+panX, sy:(maxY-wy)*CELL*zoom+panY};
+}
+function screenToWorld(sx,sy){
+  return {wx:Math.round((sx-panX)/(CELL*zoom)+minX), wy:Math.round(maxY-(sy-panY)/(CELL*zoom))};
+}
+
+function drawMap(){
+  const cv=document.getElementById('map');
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.fillStyle='#080810';
+  ctx.fillRect(0,0,W,H);
+  if(!tiles.length) return;
+  const cs=CELL*zoom;
+  const wx0=Math.floor((0-panX)/(CELL*zoom))+minX-1;
+  const wx1=Math.ceil((W-panX)/(CELL*zoom))+minX+1;
+  const wy0=Math.floor(maxY-(H-panY)/(CELL*zoom))-1;
+  const wy1=Math.ceil(maxY-(-panY)/(CELL*zoom))+1;
+  if(zoom>0.8){
+    ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
+    for(let x=Math.max(minX,wx0);x<=Math.min(maxX+1,wx1);x++){
+      const sx=(x-minX)*cs+panX;
+      ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,H);ctx.stroke();
+    }
+    for(let y=Math.max(minY,wy0);y<=Math.min(maxY+1,wy1);y++){
+      const sy=(maxY-y)*cs+panY;
+      ctx.beginPath();ctx.moveTo(0,sy);ctx.lineTo(W,sy);ctx.stroke();
+    }
+  }
+  for(const t of tiles){
+    if(t.x<wx0||t.x>wx1||t.y<wy0||t.y>wy1) continue;
+    const sx=(t.x-minX)*cs+panX, sy=(maxY-t.y)*cs+panY;
+    ctx.fillStyle=highlightPid&&t.pid===highlightPid?'#ffe066'
+      :t.isHQ?(t.isMe?'#533AB7':'#6B1A1A'):t.color;
+    ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
+    if(t.isHQ&&zoom>1.5){
+      ctx.fillStyle='rgba(255,255,255,0.6)';
+      ctx.font=`${Math.round(cs*0.6)}px sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('\u2302',sx+cs/2,sy+cs/2);
+    }
+  }
+}
+
+function drawMinimap(){
+  const mc=document.getElementById('minimap-canvas');
+  const ctx=mc.getContext('2d');
+  const MW=mc.width,MH=mc.height;
+  ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,MW,MH);
+  if(!tiles.length) return;
+  const spanX=maxX-minX+1,spanY=maxY-minY+1;
+  const sc=Math.min(MW/spanX,MH/spanY);
+  const offX=(MW-spanX*sc)/2,offY=(MH-spanY*sc)/2;
+  for(const t of tiles){
+    ctx.fillStyle=t.isMe?(t.isHQ?'#9d8fff':'#5b8fff'):t.color;
+    ctx.fillRect(offX+(t.x-minX)*sc, offY+(maxY-t.y)*sc, Math.max(1,sc-0.2),Math.max(1,sc-0.2));
+  }
+  const cv=document.getElementById('map');
+  ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=1;
+  ctx.strokeRect(offX+(-panX/(CELL*zoom))*sc, offY+(-panY/(CELL*zoom))*sc,
+    (cv.width/(CELL*zoom))*sc, (cv.height/(CELL*zoom))*sc);
+}
+
+// ── ZOOM & PAN ────────────────────────────────────────────────────────────────
+const mapWrap=document.getElementById('map-wrap');
+mapWrap.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const f=e.deltaY<0?1.15:0.87;
+  const rect=mapWrap.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  panX=mx-(mx-panX)*f; panY=my-(my-panY)*f;
+  zoom=Math.max(0.05,Math.min(80,zoom*f));
+  drawMap();drawMinimap();
+},{passive:false});
+mapWrap.addEventListener('mousedown',e=>{
+  dragging=true;dragStartX=e.clientX;dragStartY=e.clientY;dragPanX=panX;dragPanY=panY;
+  mapWrap.classList.add('dragging');
+});
+window.addEventListener('mousemove',e=>{
+  if(dragging){panX=dragPanX+(e.clientX-dragStartX);panY=dragPanY+(e.clientY-dragStartY);drawMap();drawMinimap();}
+  if(!dragging&&tiles.length){
+    const rect=mapWrap.getBoundingClientRect();
+    const {wx,wy}=screenToWorld(e.clientX-rect.left,e.clientY-rect.top);
+    const idx=tileMap.get(`${wx},${wy}`);
+    const tip=document.getElementById('tip');
+    if(idx!==undefined){
+      const t=tiles[idx];
+      const p=players[players.findIndex(pl=>pl.pid===t.pid)]||{};
+      tip.querySelector('.tname').textContent=p.name||'[unknown]';
+      tip.querySelector('.tpos').textContent=`Position: (${wx}, ${wy})`;
+      tip.querySelector('.thq').textContent=t.isHQ?'⌂ Headquarters':'';
+      tip.style.display='block';
+      tip.style.left=(e.clientX-mapWrap.getBoundingClientRect().left+14)+'px';
+      tip.style.top=(e.clientY-mapWrap.getBoundingClientRect().top-8)+'px';
+    } else {tip.style.display='none';}
+  }
+});
+window.addEventListener('mouseup',()=>{dragging=false;mapWrap.classList.remove('dragging');});
+mapWrap.addEventListener('mouseleave',()=>{document.getElementById('tip').style.display='none';});
+
+document.getElementById('minimap-canvas').addEventListener('click',e=>{
+  if(!tiles.length) return;
+  const mc=document.getElementById('minimap-canvas');
+  const rect=mc.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const spanX=maxX-minX+1,spanY=maxY-minY+1;
+  const sc=Math.min(mc.width/spanX,mc.height/spanY);
+  const offX=(mc.width-spanX*sc)/2,offY=(mc.height-spanY*sc)/2;
+  const cv=document.getElementById('map');
+  panX=cv.width/2-((mx-offX)/sc)*CELL*zoom;
+  panY=cv.height/2-((my-offY)/sc)*CELL*zoom;
+  drawMap();drawMinimap();
+});
+
+function zoomBy(f){
+  const cv=document.getElementById('map');
+  panX=cv.width/2-(cv.width/2-panX)*f;
+  panY=cv.height/2-(cv.height/2-panY)*f;
+  zoom=Math.max(0.05,Math.min(80,zoom*f));
+  drawMap();drawMinimap();
+}
+function resetView(){
+  if(!tiles.length) return;
+  const cv=document.getElementById('map');
+  const spanX=maxX-minX+1,spanY=maxY-minY+1;
+  zoom=Math.min(cv.width/(spanX*CELL),cv.height/(spanY*CELL))*0.9;
+  panX=(cv.width-spanX*CELL*zoom)/2;
+  panY=(cv.height-spanY*CELL*zoom)/2;
+  drawMap();drawMinimap();
+}
+function jumpToPlayer(pid){
+  if(!tiles.length) return;
+  const pt=tiles.filter(t=>t.pid===pid);
+  if(!pt.length) return;
+  const xs=pt.map(t=>t.x),ys=pt.map(t=>t.y);
+  const bx0=Math.min(...xs),bx1=Math.max(...xs),by0=Math.min(...ys),by1=Math.max(...ys);
+  const cv=document.getElementById('map');
+  zoom=Math.max(0.2,Math.min(20,Math.min(cv.width/((bx1-bx0+7)*CELL),cv.height/((by1-by0+7)*CELL))));
+  panX=cv.width/2-((bx0+bx1)/2-minX)*CELL*zoom;
+  panY=cv.height/2-(maxY-(by0+by1)/2)*CELL*zoom;
+  highlightPid=pid; drawMap(); drawMinimap();
+  setTimeout(()=>{highlightPid=null;drawMap();},2000);
+}
+function jumpToMe(){jumpToPlayer([...MY_IDS][0]);}
+
+// ── PLAYER LIST ───────────────────────────────────────────────────────────────
+function updateStats(){
+  document.getElementById('s-players').textContent=players.length.toLocaleString('en');
+  document.getElementById('s-tiles').textContent=totalTiles.toLocaleString('en');
+  document.getElementById('s-unclaimed').textContent=unclaimedTiles.toLocaleString('en');
+}
+let filterTimer=null;
+function filterPlayers(){clearTimeout(filterTimer);filterTimer=setTimeout(_fp,100);}
+function setFilter(f,btn){activeFilter=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');filterPlayers();}
+function _fp(){
+  const q=document.getElementById('search').value.toLowerCase();
+  filteredPlayers=players.filter(p=>{
+    if(activeFilter==='named'&&!p.name) return false;
+    if(activeFilter==='inactive'&&!p.inactive) return false;
+    if(q&&!p.name.toLowerCase().includes(q)&&!p.pid.includes(q)&&!(p.wallet||'').includes(q)) return false;
+    return true;
+  });
+  const maxT=filteredPlayers.length?filteredPlayers[0].tiles:1;
+  document.getElementById('player-list').innerHTML=filteredPlayers.map((p,i)=>{
+    const me=MY_IDS.has(p.pid);
+    const nm=p.name?`<span class="pname${me?' me':''}">${esc(p.name)}</span>`:`<span class="pname unnamed">[unknown]</span>`;
+    return `<div class="prow${me?' me':''}" onclick="onPClick('${p.pid}',event)">
+      <span class="prank">${i+1}</span>
+      <span class="pdot" style="background:${p.color}"></span>
+      ${nm}
+      <span class="ptiles">${p.tiles.toLocaleString('en')}</span>
+      <div class="pbar"><div class="pbar-fill" style="width:${Math.round(p.tiles/maxT*100)}%;background:${p.color}"></div></div>
+    </div>`;
+  }).join('')||'<div style="color:#444;padding:1rem;font-size:12px">No results</div>';
+}
+function onPClick(pid,e){jumpToPlayer(pid);document.querySelectorAll('.prow').forEach(r=>r.classList.remove('active'));e.currentTarget.classList.add('active');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportPNG(){
+  const cv=document.getElementById('map');
+  const a=document.createElement('a');
+  a.href=cv.toDataURL('image/png');
+  a.download='sui_turf_map_'+new Date().toISOString().slice(0,10)+'.png';
+  a.click();
+}
+function exportCSV(){
+  const rows=[['Rank','Name','Tiles','Percentage','Profile ID','Wallet','Inactive']];
+  players.forEach((p,i)=>rows.push([i+1,p.name||'',p.tiles,
+    totalTiles?(p.tiles/totalTiles*100).toFixed(4):'',p.pid,p.wallet||'',p.inactive?'yes':'no']));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='sui_players_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// ── REFRESH MODAL ─────────────────────────────────────────────────────────────
+function openRefreshModal(){document.getElementById('refresh-modal').classList.add('open');}
+function closeRefreshModal(){document.getElementById('refresh-modal').classList.remove('open');document.getElementById('refresh-result').textContent='';}
+
+async function triggerRefresh(){
+  const token=document.getElementById('gh-token').value.trim();
+  const repo=document.getElementById('gh-repo').value.trim();
+  const resultEl=document.getElementById('refresh-result');
+  if(!token||!repo){resultEl.style.color='#E24B4A';resultEl.textContent='Please fill in both fields.';return;}
+  resultEl.style.color='#888';resultEl.textContent='Triggering workflow...';
+  try{
+    const r=await fetch(`https://api.github.com/repos/${repo}/actions/workflows/update.yml/dispatches`,{
+      method:'POST',
+      headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+      body:JSON.stringify({ref:'main'})
+    });
+    if(r.status===204){
+      resultEl.style.color='#1D9E75';
+      resultEl.textContent='✓ Workflow started! Data will update in ~10 minutes. Reload the page then.';
+    } else {
+      const d=await r.json();
+      resultEl.style.color='#E24B4A';
+      resultEl.textContent='Error '+r.status+': '+(d.message||'unknown');
+    }
+  }catch(e){
+    resultEl.style.color='#E24B4A';
+    resultEl.textContent='Error: '+e.message;
+  }
+}
+document.getElementById('refresh-modal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('refresh-modal')) closeRefreshModal();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+resizeCanvas();
+loadData();
+</script>
+</body>
+</html>

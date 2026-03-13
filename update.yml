@@ -1,0 +1,34 @@
+name: Update map data
+
+on:
+  schedule:
+    - cron: '0 */8 * * *'   # every 8 hours
+  workflow_dispatch:          # allows manual trigger via API or GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch blockchain data
+        run: python fetch_data.py
+
+      - name: Commit and push data.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git diff --staged --quiet || git commit -m "Update map data $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
