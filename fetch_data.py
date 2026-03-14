@@ -259,7 +259,7 @@ size_kb = len(output_json) / 1024
 # ── SAVE VERSIONED SNAPSHOT ───────────────────────────────────────────────────
 os.makedirs(SNAPSHOTS_DIR, exist_ok=True)
 
-timestamp = now_utc.strftime("%Y-%m-%d_%H")
+timestamp = now_utc.strftime("%Y-%m-%d_%H%M")
 snapshot_filename = f"{SNAPSHOTS_DIR}/data_{timestamp}.json"
 
 with open(snapshot_filename, "w", encoding="utf-8") as f:
@@ -286,9 +286,9 @@ history_entries = []
 for snap_path in all_snapshots:
     # Parse timestamp from filename: snapshots/data_YYYY-MM-DD_HH.json
     basename = os.path.basename(snap_path)  # data_YYYY-MM-DD_HH.json
-    ts_str = basename[5:-5]                  # YYYY-MM-DD_HH
+    ts_str = basename[5:-5]                  # YYYY-MM-DD_HHMM
     try:
-        dt = datetime.strptime(ts_str, "%Y-%m-%d_%H").replace(tzinfo=timezone.utc)
+        dt = datetime.strptime(ts_str, "%Y-%m-%d_%H%M").replace(tzinfo=timezone.utc)
         history_entries.append({
             "file":      snap_path,
             "timestamp": dt.isoformat(),
