@@ -158,7 +158,7 @@ button:disabled{opacity:0.4;cursor:default}
 <body>
 
 <div id="toolbar">
-  <h1>SUI Turf Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v1.0</span>
+  <h1>SUI Turf Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v1.1</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#3a3a1e;color:#FAC775">⚡ Refresh data</button>
   <div class="sep"></div>
@@ -344,6 +344,10 @@ async function loadSnapshot(file){
 // ── LOAD DATA ─────────────────────────────────────────────────────────────────
 async function loadData(url){
   status('Loading...');
+  // Save current viewport if map already loaded
+  const hadTiles=tiles.length>0;
+  const savedZoom=zoom, savedPanX=panX, savedPanY=panY;
+
   tiles=[]; tileMap.clear(); players=[]; filteredPlayers=[]; neighborMap.clear();
   clearRoute();
 
@@ -376,7 +380,12 @@ async function loadData(url){
     filterPlayers();
     document.getElementById('csvBtn').style.display='';
     resizeCanvas();
-    jumpToMe();
+    if(hadTiles){
+      // Restore previous viewport when switching snapshots
+      zoom=savedZoom; panX=savedPanX; panY=savedPanY;
+    } else {
+      jumpToMe();
+    }
     drawMap();drawMinimap();
 
     // Historical mode indicator
@@ -734,7 +743,7 @@ mapWrap.addEventListener('mouseleave',()=>{document.getElementById('tip').style.
 
 // ── TOUCH EVENTS ──────────────────────────────────────────────────────────────
 let t1x=0,t1y=0,tPanX=0,tPanY=0;
-let pinchDist0=0,pinchZoom0=0,pinchWX=0,pinchWY=0;
+let pinchDist0=0,pinchZoom0=0,pinchStartPanX=0,pinchStartPanY=0;
 let tStartX=0,tStartY=0,tMoved=false,longTimer=null;
 const LONG_MS=600, TAP_PX=12;
 
@@ -769,9 +778,7 @@ mapWrap.addEventListener('touchstart',e=>{
     const mx=(ax+bx)/2, my=(ay+by)/2;
     pinchDist0=Math.hypot(bx-ax,by-ay);
     pinchZoom0=zoom;
-    // Store the world coordinate under the midpoint
-    pinchWX=(mx-panX)/(CELL*zoom)+minX;
-    pinchWY=maxY-(my-panY)/(CELL*zoom);
+    pinchStartPanX=panX; pinchStartPanY=panY;
   }
 },{passive:false});
 
@@ -795,10 +802,11 @@ mapWrap.addEventListener('touchmove',e=>{
     const bx=e.touches[1].clientX-rect.left, by=e.touches[1].clientY-rect.top;
     const mx=(ax+bx)/2, my=(ay+by)/2;
     const dist=Math.hypot(bx-ax,by-ay);
-    const newZoom=Math.max(0.05,Math.min(80,pinchZoom0*(dist/pinchDist0)));
-    // Keep pinchWX/pinchWY under the current midpoint
-    panX=mx-(pinchWX-minX)*CELL*newZoom;
-    panY=my-(maxY-pinchWY)*CELL*newZoom;
+    const scale=dist/pinchDist0;
+    const newZoom=Math.max(0.05,Math.min(80,pinchZoom0*scale));
+    // Same as wheel zoom: keep the midpoint fixed in screen space
+    panX=mx-(mx-pinchStartPanX)*(newZoom/pinchZoom0);
+    panY=my-(my-pinchStartPanY)*(newZoom/pinchZoom0);
     zoom=newZoom;
     drawMap();drawMinimap();
   }
