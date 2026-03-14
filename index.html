@@ -155,7 +155,7 @@ button:disabled{opacity:0.4;cursor:default}
 <body>
 
 <div id="toolbar">
-  <h1>SUI Turf Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v1.4</span>
+  <h1>SUI Turf Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v1.5</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#3a3a1e;color:#FAC775">⚡ Refresh data</button>
   <div class="sep"></div>
@@ -737,105 +737,6 @@ mapWrap.addEventListener('contextmenu',e=>{
 });
 mapWrap.addEventListener('mouseleave',()=>{document.getElementById('tip').style.display='none';});
 
-// ── TOUCH EVENTS ──────────────────────────────────────────────────────────────
-let t1x=0,t1y=0,tPanX=0,tPanY=0;
-let pinchDist0=0,pinchMidX0=0,pinchMidY0=0;
-let tStartX=0,tStartY=0,tMoved=false,longTimer=null;
-const LONG_MS=600, TAP_PX=12;
-
-function isButton(el){return el&&(el.tagName==='BUTTON'||el.closest('button'));}
-
-mapWrap.addEventListener('touchstart',e=>{
-  if(isButton(e.target)) return;
-  e.preventDefault();
-  document.getElementById('touch-tooltip').style.display='none';
-  clearTimeout(longTimer);
-  tMoved=false;
-
-  if(e.touches.length===1){
-    const t=e.touches[0];
-    t1x=t.clientX; t1y=t.clientY;
-    tStartX=t.clientX; tStartY=t.clientY;
-    tPanX=panX; tPanY=panY;
-    longTimer=setTimeout(()=>{
-      if(!tMoved){
-        const rect=mapWrap.getBoundingClientRect();
-        const {wx,wy}=screenToWorld(t1x-rect.left,t1y-rect.top);
-        const idx=tileMap.get(`${wx},${wy}`);
-        if(idx!==undefined) showNeighborPopup(tiles[idx].pid,t1x,t1y);
-      }
-    },LONG_MS);
-  } else if(e.touches.length===2){
-    clearTimeout(longTimer);
-    const rect=mapWrap.getBoundingClientRect();
-    const ax=e.touches[0].clientX-rect.left, ay=e.touches[0].clientY-rect.top;
-    const bx=e.touches[1].clientX-rect.left, by=e.touches[1].clientY-rect.top;
-    pinchDist0=Math.hypot(bx-ax,by-ay)||1;
-    pinchMidX0=(ax+bx)/2;
-    pinchMidY0=(ay+by)/2;
-  }
-},{passive:false});
-
-mapWrap.addEventListener('touchmove',e=>{
-  if(isButton(e.target)) return;
-  e.preventDefault();
-  document.getElementById('touch-tooltip').style.display='none';
-
-  if(e.touches.length===1){
-    const t=e.touches[0];
-    const dx=t.clientX-tStartX, dy=t.clientY-tStartY;
-    if(!tMoved&&Math.hypot(dx,dy)>TAP_PX){tMoved=true;clearTimeout(longTimer);}
-    if(tMoved){panX=tPanX+dx;panY=tPanY+dy;drawMap();drawMinimap();}
-  } else if(e.touches.length===2){
-    tMoved=true;clearTimeout(longTimer);
-    const rect=mapWrap.getBoundingClientRect();
-    const ax=e.touches[0].clientX-rect.left, ay=e.touches[0].clientY-rect.top;
-    const bx=e.touches[1].clientX-rect.left, by=e.touches[1].clientY-rect.top;
-    const curDist=Math.hypot(bx-ax,by-ay)||1;
-    const curMidX=(ax+bx)/2, curMidY=(ay+by)/2;
-    const zf=curDist/pinchDist0;
-    const newZoom=Math.max(0.05,Math.min(80,zoom*zf));
-    // Zoom centered on PREVIOUS midpoint
-    panX=pinchMidX0-(pinchMidX0-panX)*(newZoom/zoom);
-    panY=pinchMidY0-(pinchMidY0-panY)*(newZoom/zoom);
-    zoom=newZoom;
-    // Pan by midpoint delta
-    panX+=curMidX-pinchMidX0;
-    panY+=curMidY-pinchMidY0;
-    // Update for next frame
-    pinchDist0=curDist;
-    pinchMidX0=curMidX;
-    pinchMidY0=curMidY;
-    drawMap();drawMinimap();
-  }
-},{passive:false});
-
-mapWrap.addEventListener('touchend',e=>{
-  if(isButton(e.target)) return;
-  e.preventDefault();
-  clearTimeout(longTimer);
-  if(!tMoved&&e.changedTouches.length===1){
-    const t=e.changedTouches[0];
-    const rect=mapWrap.getBoundingClientRect();
-    const {wx,wy}=screenToWorld(t.clientX-rect.left,t.clientY-rect.top);
-    const idx=tileMap.get(`${wx},${wy}`);
-    if(idx!==undefined){
-      const tile=tiles[idx];
-      if(routeMode){
-        selectRoutePlayer(tile.pid);
-      } else {
-        const p=players[tile.pidIdx]||{};
-        const tt=document.getElementById('touch-tooltip');
-        tt.querySelector('.tname').textContent=p.name||'[unknown]';
-        tt.querySelector('.tpos').textContent=`Position: (${wx}, ${wy})`;
-        tt.querySelector('.thq').textContent=tile.isHQ?'⌂ Headquarters':'';
-        tt.style.display='block';
-        setTimeout(()=>tt.style.display='none',3000);
-      }
-    }
-  }
-},{passive:false});
-
 // ── SIDEBAR TOGGLE (mobile) ───────────────────────────────────────────────────
 function toggleSidebar(){
   const sb=document.getElementById('sidebar');
@@ -974,6 +875,65 @@ document.addEventListener('click',e=>{
 resizeCanvas();
 loadHistory();
 loadLatest();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" onload="initHammer()"></script>
+<script>
+function initHammer(){
+  const mapWrapH=document.getElementById('map-wrap');
+  const hammer=new Hammer.Manager(mapWrapH,{
+    recognizers:[
+      [Hammer.Pan,{direction:Hammer.DIRECTION_ALL,threshold:5}],
+      [Hammer.Pinch,{enable:true,threshold:0}],
+      [Hammer.Tap,{event:'singletap',taps:1,interval:300,time:250}],
+      [Hammer.Press,{event:'longpress',time:600,threshold:10}],
+    ]
+  });
+  hammer.get('pinch').recognizeWith(hammer.get('pan'));
+
+  let hamPanX=0,hamPanY=0;
+  hammer.on('panstart',()=>{hamPanX=panX;hamPanY=panY;document.getElementById('touch-tooltip').style.display='none';});
+  hammer.on('panmove',e=>{panX=hamPanX+e.deltaX;panY=hamPanY+e.deltaY;drawMap();drawMinimap();});
+
+  let pinchStartZoom=1,pinchStartPanX=0,pinchStartPanY=0,pinchCenterX=0,pinchCenterY=0;
+  hammer.on('pinchstart',e=>{
+    pinchStartZoom=zoom;pinchStartPanX=panX;pinchStartPanY=panY;
+    const rect=mapWrapH.getBoundingClientRect();
+    pinchCenterX=e.center.x-rect.left;pinchCenterY=e.center.y-rect.top;
+  });
+  hammer.on('pinchmove',e=>{
+    const newZoom=Math.max(0.05,Math.min(80,pinchStartZoom*e.scale));
+    const zf=newZoom/pinchStartZoom;
+    panX=pinchCenterX-(pinchCenterX-pinchStartPanX)*zf+e.deltaX;
+    panY=pinchCenterY-(pinchCenterY-pinchStartPanY)*zf+e.deltaY;
+    zoom=newZoom;drawMap();drawMinimap();
+  });
+
+  hammer.on('singletap',e=>{
+    document.getElementById('touch-tooltip').style.display='none';
+    const rect=mapWrapH.getBoundingClientRect();
+    const {wx,wy}=screenToWorld(e.center.x-rect.left,e.center.y-rect.top);
+    const idx=tileMap.get(`${wx},${wy}`);
+    if(idx===undefined) return;
+    const tile=tiles[idx];
+    if(routeMode){selectRoutePlayer(tile.pid);}
+    else{
+      const p=players[tile.pidIdx]||{};
+      const tt=document.getElementById('touch-tooltip');
+      tt.querySelector('.tname').textContent=p.name||'[unknown]';
+      tt.querySelector('.tpos').textContent=`Position: (${wx}, ${wy})`;
+      tt.querySelector('.thq').textContent=tile.isHQ?'⌂ Headquarters':'';
+      tt.style.display='block';
+      setTimeout(()=>tt.style.display='none',3000);
+    }
+  });
+
+  hammer.on('longpress',e=>{
+    const rect=mapWrapH.getBoundingClientRect();
+    const {wx,wy}=screenToWorld(e.center.x-rect.left,e.center.y-rect.top);
+    const idx=tileMap.get(`${wx},${wy}`);
+    if(idx!==undefined) showNeighborPopup(tiles[idx].pid,e.center.x,e.center.y);
+  });
+}
 </script>
 </body>
 </html>
