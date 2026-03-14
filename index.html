@@ -136,6 +136,7 @@ button:disabled{opacity:0.4;cursor:default}
 @media (max-width: 768px){
   #toolbar{padding:8px 10px;gap:5px}
   #toolbar h1{display:none}
+  #ver{display:block!important;color:#555}
   .sep{display:none}
   #age{display:none}
   #route-indicator{display:none!important}
@@ -157,7 +158,7 @@ button:disabled{opacity:0.4;cursor:default}
 <body>
 
 <div id="toolbar">
-  <h1>SUI Turf Map</h1><span style="font-size:10px;color:#333;margin-right:4px">v1.0</span>
+  <h1>SUI Turf Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v1.0</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#3a3a1e;color:#FAC775">⚡ Refresh data</button>
   <div class="sep"></div>
