@@ -2070,10 +2070,23 @@ function walletStatus(msg, color){
 }
 
 async function connectWallet(){
-  walletStatus('Looking for wallet...','#888');
+  walletStatus('Initializing wallet registry...','#888');
   walletApi=null;
 
-  // Try getWallets() registry first (wallet-standard)
+  // Load @mysten/wallet-standard from CDN to set up the registry Slush hooks into
+  if(!window.__walletStandardLoaded){
+    await new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src='https://unpkg.com/@mysten/wallet-standard@latest/dist/umd/index.js';
+      s.onload=resolve; s.onerror=reject;
+      document.head.appendChild(s);
+    }).catch(()=>{});
+    window.__walletStandardLoaded=true;
+    // Give Slush a moment to detect the new registry and register itself
+    await new Promise(r=>setTimeout(r,500));
+  }
+
+  // Now try getWallets()
   try{
     const reg=window.getWallets?.();
     if(reg){
@@ -2082,33 +2095,20 @@ async function connectWallet(){
     }
   }catch(e){}
 
-  // Wait passively for wallet to announce itself (up to 1.5s)
-  const wallet = await new Promise(resolve=>{
-    // Already registered?
-    if(window.__suiWallets?.length) return resolve(window.__suiWallets[0]);
-    const timer=setTimeout(()=>resolve(null), 1500);
-    window.addEventListener('wallet-standard:register-wallet', e=>{
-      clearTimeout(timer);
-      // e.detail is the wallet or a register function
-      const w=e.detail?.wallet||e.detail;
-      resolve(w||null);
-    },{once:true});
-  });
-
-  if(wallet) return connectStandardWallet(wallet);
-
-  // Last resort: check all window keys for anything with sui features
+  // Scan window for any wallet object with SUI features
   for(const key of Object.keys(window)){
     try{
       const w=window[key];
       if(w&&typeof w==='object'&&w.features&&
-        (w.features['sui:signAndExecuteTransaction']||w.features['sui:signAndExecuteTransactionBlock'])){
+        (w.features['sui:signAndExecuteTransaction']||
+         w.features['sui:signAndExecuteTransactionBlock']||
+         w.features['standard:connect'])){
         return connectStandardWallet(w);
       }
     }catch(e){}
   }
 
-  walletStatus('❌ Slush wallet not detected. Please open the Slush extension once to activate it, then try again.','var(--v-red)');
+  walletStatus('❌ Slush not detected. Try: 1) Refresh the page 2) Click the Slush icon in toolbar 3) Try again.','var(--v-red)');
 }
 
 async function connectStandardWallet(w){
