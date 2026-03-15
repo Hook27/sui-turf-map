@@ -2202,12 +2202,25 @@ async function loadSuiSdk(){
   if(window.__suiSdkLoaded) return;
   await new Promise((resolve,reject)=>{
     const s=document.createElement('script');
-    s.src='https://unpkg.com/@mysten/sui@1.21.2/dist/umd/index.js'; // pinned stable version
-    s.onload=resolve; s.onerror=reject;
+    // jsDelivr serves correct CORS headers and has the right UMD path
+    s.src='https://cdn.jsdelivr.net/npm/@mysten/sui@1.21.2/dist/umd/index.umd.js';
+    s.onload=()=>{
+      // The UMD bundle may register as window.sui or window._mysten_sui
+      if(!window.sui && window._mysten_sui) window.sui=window._mysten_sui;
+      resolve();
+    };
+    s.onerror=()=>{
+      // Fallback to a different version path
+      const s2=document.createElement('script');
+      s2.src='https://cdn.jsdelivr.net/npm/@mysten/sui/dist/umd/index.umd.js';
+      s2.onload=resolve; s2.onerror=reject;
+      document.head.appendChild(s2);
+    };
     document.head.appendChild(s);
   });
   window.__suiSdkLoaded=true;
-  await new Promise(r=>setTimeout(r,200));
+  await new Promise(r=>setTimeout(r,300));
+  console.log('SDK loaded, window.sui:', window.sui);
 }
 
 async function buildAndSignTx(calls, dvdId, profileId, hqOid){
