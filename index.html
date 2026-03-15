@@ -2071,20 +2071,53 @@ function walletStatus(msg, color){
 
 async function connectWallet(){
   walletStatus('Looking for wallet...','#888');
-  // Try Slush first, then Suiet, then generic window.suiWallet
-  const providers=['slush','suiWallet','suiet','okxwallet','martian'];
   walletApi=null;
-  for(const key of providers){
+
+  // Modern SUI Wallet Standard — Slush and other modern wallets register here
+  const standardWallets = (window.__suiWallets || []);
+  // Also check via wallet-standard registry if available
+  if(!standardWallets.length && window.navigator?.wallets){
+    try{
+      const wl = await window.navigator.wallets.get();
+      wl.forEach(w=>standardWallets.push(w));
+    }catch(e){}
+  }
+
+  if(standardWallets.length>0){
+    const w=standardWallets[0];
+    walletApi={key:'standard',w};
+    try{
+      // Connect using Wallet Standard
+      const features=w.features||{};
+      if(features['standard:connect']){
+        await features['standard:connect'].connect();
+      }
+      const accounts=w.accounts||[];
+      const addr=accounts[0]?.address||'';
+      walletStatus(`✓ Connected: ${addr?addr.slice(0,10)+'...':w.name}`,'var(--v-green)');
+      document.getElementById('wallet-execute-btn').style.display='block';
+      return;
+    }catch(err){
+      walletStatus(`❌ Connect failed: ${err.message}`,'var(--v-red)');
+      return;
+    }
+  }
+
+  // Legacy fallback: window.slush, window.suiWallet, window.suiet etc.
+  const legacyKeys=['slush','suiWallet','suiet','sui','okxwallet','martian'];
+  for(const key of legacyKeys){
     const w=window[key];
     if(w&&(w.connect||w.signAndExecuteTransactionBlock||w.signAndExecuteTransaction)){
       walletApi={key,w};
       break;
     }
   }
+
   if(!walletApi){
-    walletStatus('❌ No wallet extension found. Install Slush or Suiet.','var(--v-red)');
+    walletStatus('❌ No wallet found. Make sure Slush is installed and this page is https:// or localhost.','var(--v-red)');
     return;
   }
+
   try{
     if(walletApi.w.connect) await walletApi.w.connect();
     let addr='';
@@ -2162,50 +2195,34 @@ async function executeRecall(){
 }
 
 async function buildAndSignTx(calls, dvdId, profileId, hqOid){
-  // Build a raw transaction using the wallet's signAndExecuteTransactionBlock
-  // We use the serialized PTB format supported by Slush/Suiet
-
-  // Try @mysten/sui TransactionBlock if loaded
-  if(window.SuiTransaction){
-    return buildWithSuiSdk(calls, dvdId, profileId, hqOid);
-  }
-
-  // Fallback: use wallet's moveCall method if supported
   const w=walletApi.w;
-
-  // Build PTB as JSON for wallets that support it
-  const txInputs=[];
-  const txCalls=[];
-
-  // Shared object helper
-  const shared=(id, iv, mutable)=>({objectId:id, initialSharedVersion:String(iv), mutable});
-  // We need the initialSharedVersions — use known values from the reference tx
-  const SHARED_VERSIONS={
-    [GAME_CONFIG]: '587268221',
-    [TURF_REG]:    '587268220',
-    [ITEM_REG]:    '501692172',
-    [GANG_CONFIG]: '587268217',
-    [SCORE_REG]:   '587268220',
-    [CLOCK]:       '1',
+  const inputs=buildInputs(calls, dvdId, profileId, hqOid, {
+    [GAME_CONFIG]:'587268221',[TURF_REG]:'587268220',
+    [ITEM_REG]:'501692172',[GANG_CONFIG]:'587268217',
+    [SCORE_REG]:'587268220',[CLOCK]:'1',
+  });
+  const transaction={
+    kind:'ProgrammableTransaction',
+    inputs,
+    transactions:buildMoveCallsFromInputs(calls),
   };
 
-  // Try signAndExecuteTransaction (newer API)
-  if(w.signAndExecuteTransaction||w.signAndExecuteTransactionBlock){
-    // Use unsafe_moveCall approach via wallet.executeMoveCall if available
-    // Many wallets support a simple array of move calls
-    const fn = w.signAndExecuteTransaction||w.signAndExecuteTransactionBlock;
-
-    // Build a minimal PTB JSON — most wallets accept this format
-    const transaction = {
-      kind: 'ProgrammableTransaction',
-      inputs: buildInputs(calls, dvdId, profileId, hqOid, SHARED_VERSIONS),
-      transactions: buildMoveCallsFromInputs(calls),
-    };
-
-    return await fn({transaction, options:{showEffects:true}});
+  // Wallet Standard API (Slush)
+  if(walletApi.key==='standard'){
+    const features=w.features||{};
+    const signFn=features['sui:signAndExecuteTransaction']||features['sui:signAndExecuteTransactionBlock'];
+    if(signFn){
+      return await signFn.signAndExecuteTransaction({transaction, options:{showEffects:true}});
+    }
+    throw new Error('Wallet does not support signAndExecuteTransaction');
   }
 
-  throw new Error('Wallet API not supported. Try Slush or Suiet.');
+  // Legacy API
+  const signFn=w.signAndExecuteTransaction||w.signAndExecuteTransactionBlock;
+  if(signFn){
+    return await signFn.call(w,{transaction, options:{showEffects:true}});
+  }
+  throw new Error('Wallet API not supported.');
 }
 
 function buildInputs(calls, dvdId, profileId, hqOid, sv){
