@@ -2198,26 +2198,60 @@ async function executeRecall(){
   }
 }
 
+async function loadSuiSdk(){
+  if(window.__suiSdkLoaded) return;
+  await new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/@mysten/sui@latest/dist/umd/index.js';
+    s.onload=resolve; s.onerror=reject;
+    document.head.appendChild(s);
+  });
+  window.__suiSdkLoaded=true;
+  await new Promise(r=>setTimeout(r,200));
+}
+
 async function buildAndSignTx(calls, dvdId, profileId, hqOid){
   const w=walletApi.w;
-  const inputs=buildInputs(calls, dvdId, profileId, hqOid, {
-    [GAME_CONFIG]:'587268221',[TURF_REG]:'587268220',
-    [ITEM_REG]:'501692172',[GANG_CONFIG]:'587268217',
-    [SCORE_REG]:'587268220',[CLOCK]:'1',
-  });
-  const transaction={
-    kind:'ProgrammableTransaction',
-    inputs,
-    transactions:buildMoveCallsFromInputs(calls),
-  };
 
-  // Wallet Standard API (Slush)
+  // Load @mysten/sui SDK for Transaction builder
+  await loadSuiSdk();
+  const SuiLib=window.sui||window.SuiLib||window['@mysten/sui'];
+  if(!SuiLib?.Transaction) throw new Error('SUI SDK not loaded. Check CDN connection.');
+
+  const tx=new SuiLib.Transaction();
+
+  // Fixed shared objects
+  const gameConfig=tx.object(GAME_CONFIG);
+  const dvd=tx.object(dvdId);
+  const profile=tx.object(profileId);
+  const turfReg=tx.object(TURF_REG);
+  const itemReg=tx.object(ITEM_REG);
+  const gangConfig=tx.object(GANG_CONFIG);
+  const scoreReg=tx.object(SCORE_REG);
+  const clock=tx.object(CLOCK);
+  const hqObj=tx.object(hqOid);
+
+  for(const c of calls){
+    const fromTurf=tx.object(c.fromOid);
+    tx.moveCall({
+      target:`${GAME_PKG}::game::move_gangster_free`,
+      arguments:[
+        gameConfig, dvd, profile, turfReg, itemReg, gangConfig,
+        fromTurf, hqObj, scoreReg,
+        tx.pure.string(c.type),
+        tx.pure.u64(c.count),
+        clock,
+      ],
+    });
+  }
+
+  // Sign via Wallet Standard
   if(walletApi.key==='standard'){
     const features=w.features||{};
     const signFn=features['sui:signAndExecuteTransaction']||features['sui:signAndExecuteTransactionBlock'];
     if(signFn){
       return await signFn.signAndExecuteTransaction({
-        transaction, chain:'sui:mainnet', options:{showEffects:true}
+        transaction:tx, chain:'sui:mainnet', options:{showEffects:true}
       });
     }
     throw new Error('Wallet does not support signAndExecuteTransaction');
@@ -2226,7 +2260,7 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
   // Legacy API
   const signFn=w.signAndExecuteTransaction||w.signAndExecuteTransactionBlock;
   if(signFn){
-    return await signFn.call(w,{transaction, chain:'sui:mainnet', options:{showEffects:true}});
+    return await signFn.call(w,{transaction:tx, chain:'sui:mainnet', options:{showEffects:true}});
   }
   throw new Error('Wallet API not supported.');
 }
