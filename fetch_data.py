@@ -202,7 +202,7 @@ for i in range(0, len(tile_ids), BATCH):
         # ── GARRISON (v2.6) ──────────────────────────────────────────────────
         garrison_count = int(f.get("garrison_count", 0) or 0)
         raw_tiles.append({"x": x, "y": y, "pid": pid, "hq": tile_id in hq_set,
-                          "g_h": g_h, "g_b": g_b, "g_e": g_e})
+                          "garrison_count": garrison_count})
         owner_count[pid] = owner_count.get(pid, 0) + 1
     if i % 2000 == 0 and i > 0: print(f"  {i}/{len(tile_ids)} tiles → {len(owner_count)} players")
     time.sleep(DELAY)
