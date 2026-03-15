@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Martian+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-/* ── VENDETTA THEME ── */
+/* ── VENDETTA THEME v2.5 ── */
 :root{
   --v-black:#000;
   --v-white:#fff;
@@ -18,8 +18,6 @@
   --v-red:#ff8483;
   --v-green:#6fffa9;
   --v-blue:#3291e9;
-  --v-shadow:3px 3px 0 #fff;
-  --v-shadow-dark:3px 3px 0 #333;
   --font-bangers:'Bangers',system-ui,sans-serif;
   --font-mono:'Martian Mono',monospace;
 }
@@ -27,17 +25,17 @@
 body{font-family:var(--font-mono);background:var(--v-bg);color:#ccc;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 /* ── TOOLBAR ── */
-#toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 14px;background:var(--v-black);border-bottom:2px solid var(--v-border);flex-shrink:0}
-#toolbar h1{font-family:var(--font-bangers);font-size:22px;font-weight:400;color:var(--v-white);white-space:nowrap;margin-right:6px;letter-spacing:2px;text-transform:uppercase}
+#toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 14px;background:#000;border-bottom:2px solid #333;flex-shrink:0}
+#toolbar h1{font-family:var(--font-bangers);font-size:22px;font-weight:400;color:#fff;white-space:nowrap;margin-right:6px;letter-spacing:2px;text-transform:uppercase}
 
 /* Ruby-style buttons */
 button{
   cursor:pointer;padding:4px 12px;
-  background:var(--v-white);
-  border:2px solid var(--v-black);
-  box-shadow:2.5px 2.5px 0 var(--v-border);
+  background:#fff;
+  border:2px solid #000;
+  box-shadow:2.5px 2.5px 0 #555;
   border-radius:0;
-  color:var(--v-black);
+  color:#000;
   font-family:var(--font-mono);
   font-size:11px;
   font-weight:600;
@@ -46,17 +44,17 @@ button{
   transition:all .08s ease;
   line-height:1.4;
 }
-button:hover{background:#e8e8e8;box-shadow:3.5px 3.5px 0 var(--v-border)}
+button:hover{background:#e8e8e8;box-shadow:3.5px 3.5px 0 #555}
 button:active{box-shadow:none;transform:translate(2px,2px)}
 button.primary{background:var(--v-blue);border-color:var(--v-blue);box-shadow:2.5px 2.5px 0 #1a5a9a;color:#fff}
 button.primary:hover{background:#4aa5ff;box-shadow:3.5px 3.5px 0 #1a5a9a}
-button.active{background:#1a3a2a;border-color:var(--v-green);box-shadow:2.5px 2.5px 0 #2a6a4a;color:var(--v-green)}
+button.active{background:#0a2a18;border-color:var(--v-green);box-shadow:2.5px 2.5px 0 #1a5a2a;color:var(--v-green)}
 button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 
 .sep{width:1px;height:20px;background:#333;flex-shrink:0}
 #status{font-size:10px;color:#555;padding:3px 8px;background:#111;border:1px solid #2a2a2a;border-radius:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-mono)}
 #age{font-size:10px;color:#444;white-space:nowrap;font-family:var(--font-mono)}
-#route-indicator{display:none;font-size:10px;padding:3px 8px;background:#0a1a0a;border:2px solid var(--v-green);border-radius:0;color:var(--v-green);white-space:nowrap;font-family:var(--font-mono);box-shadow:2px 2px 0 #2a4a2a}
+#route-indicator{display:none;font-size:10px;padding:3px 8px;background:#0a1a0a;border:2px solid var(--v-green);border-radius:0;color:var(--v-green);white-space:nowrap;font-family:var(--font-mono);box-shadow:2px 2px 0 #1a3a1a}
 
 /* ── TIMELINE ── */
 #timeline-bar{display:none;align-items:center;gap:10px;padding:6px 14px;background:#050505;border-bottom:2px solid #222;flex-shrink:0}
@@ -133,6 +131,14 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .pbar-fill{height:2px;border-radius:0}
 .p-route-btn{width:18px;height:18px;padding:0;font-size:9px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;display:none;background:#111;border:1px solid #333;box-shadow:1px 1px 0 #000;color:#888}
 .route-mode-active .p-route-btn{display:block}
+.p-mark-btn{width:18px;height:18px;padding:0;font-size:11px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;background:transparent;border:1px solid #2a2a2a;color:#555;margin-left:2px;box-shadow:none}
+.p-mark-btn:hover{border-color:#888;color:#ccc}
+.mark-friend{color:var(--v-green)!important;border-color:var(--v-green)!important}
+.mark-enemy{color:var(--v-red)!important;border-color:var(--v-red)!important}
+.prow.friend{border-left:3px solid var(--v-green)}
+.prow.enemy{border-left:3px solid var(--v-red)}
+.nmark{font-size:10px;padding:2px 5px;border-radius:0;flex-shrink:0;background:transparent;border:1px solid #2a2a2a;color:#555;box-shadow:none}
+.nmark:hover{border-color:#888;color:#ccc}
 
 /* ── NEIGHBOR POPUP ── */
 #neighbor-popup{position:fixed;background:#111;border:2px solid #444;border-radius:0;padding:0;min-width:220px;max-width:280px;max-height:400px;display:none;z-index:200;overflow:hidden;box-shadow:5px 5px 0 #000}
@@ -150,13 +156,13 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .nname.unnamed{color:#333;font-style:italic}
 .ncontact{font-size:9px;color:#444;flex-shrink:0}
 .nroute{font-size:9px;padding:2px 5px;border-radius:0;flex-shrink:0;background:#0a0a0a;border:1px solid #333;color:#666;box-shadow:1px 1px 0 #000}
-.nroute:hover{background:var(--v-blue);border-color:var(--v-blue);color:#fff}
+.nroute:hover{background:var(--v-blue);border-color:var(--v-blue);color:#fff;box-shadow:none}
 
 /* ── REFRESH MODAL ── */
 #refresh-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:300;align-items:center;justify-content:center}
 #refresh-modal.open{display:flex}
 #refresh-box{background:#111;border:2px solid #555;border-radius:0;padding:24px;width:400px;max-width:90vw;box-shadow:6px 6px 0 #000}
-#refresh-box h2{font-family:var(--font-bangers);font-size:18px;font-weight:400;letter-spacing:1.5px;margin-bottom:12px;color:var(--v-white);text-transform:uppercase}
+#refresh-box h2{font-family:var(--font-bangers);font-size:18px;font-weight:400;letter-spacing:1.5px;margin-bottom:12px;color:#fff;text-transform:uppercase}
 #refresh-box p{font-size:11px;color:#666;margin-bottom:10px;line-height:1.7;font-family:var(--font-mono)}
 #refresh-box input{width:100%;background:#0a0a0a;color:#ccc;border:2px solid #333;border-radius:0;padding:6px 10px;font-size:11px;margin-bottom:8px;font-family:var(--font-mono)}
 #refresh-box input:focus{outline:none;border-color:var(--v-gold)}
@@ -191,6 +197,19 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
   #zoom-btns button{width:44px;height:44px;font-size:20px;padding:0}
   button{padding:6px 10px;font-size:12px}
 }
+
+/* ── ANALYSIS TABS ── */
+.an-tab{background:#0a0a0a;color:#555;cursor:pointer;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px;border-radius:0;border:2px solid #222}
+.an-tab.on{background:#111;color:#ccc;font-weight:700;border-color:#444;box-shadow:2px 2px 0 #000}
+.an-tab:hover{background:#141414;color:#aaa}
+.an-row{display:flex;align-items:center;gap:8px;padding:7px 18px;border-bottom:1px solid #111;font-size:11px;cursor:pointer;font-family:var(--font-mono)}
+.an-row:hover{background:#141414}
+.an-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ccc}
+.an-name.me{color:var(--v-gold)}
+.an-delta{font-weight:700;min-width:44px;text-align:right}
+.an-bar-wrap{width:70px;height:3px;background:#1a1a1a;border-radius:0;flex-shrink:0}
+.an-bar{height:3px;border-radius:0}
+.an-tiles{color:#555;font-size:10px;min-width:50px;text-align:right}
 </style>
 </head>
 <body>
@@ -198,12 +217,13 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 <div id="toolbar">
   <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#555;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v2.5</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
-  <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh</button>
+  <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh data</button>
   <div class="sep"></div>
   <button id="route-btn" onclick="toggleRouteMode()">🗺 Route</button>
   <span id="route-indicator">Click a tile or player to select A → B</span>
   <div class="sep"></div>
   <button onclick="exportPNG()">⬇ PNG</button>
+  <button onclick="exportGIF()" id="gifBtn" style="display:none">🎬 GIF</button>
   <button onclick="exportCSV()" id="csvBtn" style="display:none">⬇ CSV</button>
   <div class="sep"></div>
   <span id="age"></span>
@@ -217,6 +237,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
   <input type="range" id="tl-slider" min="0" value="0" step="1" oninput="onSliderInput(this.value)">
   <span id="tl-info">—</span>
   <span id="tl-count">— snapshots</span>
+  <button id="analyse-btn" onclick="openAnalysis()" style="font-size:11px;padding:3px 10px;border-color:#378ADD;color:#378ADD;display:none">📊 Analyse</button>
 </div>
 
 <div id="main">
@@ -232,7 +253,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
     <button id="sidebar-toggle" onclick="toggleSidebar()" title="Player list">☰</button>
     <div id="touch-tooltip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div></div>
     <div id="route-panel">
-      <h3>🗺 Shortest Route</h3>
+      <h3>🗺 Shortest route</h3>
       <div class="route-player">
         <div class="route-dot" id="rp-dot-a" style="background:#1D9E75"></div>
         <div class="route-name" id="rp-name-a">—</div>
@@ -245,8 +266,8 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
       <div id="route-no-path">No path found between these players.</div>
       <div class="route-stats" id="route-stats" style="display:none">
         <div class="route-stat-row"><span class="route-stat-label">Total steps</span><span class="route-stat-val" id="rs-total">—</span></div>
-        <div class="route-stat-row"><span class="route-stat-label">Your tiles (free)</span><span class="route-stat-val own" id="rs-own">—</span></div>
-        <div class="route-stat-row"><span class="route-stat-label">Empty tiles (expand)</span><span class="route-stat-val free" id="rs-empty">—</span></div>
+        <div class="route-stat-row"><span class="route-stat-label">Your turfs (free)</span><span class="route-stat-val own" id="rs-own">—</span></div>
+        <div class="route-stat-row"><span class="route-stat-label">Empty turfs (expand)</span><span class="route-stat-val free" id="rs-empty">—</span></div>
         <div class="route-stat-row"><span class="route-stat-label">To conquer</span><span class="route-stat-val conquer" id="rs-conquer">—</span></div>
       </div>
       <button onclick="clearRoute()">✕ Clear route</button>
@@ -257,14 +278,17 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
     <div id="sidebar-head">
       <div class="stats-row">
         <div class="stat"><b id="s-players">—</b>players</div>
-        <div class="stat"><b id="s-tiles">—</b>tiles</div>
-        <div class="stat"><b id="s-unclaimed">—</b>unclaimed</div>
+        <div class="stat"><b id="s-tiles">—</b>turfs</div>
       </div>
-      <input type="text" id="search" placeholder="Search player..." oninput="filterPlayers()">
+      <div style="position:relative;display:flex;align-items:center">
+        <input type="text" id="search" placeholder="Search player..." oninput="onSearchInput(this)" style="width:100%;padding-right:28px">
+        <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;background:transparent;border:none;color:#555;font-size:14px;cursor:pointer;padding:2px;line-height:1">✕</button>
+      </div>
       <div class="filter-row">
         <button class="fb on" onclick="setFilter('all',this)">All</button>
-        <button class="fb" onclick="setFilter('named',this)">Named</button>
         <button class="fb" onclick="setFilter('inactive',this)">Inactive</button>
+        <button class="fb" onclick="setFilter('friends',this)" style="color:#1D9E75">♥ Friends</button>
+        <button class="fb" onclick="setFilter('enemies',this)" style="color:#E24B4A">✕ Enemies</button>
       </div>
     </div>
     <div id="player-list"></div>
@@ -280,10 +304,56 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
   <div id="neighbor-list"></div>
 </div>
 
+<!-- Analysis modal -->
+<div id="analysis-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:#0f0f1e;border:1px solid #2a2a4e;border-radius:12px;width:100%;max-width:600px;overflow:hidden;margin:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #1e1e2e;background:#0a0a14">
+      <div>
+        <div style="font-size:14px;font-weight:500;color:#fff">📊 Snapshot analysis</div>
+        <div id="analysis-subtitle" style="font-size:11px;color:#555;margin-top:2px">—</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="analysis-map-btn" onclick="toggleAnalysisOverlay()" style="font-size:11px;padding:4px 10px">🗺 Show on map</button>
+        <button onclick="closeAnalysis()" style="background:transparent;border:none;color:#555;font-size:18px;cursor:pointer;padding:0;line-height:1">✕</button>
+      </div>
+    </div>
+    <!-- Summary stats -->
+    <div style="display:flex;gap:0;border-bottom:1px solid #1e1e2e">
+      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #1e1e2e">
+        <div style="font-size:20px;font-weight:500;color:#1D9E75" id="an-gained-total">—</div>
+        <div style="font-size:11px;color:#555">turfs captured</div>
+      </div>
+      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #1e1e2e">
+        <div style="font-size:20px;font-weight:500;color:#E24B4A" id="an-lost-total">—</div>
+        <div style="font-size:11px;color:#555">turfs lost</div>
+      </div>
+      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #1e1e2e">
+        <div style="font-size:20px;font-weight:500;color:#FAC775" id="an-active">—</div>
+        <div style="font-size:11px;color:#555">active players</div>
+      </div>
+      <div style="flex:1;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:500;color:#888" id="an-unchanged">—</div>
+        <div style="font-size:11px;color:#555">turfs changed</div>
+      </div>
+    </div>
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:0;border-bottom:1px solid #1e1e2e;background:#0a0a12">
+      <button class="an-tab on" onclick="setAnTab('all',this)" style="flex:1;border-radius:0;border:none;border-right:1px solid #1e1e2e;padding:7px;font-size:11px">All movers</button>
+      <button class="an-tab" onclick="setAnTab('gainers',this)" style="flex:1;border-radius:0;border:none;border-right:1px solid #1e1e2e;padding:7px;font-size:11px;color:#1D9E75">▲ Gainers</button>
+      <button class="an-tab" onclick="setAnTab('losers',this)" style="flex:1;border-radius:0;border:none;padding:7px;font-size:11px;color:#E24B4A">▼ Losers</button>
+    </div>
+    <!-- Player list -->
+    <div id="analysis-list" style="max-height:50vh;overflow-y:auto;padding:8px 0"></div>
+    <div style="padding:10px 18px;border-top:1px solid #1e1e2e;font-size:11px;color:#444">
+      Comparing: <span id="an-from-label" style="color:#666">—</span> → <span id="an-to-label" style="color:#666">—</span>
+    </div>
+  </div>
+</div>
+
 <!-- Refresh modal -->
 <div id="refresh-modal">
   <div id="refresh-box">
-    <h2>⚡ Trigger Data Refresh</h2>
+    <h2>⚡ Trigger data refresh</h2>
     <p>This triggers the GitHub Actions workflow to re-fetch all blockchain data. It runs in the background and takes about 10 minutes. The map will update automatically on next reload.</p>
     <p>Enter your GitHub Personal Access Token (needs <code>workflow</code> scope):<br>
     <a href="https://github.com/settings/tokens/new?scopes=workflow&description=SUI+Turf+Map" target="_blank" style="color:#378ADD;font-size:11px">Create token on GitHub →</a></p>
@@ -334,6 +404,8 @@ async function loadHistory(){
       slider.max=snapshots.length-1;
       slider.value=0;
       document.getElementById('tl-count').textContent=`${snapshots.length} snapshots`;
+      document.getElementById('analyse-btn').style.display='';
+      document.getElementById('gifBtn').style.display='';
       updateTimelineLabel(0);
     }
   }catch(e){}
@@ -426,7 +498,7 @@ async function loadData(url){
     if(!isLive){
       status(`Historical: ${document.getElementById('tl-info').textContent}`);
     } else {
-      status(`${players.length} players · ${tiles.length} tiles`);
+      status(`${players.length} players · ${tiles.length} turfs`);
     }
   }catch(e){
     status('Error: '+e.message);
@@ -542,7 +614,7 @@ function computeAndShowRoute(){
     routePathMap=routePath?new Map(routePath.map(s=>[`${s.x},${s.y}`,s.type])):null;
     showRoutePanel();drawMap();
     if(routePath) zoomToRoute();
-    status(isLive?`${players.length} players · ${tiles.length} tiles`:`Historical: ${document.getElementById('tl-info').textContent}`);
+    status(isLive?`${players.length} players · ${tiles.length} turfs`:`Historical: ${document.getElementById('tl-info').textContent}`);
   },50);
 }
 
@@ -592,6 +664,7 @@ function showNeighborPopup(pid,sx,sy){
   const p=players.find(pl=>pl.pid===pid)||{};
   document.getElementById('neighbor-title').textContent=`Neighbors of ${p.name||'[unknown]'} (${nbrs?nbrs.size:0})`;
   const list=document.getElementById('neighbor-list');
+  const marks=loadMarks();
   if(!nbrs||nbrs.size===0){
     list.innerHTML='<div style="padding:1rem;color:#555;font-size:12px">No neighboring players found.</div>';
   } else {
@@ -599,10 +672,16 @@ function showNeighborPopup(pid,sx,sy){
     list.innerHTML=sorted.map(([npid,cnt])=>{
       const np=players.find(pl=>pl.pid===npid)||{};
       const isMe=MY_IDS.has(npid);
+      const mark=marks[npid]||null;
+      const dotCol=markColor(npid,np.color||'#666');
+      const fCls=mark==='friend'?'mark-friend':'';
+      const eCls=mark==='enemy'?'mark-enemy':'';
       return `<div class="nrow" onclick="onNeighborClick('${npid}')">
-        <div class="ndot" style="background:${np.color||'#666'}"></div>
+        <div class="ndot" style="background:${dotCol}"></div>
         <div class="nname${np.name?'':' unnamed'}${isMe?' me':''}">${esc(np.name||'[unknown]')}</div>
         <div class="ncontact">${cnt} border${cnt>1?'s':''}</div>
+        <button class="nmark ${fCls}" data-pid="${npid}" data-mtype="friend" onclick="toggleMark('${npid}','friend',event)" title="Friend">♥</button>
+        <button class="nmark ${eCls}" data-pid="${npid}" data-mtype="enemy" onclick="toggleMark('${npid}','enemy',event)" title="Enemy">✕</button>
         <button class="nroute" onclick="onNeighborRoute('${pid}','${npid}',event)">→</button>
       </div>`;
     }).join('');
@@ -659,8 +738,8 @@ function drawMap(){
       const type=routePathMap.get(key);
       col=type==='own'?'#7F77DD':type==='conquer'?'#E24B4A':type==='target'?'#1D9E75':t.color;
     } else if(highlightPid&&t.pid===highlightPid){col='#ffe066';}
-    else if(t.isHQ){col=t.isMe?'#533AB7':'#6B1A1A';}
-    else{col=t.color;}
+    else if(t.isHQ){col=t.isMe?'#533AB7':(getMark(t.pid)==='friend'?'#0a5f40':getMark(t.pid)==='enemy'?'#5f0a0a':'#6B1A1A');}
+    else{col=markColor(t.pid,t.color);}
     if(routePath&&routePathMap&&!routePathMap.has(key)) ctx.globalAlpha=0.35;
     ctx.fillStyle=col;ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
     ctx.globalAlpha=1;
@@ -688,6 +767,31 @@ function drawMap(){
     ctx.fillStyle='rgba(200,150,0,0.6)';ctx.font='11px sans-serif';
     ctx.textAlign='left';ctx.textBaseline='top';
     ctx.fillText('📅 '+document.getElementById('tl-info').textContent,8,8);
+  }
+  // Analysis overlay
+  if(analysisOverlay&&analysisData){
+    for(const ch of analysisData.changedTiles){
+      if(ch.x<wx0||ch.x>wx1||ch.y<wy0||ch.y>wy1) continue;
+      const sx=(ch.x-minX)*cs+panX,sy=(maxY-ch.y)*cs+panY;
+      const col=ch.type==='new'?'rgba(250,199,117,0.85)':
+                ch.type==='abandoned'?'rgba(120,120,120,0.6)':
+                (ch.toPid&&MY_IDS.has(ch.toPid))?'rgba(29,158,117,0.9)':
+                (ch.fromPid&&MY_IDS.has(ch.fromPid))?'rgba(226,75,74,0.9)':
+                ch.toPid?'rgba(29,158,117,0.65)':'rgba(226,75,74,0.65)';
+      ctx.fillStyle=col;ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
+      ctx.strokeStyle=col.replace(/[\d.]+\)$/,'1)');ctx.lineWidth=1;
+      ctx.strokeRect(sx+1,sy+1,cs-2,cs-2);
+    }
+    // Legend bottom-left
+    ctx.font='11px sans-serif';ctx.textBaseline='bottom';
+    const leg=[['#1D9E75','Captured'],['#E24B4A','Lost'],['#FAC775','New']];
+    let lx=8,ly=H-8;
+    for(const [col,lbl] of leg){
+      ctx.fillStyle=col;ctx.fillRect(lx,ly-12,12,12);
+      ctx.fillStyle='rgba(255,255,255,0.75)';ctx.textAlign='left';
+      ctx.fillText(lbl,lx+16,ly);
+      lx+=ctx.measureText(lbl).width+34;
+    }
   }
 }
 
@@ -993,38 +1097,98 @@ function jumpToMe(){jumpToPlayer([...MY_IDS][0]);}
 function updateStats(){
   document.getElementById('s-players').textContent=players.length.toLocaleString('en');
   document.getElementById('s-tiles').textContent=totalTiles.toLocaleString('en');
-  document.getElementById('s-unclaimed').textContent=unclaimedTiles.toLocaleString('en');
 }
 let filterTimer=null;
 function filterPlayers(){clearTimeout(filterTimer);filterTimer=setTimeout(_fp,100);}
 function setFilter(f,btn){activeFilter=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');filterPlayers();}
 function _fp(){
   const q=document.getElementById('search').value.toLowerCase();
+  const marks=loadMarks();
   filteredPlayers=players.filter(p=>{
     if(activeFilter==='named'&&!p.name) return false;
     if(activeFilter==='inactive'&&!p.inactive) return false;
+    if(activeFilter==='friends'&&marks[p.pid]!=='friend') return false;
+    if(activeFilter==='enemies'&&marks[p.pid]!=='enemy') return false;
     if(q&&!p.name.toLowerCase().includes(q)&&!p.pid.includes(q)&&!(p.wallet||'').includes(q)) return false;
     return true;
   });
   renderPlayerList();
 }
+// ── MARKS (friend / enemy) ────────────────────────────────────────────────────
+const MARKS_KEY = 'sui_turf_marks';
+
+function loadMarks(){
+  try{ return JSON.parse(localStorage.getItem(MARKS_KEY)||'{}'); }
+  catch(e){ return {}; }
+}
+function saveMarks(m){ localStorage.setItem(MARKS_KEY, JSON.stringify(m)); }
+
+function getMark(pid){ return loadMarks()[pid]||null; } // 'friend'|'enemy'|null
+
+function toggleMark(pid, type, e){
+  if(e){ e.stopPropagation(); }
+  const marks = loadMarks();
+  if(marks[pid]===type) delete marks[pid];
+  else marks[pid] = type;
+  saveMarks(marks);
+  renderPlayerList();
+  drawMap();
+  // Refresh neighbor popup if open
+  const popup = document.getElementById('neighbor-popup');
+  if(popup.style.display!=='none'){
+    const title = document.getElementById('neighbor-title').textContent;
+    // re-render neighbor list marks
+    popup.querySelectorAll('.nmark').forEach(btn=>{
+      const npid = btn.dataset.pid;
+      const mtype = btn.dataset.mtype;
+      const cur = marks[npid];
+      btn.textContent = mtype==='friend' ? '♥' : '✕';
+      btn.className = 'nmark' + (cur===mtype ? (mtype==='friend'?' mark-friend':' mark-enemy') : '');
+    });
+  }
+}
+
+function markColor(pid, defaultColor){
+  const m = getMark(pid);
+  if(m==='friend') return '#1D9E75';
+  if(m==='enemy')  return '#E24B4A';
+  return defaultColor;
+}
+
 function renderPlayerList(){
   const maxT=filteredPlayers.length?filteredPlayers[0].tiles:1;
+  const marks=loadMarks();
   document.getElementById('player-list').innerHTML=filteredPlayers.map((p,i)=>{
     const me=MY_IDS.has(p.pid);
     const isA=p.pid===routePidA,isB=p.pid===routePidB;
-    const rowCls=`prow${me?' me':''}${isA?' route-a':''}${isB?' route-b':''}`;
+    const mark=marks[p.pid]||null;
+    const rowCls=`prow${me?' me':''}${isA?' route-a':''}${isB?' route-b':''}${mark==='friend'?' friend':''}${mark==='enemy'?' enemy':''}`;
     const nm=p.name?`<span class="pname${me?' me':''}">${esc(p.name)}</span>`:`<span class="pname unnamed">[unknown]</span>`;
     const rl=isA?'A':isB?'B':'→';
+    const friendCls=mark==='friend'?'mark-friend':'';
+    const enemyCls=mark==='enemy'?'mark-enemy':'';
+    const dotCol=markColor(p.pid,p.color);
     return `<div class="${rowCls}" onclick="onPClick('${p.pid}',event)">
       <span class="prank">${i+1}</span>
-      <span class="pdot" style="background:${p.color}"></span>
+      <span class="pdot" style="background:${dotCol}"></span>
       ${nm}
       <span class="ptiles">${p.tiles.toLocaleString('en')}</span>
-      <div class="pbar"><div class="pbar-fill" style="width:${Math.round(p.tiles/maxT*100)}%;background:${p.color}"></div></div>
+      <div class="pbar"><div class="pbar-fill" style="width:${Math.round(p.tiles/maxT*100)}%;background:${dotCol}"></div></div>
+      <button class="p-mark-btn ${friendCls}" onclick="toggleMark('${p.pid}','friend',event)" title="Mark as friend">♥</button>
+      <button class="p-mark-btn ${enemyCls}" onclick="toggleMark('${p.pid}','enemy',event)" title="Mark as enemy">✕</button>
       <button class="p-route-btn" onclick="onRouteBtn('${p.pid}',event)">${rl}</button>
     </div>`;
   }).join('')||'<div style="color:#444;padding:1rem;font-size:12px">No results</div>';
+}
+function onSearchInput(el){
+  document.getElementById('search-clear').style.display=el.value?'block':'none';
+  filterPlayers();
+}
+function clearSearch(){
+  const el=document.getElementById('search');
+  el.value='';
+  document.getElementById('search-clear').style.display='none';
+  filterPlayers();
 }
 function onPClick(pid,e){
   if(e.target.classList.contains('p-route-btn')) return;
@@ -1037,14 +1201,213 @@ function onRouteBtn(pid,e){e.stopPropagation();if(!routeMode)toggleRouteMode();s
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ── EXPORT ────────────────────────────────────────────────────────────────────
+function fileTimestamp(){
+  const n=new Date();
+  const pad=x=>String(x).padStart(2,'0');
+  return `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}-${pad(n.getHours())}${pad(n.getMinutes())}${pad(n.getSeconds())}`;
+}
+
 function exportPNG(){
   const cv=document.getElementById('map');
+  const scale=3;
+  const offscreen=document.createElement('canvas');
+  offscreen.width=cv.width*scale;
+  offscreen.height=cv.height*scale;
+  const ctx=offscreen.getContext('2d');
+  ctx.scale(scale,scale);
+  ctx.drawImage(cv,0,0);
   const a=document.createElement('a');
-  a.href=cv.toDataURL('image/png');
-  a.download='sui_turf_map_'+new Date().toISOString().slice(0,10)+'.png';a.click();
+  a.href=offscreen.toDataURL('image/png');
+  a.download=`vendetta_map_${fileTimestamp()}.png`;a.click();
+}
+
+async function exportGIF(){
+  if(snapshots.length<2){alert('Need at least 2 snapshots to create an animation.');return;}
+
+  const btn=document.getElementById('gifBtn');
+  btn.disabled=true;
+
+  const cv=document.getElementById('map');
+  const W=cv.width, H=cv.height;
+  const GW=Math.round(W/2), GH=Math.round(H/2);
+  const frames=snapshots.slice(0,Math.min(20,snapshots.length)).reverse();
+
+  const offscreen=document.createElement('canvas');
+  offscreen.width=GW; offscreen.height=GH;
+  const octx=offscreen.getContext('2d');
+
+  // Collect raw pixel data per frame
+  const framePixels=[];
+
+  for(let i=0;i<frames.length;i++){
+    const snap=frames[i];
+    btn.textContent=`⏳ Frame ${i+1}/${frames.length}...`;
+    await new Promise(r=>setTimeout(r,5));
+    try{
+      const d=await fetch(snap.file+'?t='+Date.now()).then(r=>r.json());
+      const snapPlayers=d.players||[];
+      octx.fillStyle='#080810';
+      octx.fillRect(0,0,GW,GH);
+      const cs=CELL*zoom*0.5;
+      for(const t of (d.tiles||[])){
+        const p=snapPlayers[t.p]; if(!p) continue;
+        const isMe=MY_IDS.has(p.pid);
+        const mark=getMark(p.pid);
+        const col=mark==='friend'?'#1D9E75':mark==='enemy'?'#E24B4A':p.color;
+        const sx=(t.x-minX)*cs+panX*0.5, sy=(maxY-t.y)*cs+panY*0.5;
+        if(sx<-cs||sx>GW||sy<-cs||sy>GH) continue;
+        octx.fillStyle=t.hq?(isMe?'#533AB7':'#6B1A1A'):col;
+        octx.fillRect(sx+0.5,sy+0.5,Math.max(1,cs-1),Math.max(1,cs-1));
+      }
+      octx.fillStyle='rgba(0,0,0,0.6)';octx.fillRect(3,3,148,18);
+      octx.fillStyle='rgba(255,255,255,0.85)';octx.font='11px sans-serif';
+      octx.textAlign='left';octx.textBaseline='top';
+      octx.fillText(snap.label,6,5);
+      framePixels.push({pixels:octx.getImageData(0,0,GW,GH).data, label:snap.label});
+    }catch(e){console.warn('Frame failed:',e);}
+  }
+
+  btn.textContent='⏳ Encoding...';
+  await new Promise(r=>setTimeout(r,10));
+
+  // Build GIF using inline encoder
+  const gif=buildGIF(framePixels,GW,GH,70);
+  const blob=new Blob([gif],{type:'image/gif'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`vendetta_map_${fileTimestamp()}.gif`;
+  a.click();
+  btn.disabled=false;btn.textContent='🎬 GIF';
+  status(`${players.length} players · ${tiles.length} turfs`);
+}
+
+// ── Minimal inline GIF encoder ────────────────────────────────────────────────
+function buildGIF(frames,w,h,delay){
+  // Quantize RGBA pixels to 256-color palette using median-cut approximation
+  function quantize(rgba){
+    const buckets=[[...Array(rgba.length/4).keys()]];
+    while(buckets.length<256){
+      let best=-1,bestRange=0;
+      for(let i=0;i<buckets.length;i++){
+        const b=buckets[i];
+        let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
+        for(const p of b){
+          const o=p*4;
+          if(rgba[o]<rMin)rMin=rgba[o];if(rgba[o]>rMax)rMax=rgba[o];
+          if(rgba[o+1]<gMin)gMin=rgba[o+1];if(rgba[o+1]>gMax)gMax=rgba[o+1];
+          if(rgba[o+2]<bMin)bMin=rgba[o+2];if(rgba[o+2]>bMax)bMax=rgba[o+2];
+        }
+        const range=Math.max(rMax-rMin,gMax-gMin,bMax-bMin);
+        if(range>bestRange){bestRange=range;best=i;}
+      }
+      if(best<0||bestRange===0) break;
+      const b=buckets[best];
+      let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
+      for(const p of b){
+        const o=p*4;
+        if(rgba[o]<rMin)rMin=rgba[o];if(rgba[o]>rMax)rMax=rgba[o];
+        if(rgba[o+1]<gMin)gMin=rgba[o+1];if(rgba[o+1]>gMax)gMax=rgba[o+1];
+        if(rgba[o+2]<bMin)bMin=rgba[o+2];if(rgba[o+2]>bMax)bMax=rgba[o+2];
+      }
+      const rRange=rMax-rMin,gRange=gMax-gMin,bRange=bMax-bMin;
+      const ch=rRange>=gRange&&rRange>=bRange?0:gRange>=bRange?1:2;
+      b.sort((a,z)=>rgba[a*4+ch]-rgba[z*4+ch]);
+      const mid=b.length>>1;
+      buckets.splice(best,1,b.slice(0,mid),b.slice(mid));
+    }
+    const palette=new Uint8Array(256*3);
+    const map=new Map();
+    buckets.forEach((b,i)=>{
+      let r=0,g=0,bl=0;
+      for(const p of b){const o=p*4;r+=rgba[o];g+=rgba[o+1];bl+=rgba[o+2];}
+      palette[i*3]=r/b.length|0;palette[i*3+1]=g/b.length|0;palette[i*3+2]=bl/b.length|0;
+      for(const p of b)map.set(p,i);
+    });
+    return{palette,map};
+  }
+
+  function nearestColor(r,g,b,palette){
+    let best=0,bestD=1e9;
+    for(let i=0;i<256;i++){
+      const dr=r-palette[i*3],dg=g-palette[i*3+1],db=b-palette[i*3+2];
+      const d=dr*dr+dg*dg+db*db;
+      if(d<bestD){bestD=d;best=i;}
+    }
+    return best;
+  }
+
+  function lzwEncode(indices,minCode){
+    const out=[];let buf=0,bits=0;
+    const write=(v,n)=>{buf|=v<<bits;bits+=n;while(bits>=8){out.push(buf&255);buf>>=8;bits-=8;}};
+    let codeSize=minCode+1,codeLimit=1<<codeSize;
+    const clear=1<<minCode,eoi=clear+1;
+    let table=new Map(),next=eoi+1;
+    const resetTable=()=>{table.clear();next=eoi+1;codeSize=minCode+1;codeLimit=1<<codeSize;};
+    write(clear,codeSize);resetTable();
+    let buf2=indices[0];
+    for(let i=1;i<indices.length;i++){
+      const c=indices[i],key=buf2*4096+c;
+      if(table.has(key)){buf2=table.get(key);}
+      else{
+        write(buf2,codeSize);
+        if(next>=4096){write(clear,codeSize);resetTable();buf2=c;}
+        else{table.set(key,next++);if(next>codeLimit&&codeSize<12){codeSize++;codeLimit<<=1;}buf2=c;}
+      }
+    }
+    write(buf2,codeSize);write(eoi,codeSize);
+    if(bits>0){out.push(buf&255);}
+    return out;
+  }
+
+  function packSubBlocks(data){
+    const out=[];
+    for(let i=0;i<data.length;i+=255){
+      const chunk=data.slice(i,i+255);
+      out.push(chunk.length,...chunk);
+    }
+    out.push(0);return out;
+  }
+
+  // Use first frame's palette for all frames (global palette)
+  const{palette}=quantize(frames[0].pixels);
+
+  const bytes=[];
+  const push=(...v)=>bytes.push(...v);
+  const pushStr=(s)=>{for(let i=0;i<s.length;i++)push(s.charCodeAt(i));};
+  const push16=(v)=>{push(v&255,(v>>8)&255);};
+
+  // Header
+  pushStr('GIF89a');
+  push16(w);push16(h);
+  push(0b11110111,0,0); // global color table, 256 colors
+  bytes.push(...palette);
+
+  // Netscape looping extension
+  push(0x21,0xFF,11);pushStr('NETSCAPE2.0');push(3,1,0,0,0);
+
+  for(const frame of frames){
+    // Map pixels to palette indices
+    const n=w*h;
+    const indices=new Uint8Array(n);
+    for(let i=0;i<n;i++){
+      const o=i*4;
+      indices[i]=nearestColor(frame.pixels[o],frame.pixels[o+1],frame.pixels[o+2],palette);
+    }
+    // Graphic control extension
+    push(0x21,0xF9,4,0);push16(delay);push(0,0);
+    // Image descriptor
+    push(0x2C);push16(0);push16(0);push16(w);push16(h);push(0);
+    // LZW
+    const minCode=8;
+    push(minCode);
+    const lzw=lzwEncode(indices,minCode);
+    bytes.push(...packSubBlocks(lzw));
+  }
+  push(0x3B);
+  return new Uint8Array(bytes);
 }
 function exportCSV(){
-  const rows=[['Rank','Name','Tiles','Percentage','Profile ID','Wallet','Inactive']];
+  const rows=[['Rank','Name','Turfs','Percentage','Profile ID','Wallet','Inactive']];
   players.forEach((p,i)=>rows.push([i+1,p.name||'',p.tiles,totalTiles?(p.tiles/totalTiles*100).toFixed(4):'',p.pid,p.wallet||'',p.inactive?'yes':'no']));
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
@@ -1076,10 +1439,176 @@ document.addEventListener('click',e=>{
   if(popup.style.display!=='none'&&!popup.contains(e.target))closeNeighborPopup();
 });
 
+// ── SNAPSHOT ANALYSIS ────────────────────────────────────────────────────────
+let analysisData = null;   // {changes, snapA, snapB}
+let analysisFilter = 'all';
+let analysisOverlay = false;
+
+async function openAnalysis(){
+  if(snapshots.length < 2){
+    alert('Need at least 2 snapshots to compare.');
+    return;
+  }
+  const modal = document.getElementById('analysis-modal');
+  modal.style.display = 'flex';
+  document.getElementById('analysis-list').innerHTML =
+    '<div style="padding:2rem;text-align:center;color:#555;font-size:12px">Loading snapshots...</div>';
+
+  try{
+    // Always compare the two most recent snapshots
+    const snapA = snapshots[1]; // second newest = older
+    const snapB = snapshots[0]; // newest
+
+    document.getElementById('an-from-label').textContent = snapA.label || '—';
+    document.getElementById('an-to-label').textContent   = snapB.label || '—';
+    document.getElementById('analysis-subtitle').textContent =
+      `${snapA.label} → ${snapB.label}`;
+
+    const [dA, dB] = await Promise.all([
+      fetch(snapA.file+'?t='+Date.now()).then(r=>r.json()),
+      fetch(snapB.file+'?t='+Date.now()).then(r=>r.json()),
+    ]);
+
+    // Build tile ownership maps: "x,y" → pid
+    function tileOwnerMap(d){
+      const m = new Map();
+      for(const t of (d.tiles||[])){
+        const p = d.players[t.p];
+        if(p) m.set(`${t.x},${t.y}`, {pid:p.pid, name:p.name, color:p.color});
+      }
+      return m;
+    }
+    const mapA = tileOwnerMap(dA);
+    const mapB = tileOwnerMap(dB);
+
+    // Build pid → name/color lookup from both snapshots
+    const pidInfo = new Map();
+    for(const p of [...(dA.players||[]), ...(dB.players||[])]){
+      if(!pidInfo.has(p.pid)) pidInfo.set(p.pid, {name:p.name||'', color:p.color});
+    }
+
+    // Tile-level changes
+    const changedTiles = []; // {x, y, fromPid, toPid, type}
+    const allKeys = new Set([...mapA.keys(), ...mapB.keys()]);
+
+    for(const key of allKeys){
+      const a = mapA.get(key);
+      const b = mapB.get(key);
+      const fromPid = a?.pid || null;
+      const toPid   = b?.pid || null;
+      if(fromPid === toPid) continue;
+      const [x,y] = key.split(',').map(Number);
+      let type;
+      if(!fromPid)      type='new';       // empty → owned
+      else if(!toPid)   type='abandoned'; // owned → empty
+      else              type='captured';  // A → B
+      changedTiles.push({x,y,fromPid,toPid,type});
+    }
+
+    // Aggregate per player
+    const playerChanges = new Map(); // pid → {gained, lost, name, color}
+    for(const ch of changedTiles){
+      if(ch.toPid){
+        if(!playerChanges.has(ch.toPid)){
+          const info=pidInfo.get(ch.toPid)||{};
+          playerChanges.set(ch.toPid,{gained:0,lost:0,name:info.name||'',color:info.color||'#888'});
+        }
+        playerChanges.get(ch.toPid).gained++;
+      }
+      if(ch.fromPid){
+        if(!playerChanges.has(ch.fromPid)){
+          const info=pidInfo.get(ch.fromPid)||{};
+          playerChanges.set(ch.fromPid,{gained:0,lost:0,name:info.name||'',color:info.color||'#888'});
+        }
+        playerChanges.get(ch.fromPid).lost++;
+      }
+    }
+
+    // Summary stats
+    const totalGained = changedTiles.filter(c=>c.toPid).length;
+    const totalLost   = changedTiles.filter(c=>c.fromPid).length;
+    document.getElementById('an-gained-total').textContent = totalGained;
+    document.getElementById('an-lost-total').textContent   = totalLost;
+    document.getElementById('an-active').textContent       = playerChanges.size;
+    document.getElementById('an-unchanged').textContent    = changedTiles.length;
+
+    analysisData = {changedTiles, playerChanges, pidInfo};
+    renderAnalysisList();
+
+  }catch(e){
+    document.getElementById('analysis-list').innerHTML =
+      `<div style="padding:1rem;color:#E24B4A;font-size:12px">Error: ${e.message}</div>`;
+  }
+}
+
+function renderAnalysisList(){
+  if(!analysisData) return;
+  const {playerChanges} = analysisData;
+
+  let rows = [...playerChanges.entries()].map(([pid,c])=>({pid,...c,net:c.gained-c.lost}));
+
+  if(analysisFilter==='gainers') rows=rows.filter(r=>r.gained>0).sort((a,b)=>b.gained-a.gained);
+  else if(analysisFilter==='losers') rows=rows.filter(r=>r.lost>0).sort((a,b)=>b.lost-a.lost);
+  else rows=rows.filter(r=>r.gained>0||r.lost>0).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));
+
+  const maxVal = rows.length ? Math.max(...rows.map(r=>Math.max(r.gained,r.lost))) : 1;
+  const isMe = pid => MY_IDS.has(pid);
+
+  const marks=loadMarks();
+  document.getElementById('analysis-list').innerHTML = rows.length
+    ? rows.map(r=>{
+        const net = r.net >= 0 ? `+${r.net}` : `${r.net}`;
+        const netCol = r.net > 0 ? '#1D9E75' : r.net < 0 ? '#E24B4A' : '#888';
+        const barG = Math.round(r.gained/maxVal*70);
+        const barL = Math.round(r.lost/maxVal*70);
+        const mark=marks[r.pid];
+        const markBadge=mark==='friend'?'<span style="color:#1D9E75;font-size:10px">♥</span>':mark==='enemy'?'<span style="color:#E24B4A;font-size:10px">✕</span>':'';
+        return `<div class="an-row" onclick="jumpToPlayerFromAnalysis('${r.pid}')">
+          <div class="pdot" style="background:${markColor(r.pid,r.color)};width:8px;height:8px;border-radius:2px;flex-shrink:0"></div>
+          <div class="an-name${isMe(r.pid)?' me':''}">${markBadge} ${esc(r.name)||'[unknown]'}</div>
+          <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+            ${r.gained?`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#1D9E75;width:16px">+${r.gained}</span><div class="an-bar-wrap"><div class="an-bar" style="width:${barG}px;background:#1D9E75"></div></div></div>`:''}
+            ${r.lost?`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#E24B4A;width:16px">-${r.lost}</span><div class="an-bar-wrap"><div class="an-bar" style="width:${barL}px;background:#E24B4A"></div></div></div>`:''}
+          </div>
+          <div class="an-delta" style="color:${netCol}">${net}</div>
+          <div class="an-tiles">${(r.gained+r.lost)} turfs</div>
+        </div>`;
+      }).join('')
+    : '<div style="padding:1rem;text-align:center;color:#555;font-size:12px">No changes found.</div>';
+}
+
+function setAnTab(f, btn){
+  analysisFilter=f;
+  document.querySelectorAll('.an-tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderAnalysisList();
+}
+
+function jumpToPlayerFromAnalysis(pid){
+  closeAnalysis();
+  jumpToPlayer(pid);
+}
+
+function closeAnalysis(){
+  document.getElementById('analysis-modal').style.display='none';
+  if(analysisOverlay){ analysisOverlay=false; drawMap(); }
+  document.getElementById('analysis-map-btn').textContent='🗺 Show on map';
+}
+
+function toggleAnalysisOverlay(){
+  if(!analysisData) return;
+  analysisOverlay=!analysisOverlay;
+  document.getElementById('analysis-map-btn').textContent=
+    analysisOverlay?'🗺 Hide overlay':'🗺 Show on map';
+  closeAnalysis();
+  drawMap();
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 resizeCanvas();
 loadHistory();
 loadLatest();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" onload="initHammer()"></script>
 </body>
 </html>
