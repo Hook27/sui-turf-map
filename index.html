@@ -2216,7 +2216,9 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
     const features=w.features||{};
     const signFn=features['sui:signAndExecuteTransaction']||features['sui:signAndExecuteTransactionBlock'];
     if(signFn){
-      return await signFn.signAndExecuteTransaction({transaction, options:{showEffects:true}});
+      return await signFn.signAndExecuteTransaction({
+        transaction, chain:'sui:mainnet', options:{showEffects:true}
+      });
     }
     throw new Error('Wallet does not support signAndExecuteTransaction');
   }
@@ -2224,7 +2226,7 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
   // Legacy API
   const signFn=w.signAndExecuteTransaction||w.signAndExecuteTransactionBlock;
   if(signFn){
-    return await signFn.call(w,{transaction, options:{showEffects:true}});
+    return await signFn.call(w,{transaction, chain:'sui:mainnet', options:{showEffects:true}});
   }
   throw new Error('Wallet API not supported.');
 }
