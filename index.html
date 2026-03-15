@@ -499,6 +499,27 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 </div>
 
 <script>
+// ── WALLET STANDARD REGISTRY (inline) ────────────────────────────────────────
+// Slush's content script waits for this registry to exist before registering.
+// We implement the minimal interface so no external library is needed.
+(function(){
+  if(window.getWallets) return;
+  const _wallets=[],_listeners=[];
+  function register(...ws){
+    _wallets.push(...ws);
+    _listeners.forEach(l=>{try{l({wallets:ws});}catch(e){}});
+    return ()=>{ws.forEach(w=>{const i=_wallets.indexOf(w);if(i>-1)_wallets.splice(i,1);});};
+  }
+  window.getWallets=()=>({
+    get:()=>[..._wallets],
+    register,
+    on:(ev,cb)=>{if(ev==='register')_listeners.push(cb);return ()=>{const i=_listeners.indexOf(cb);if(i>-1)_listeners.splice(i,1);};},
+  });
+  // Fire app-ready so Slush content script registers itself
+  window.dispatchEvent(Object.assign(new CustomEvent('wallet-standard:app-ready'),{
+    detail:{register}
+  }));
+})();
 const MY_IDS=new Set(['0x857e8e7fc94d43f327bb24388439d0fdcc112a9e5e25264969b27011a233d2f0','0xdb2b57ea07dae7acd91d56f4c5e20a077313abb50a9924f84529ef67030ab273']);
 const CELL=12;
 const DIRS8=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
@@ -2070,23 +2091,12 @@ function walletStatus(msg, color){
 }
 
 async function connectWallet(){
-  walletStatus('Initializing wallet registry...','#888');
+  walletStatus('Looking for wallet...','#888');
   walletApi=null;
 
-  // Load @mysten/wallet-standard from CDN to set up the registry Slush hooks into
-  if(!window.__walletStandardLoaded){
-    await new Promise((resolve,reject)=>{
-      const s=document.createElement('script');
-      s.src='https://unpkg.com/@mysten/wallet-standard@latest/dist/umd/index.js';
-      s.onload=resolve; s.onerror=reject;
-      document.head.appendChild(s);
-    }).catch(()=>{});
-    window.__walletStandardLoaded=true;
-    // Give Slush a moment to detect the new registry and register itself
-    await new Promise(r=>setTimeout(r,500));
-  }
+  // Give Slush a moment to register if it hasn't yet
+  await new Promise(r=>setTimeout(r,200));
 
-  // Now try getWallets()
   try{
     const reg=window.getWallets?.();
     if(reg){
@@ -2095,7 +2105,7 @@ async function connectWallet(){
     }
   }catch(e){}
 
-  // Scan window for any wallet object with SUI features
+  // Scan window for wallet objects as last resort
   for(const key of Object.keys(window)){
     try{
       const w=window[key];
@@ -2108,7 +2118,7 @@ async function connectWallet(){
     }catch(e){}
   }
 
-  walletStatus('❌ Slush not detected. Try: 1) Refresh the page 2) Click the Slush icon in toolbar 3) Try again.','var(--v-red)');
+  walletStatus('❌ Slush not detected. Please refresh the page and try again.','var(--v-red)');
 }
 
 async function connectStandardWallet(w){
