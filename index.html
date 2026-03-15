@@ -2211,15 +2211,9 @@ async function loadSuiSdk(){
 }
 
 async function buildAndSignTx(calls, dvdId, profileId, hqOid){
-  const w=walletApi.w;
-
   await loadSuiSdk();
-  // Bug 1 fix: correct UMD global is window.sui
   const {Transaction, SuiClient, getFullnodeUrl}=window.sui||{};
   if(!Transaction) throw new Error('SUI SDK not loaded. Check CDN connection.');
-
-  // Bug 2 fix: create client so SDK can resolve shared object versions
-  const suiClient=new SuiClient({url:getFullnodeUrl('mainnet')});
 
   const tx=new Transaction();
 
@@ -2243,32 +2237,39 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
     });
   }
 
-  // Use accounts stored at connect time, fall back to wallet's accounts
-  const account=walletApi.accounts?.[0]||walletApi.w.accounts?.[0];
-  if(account?.address) tx.setSenderIfNotSet(account.address);
-  await tx.build({client:suiClient});
+  // Safely read address from Proxy account
+  const rawAccount=walletApi.accounts?.[0]||walletApi.w.accounts?.[0];
+  const address=rawAccount?.address;
+  if(!address) throw new Error('No account address found. Reconnect wallet.');
 
-  // Bug 3 fix: pass account + chain to signing call
-  if(walletApi.key==='standard'){
-    const features=w.features||{};
-    const signFn=features['sui:signAndExecuteTransaction'];
-    if(!signFn) throw new Error('Wallet does not support signAndExecuteTransaction');
-    try{
-      return await signFn.signAndExecuteTransaction({
-        transaction:tx,
-        account,
-        chain:'sui:mainnet',
-      });
-    }catch(err){
-      console.error('Full signing error:', err);
-      throw new Error(err?.message||err?.toString()||JSON.stringify(err)||'Unknown error');
-    }
+  tx.setSenderIfNotSet(address);
+  // ✅ Do NOT call tx.build() — v2.0.0 wallets serialize the Transaction themselves
+
+  const features=walletApi.w.features||{};
+  const signFeat=features['sui:signAndExecuteTransaction'];
+  if(!signFeat) throw new Error('Wallet does not support sui:signAndExecuteTransaction');
+
+  // Find exact Proxy account by address match — preserves reference identity
+  const allAccounts=walletApi.w.accounts||[];
+  const matchedAccount=allAccounts.find(a=>a.address===address);
+  console.log('matchedAccount:', matchedAccount, 'allAccounts length:', allAccounts.length);
+
+  const acct=matchedAccount||{address, publicKey:rawAccount.publicKey, chains:['sui:mainnet'], features:[]};
+
+  try{
+    return await signFeat.signAndExecuteTransaction({
+      transaction:tx,
+      account:acct,
+      chain:'sui:mainnet',
+    });
+  }catch(err){
+    console.log('Slush rejection type:', typeof err, 'value:', err);
+    console.log('Keys:', err?Object.keys(err):'none');
+    const msg=err?.message
+      ??(err!==undefined?(()=>{try{return JSON.stringify(err);}catch{return String(err);}})():null)
+      ??'Wallet rejected the transaction (no reason given)';
+    throw new Error(msg);
   }
-
-  // Legacy fallback
-  const signFn=w.signAndExecuteTransaction||w.signAndExecuteTransactionBlock;
-  if(signFn) return await signFn.call(w,{transaction:tx, chain:'sui:mainnet'});
-  throw new Error('Wallet API not supported.');
 }
 
 document.getElementById('wallet-modal').addEventListener('click',e=>{
