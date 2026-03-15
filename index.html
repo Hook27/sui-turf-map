@@ -1274,6 +1274,48 @@ function exportPNG(){
   const ctx=offscreen.getContext('2d');
   ctx.scale(scale,scale);
   ctx.drawImage(cv,0,0);
+
+  // Draw player names at territory centroid (min 5 tiles, scale with zoom)
+  const MIN_TILES=5;
+  const cs=CELL*zoom;
+  const fontSize=Math.max(8,Math.min(18,cs*0.7));
+  ctx.font=`bold ${fontSize}px "Martian Mono",monospace`;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+
+  // Group tiles by pid, compute centroid in screen coords
+  const pidTiles=new Map();
+  for(const t of tiles){
+    if(!pidTiles.has(t.pid)) pidTiles.set(t.pid,[]);
+    pidTiles.get(t.pid).push(t);
+  }
+  for(const [pid,pts] of pidTiles){
+    if(pts.length<MIN_TILES) continue;
+    const p=players.find(pl=>pl.pid===pid);
+    if(!p||!p.name) continue;
+    // Compute mean screen position
+    let sx=0,sy=0;
+    for(const t of pts){
+      sx+=(t.x-minX)*cs+panX+cs/2;
+      sy+=(maxY-t.y)*cs+panY+cs/2;
+    }
+    sx/=pts.length; sy/=pts.length;
+    // Skip if centroid is off-screen
+    if(sx<0||sx>cv.width||sy<0||sy>cv.height) continue;
+    const name=p.name;
+    const tw=ctx.measureText(name).width;
+    // Dark background pill
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.beginPath();
+    const pad=3,r=3;
+    const bx=sx-tw/2-pad,by=sy-fontSize/2-pad,bw=tw+pad*2,bh=fontSize+pad*2;
+    ctx.roundRect(bx,by,bw,bh,r);
+    ctx.fill();
+    // Text in player color
+    ctx.fillStyle=markColor(pid,p.color);
+    ctx.fillText(name,sx,sy);
+  }
+
   const a=document.createElement('a');
   a.href=offscreen.toDataURL('image/png');
   a.download=`vendetta_map_${fileTimestamp()}.png`;a.click();
