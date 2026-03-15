@@ -74,7 +74,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #map-wrap.dragging{cursor:grabbing}
 #map-wrap.route-mode{cursor:crosshair}
 #map{display:block}
-#minimap-canvas{position:absolute;bottom:14px;right:14px;border:2px solid #444;border-radius:0;background:#080810;cursor:pointer;box-shadow:3px 3px 0 #222}
+#minimap-canvas{display:block;width:100%;height:200px;border-top:2px solid #222;background:#080810;cursor:pointer;flex-shrink:0}
 #tip{position:absolute;display:none;background:#111;border:2px solid #555;border-radius:0;padding:8px 12px;font-size:11px;z-index:50;pointer-events:none;line-height:1.7;max-width:240px;box-shadow:4px 4px 0 #000;font-family:var(--font-mono)}
 #tip .tname{font-family:var(--font-bangers);letter-spacing:1px;color:#fff;font-size:15px}
 #tip .tpos{color:#666;font-size:10px}
@@ -100,7 +100,8 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #route-no-path{color:var(--v-red);font-size:10px;display:none;font-family:var(--font-mono);text-transform:uppercase}
 
 /* ── SIDEBAR ── */
-#sidebar{width:280px;flex-shrink:0;display:flex;flex-direction:column;border-left:2px solid #222;background:#0a0a0a;overflow:hidden}
+#right-panel{width:320px;flex-shrink:0;display:flex;flex-direction:column;border-left:2px solid #222;background:#0a0a0a;overflow:hidden}
+#sidebar{flex:1;display:flex;flex-direction:column;overflow:hidden}
 #sidebar-head{padding:10px 12px;border-bottom:2px solid #1a1a1a;flex-shrink:0}
 .stats-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
 .stat{background:#111;border:2px solid #222;box-shadow:2px 2px 0 #000;border-radius:0;padding:5px 8px;font-size:9px;color:#555;flex:1;min-width:55px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px}
@@ -188,12 +189,12 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
   #tl-label{display:none}
   #tl-count{display:none}
   #timeline-bar{padding:5px 8px;gap:5px}
-  #sidebar{position:fixed;right:0;top:0;bottom:0;z-index:50;transform:translateX(100%);transition:transform 0.25s ease;box-shadow:-6px 0 20px rgba(0,0,0,0.8);width:280px}
-  #sidebar.open{transform:translateX(0)}
+  #right-panel{position:fixed;right:0;top:0;bottom:0;z-index:50;transform:translateX(100%);transition:transform 0.25s ease;box-shadow:-6px 0 20px rgba(0,0,0,0.8);width:300px}
+  #right-panel.open{transform:translateX(0)}
   #sidebar-toggle{display:flex;align-items:center;justify-content:center}
   #route-panel{left:8px;right:8px;max-width:none;bottom:80px}
-  #minimap-canvas{position:fixed!important;width:100px;height:100px;bottom:20px;right:20px;z-index:30}
-  #zoom-btns{top:auto;bottom:20px;right:130px;flex-direction:row;gap:5px}
+  #minimap-canvas{width:100%!important;height:120px!important;border-top:2px solid #222}
+  #zoom-btns{top:auto;bottom:20px;right:20px;flex-direction:row;gap:5px}
   #zoom-btns button{width:44px;height:44px;font-size:20px;padding:0}
   button{padding:6px 10px;font-size:12px}
 }
@@ -289,7 +290,6 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 <div id="main">
   <div id="map-wrap">
     <canvas id="map"></canvas>
-    <canvas id="minimap-canvas" width="180" height="180" title="Click to navigate"></canvas>
     <div id="tip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div><div class="tgar"></div></div>
     <div id="zoom-btns">
       <button onclick="zoomBy(1.3)">+</button>
@@ -320,24 +320,27 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
     </div>
   </div>
 
-  <div id="sidebar">
-    <div id="sidebar-head">
-      <div class="stats-row">
-        <div class="stat"><b id="s-players">—</b>players</div>
-        <div class="stat"><b id="s-tiles">—</b>turfs</div>
+  <div id="right-panel">
+    <div id="sidebar">
+      <div id="sidebar-head">
+        <div class="stats-row">
+          <div class="stat"><b id="s-players">—</b>players</div>
+          <div class="stat"><b id="s-tiles">—</b>turfs</div>
+        </div>
+        <div style="position:relative;display:flex;align-items:center">
+          <input type="text" id="search" placeholder="Search player..." oninput="onSearchInput(this)" style="width:100%;padding-right:28px">
+          <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;background:transparent;border:none;color:#555;font-size:14px;cursor:pointer;padding:2px;line-height:1">✕</button>
+        </div>
+        <div class="filter-row">
+          <button class="fb on" onclick="setFilter('all',this)">All</button>
+          <button class="fb" onclick="setFilter('inactive',this)">Inactive</button>
+          <button class="fb" onclick="setFilter('friends',this)" style="color:#1D9E75">♥ Friends</button>
+          <button class="fb" onclick="setFilter('enemies',this)" style="color:#E24B4A">✕ Enemies</button>
+        </div>
       </div>
-      <div style="position:relative;display:flex;align-items:center">
-        <input type="text" id="search" placeholder="Search player..." oninput="onSearchInput(this)" style="width:100%;padding-right:28px">
-        <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;background:transparent;border:none;color:#555;font-size:14px;cursor:pointer;padding:2px;line-height:1">✕</button>
-      </div>
-      <div class="filter-row">
-        <button class="fb on" onclick="setFilter('all',this)">All</button>
-        <button class="fb" onclick="setFilter('inactive',this)">Inactive</button>
-        <button class="fb" onclick="setFilter('friends',this)" style="color:#1D9E75">♥ Friends</button>
-        <button class="fb" onclick="setFilter('enemies',this)" style="color:#E24B4A">✕ Enemies</button>
-      </div>
+      <div id="player-list"></div>
     </div>
-    <div id="player-list"></div>
+    <canvas id="minimap-canvas" width="320" height="200" title="Click to navigate"></canvas>
   </div>
 </div>
 
@@ -894,6 +897,12 @@ function drawMap(){
 
 function drawMinimap(){
   const mc=document.getElementById('minimap-canvas');
+  // Sync canvas pixel size to CSS display size
+  const rect=mc.getBoundingClientRect();
+  if(rect.width>0&&rect.height>0){
+    mc.width=Math.round(rect.width);
+    mc.height=Math.round(rect.height);
+  }
   const ctx=mc.getContext('2d');
   const MW=mc.width,MH=mc.height;
   ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,MW,MH);
@@ -1148,7 +1157,7 @@ mapWrap.addEventListener('touchcancel', _handleTouchEnd, { passive: false });
 
 // ── SIDEBAR TOGGLE (mobile) ───────────────────────────────────────────────────
 function toggleSidebar(){
-  const sb=document.getElementById('sidebar');
+  const sb=document.getElementById('right-panel');
   const btn=document.getElementById('sidebar-toggle');
   const isOpen=sb.classList.toggle('open');
   btn.classList.toggle('open',isOpen);
@@ -1163,8 +1172,13 @@ document.getElementById('minimap-canvas').addEventListener('click',e=>{
   const sc=Math.min(mc.width/spanX,mc.height/spanY);
   const offX=(mc.width-spanX*sc)/2,offY=(mc.height-spanY*sc)/2;
   const cv=document.getElementById('map');
-  panX=cv.width/2-((e.clientX-rect.left-offX)/sc)*CELL*zoom;
-  panY=cv.height/2-((e.clientY-rect.top-offY)/sc)*CELL*zoom;
+  const cx=e.clientX-rect.left;
+  const cy=e.clientY-rect.top;
+  // Scale click to canvas pixels (canvas may be CSS-scaled)
+  const scaleX=mc.width/rect.width;
+  const scaleY=mc.height/rect.height;
+  panX=cv.width/2-((cx*scaleX-offX)/sc)*CELL*zoom;
+  panY=cv.height/2-((cy*scaleY-offY)/sc)*CELL*zoom;
   drawMap();drawMinimap();
 });
 
