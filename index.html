@@ -516,9 +516,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
     on:(ev,cb)=>{if(ev==='register')_listeners.push(cb);return ()=>{const i=_listeners.indexOf(cb);if(i>-1)_listeners.splice(i,1);};},
   });
   // Fire app-ready so Slush content script registers itself
-  window.dispatchEvent(Object.assign(new CustomEvent('wallet-standard:app-ready'),{
-    detail:{register}
-  }));
+  window.dispatchEvent(new CustomEvent('wallet-standard:app-ready',{detail:{register}}));
 })();
 const MY_IDS=new Set(['0x857e8e7fc94d43f327bb24388439d0fdcc112a9e5e25264969b27011a233d2f0','0xdb2b57ea07dae7acd91d56f4c5e20a077313abb50a9924f84529ef67030ab273']);
 const CELL=12;
