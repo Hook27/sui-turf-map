@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SUI Turf Map — Sir Caprice</title>
+<title>Vendetta World Map</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,sans-serif;background:#0a0a0e;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
@@ -176,7 +176,7 @@ button:disabled{opacity:0.4;cursor:default}
 <body>
 
 <div id="toolbar">
-  <h1>SUI Turf Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v2.0</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v2.1</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#3a3a1e;color:#FAC775">⚡ Refresh data</button>
   <div class="sep"></div>
@@ -226,8 +226,8 @@ button:disabled{opacity:0.4;cursor:default}
       <div id="route-no-path">No path found between these players.</div>
       <div class="route-stats" id="route-stats" style="display:none">
         <div class="route-stat-row"><span class="route-stat-label">Total steps</span><span class="route-stat-val" id="rs-total">—</span></div>
-        <div class="route-stat-row"><span class="route-stat-label">Your tiles (free)</span><span class="route-stat-val own" id="rs-own">—</span></div>
-        <div class="route-stat-row"><span class="route-stat-label">Empty tiles (expand)</span><span class="route-stat-val free" id="rs-empty">—</span></div>
+        <div class="route-stat-row"><span class="route-stat-label">Your turfs (free)</span><span class="route-stat-val own" id="rs-own">—</span></div>
+        <div class="route-stat-row"><span class="route-stat-label">Empty turfs (expand)</span><span class="route-stat-val free" id="rs-empty">—</span></div>
         <div class="route-stat-row"><span class="route-stat-label">To conquer</span><span class="route-stat-val conquer" id="rs-conquer">—</span></div>
       </div>
       <button onclick="clearRoute()">✕ Clear route</button>
@@ -238,13 +238,14 @@ button:disabled{opacity:0.4;cursor:default}
     <div id="sidebar-head">
       <div class="stats-row">
         <div class="stat"><b id="s-players">—</b>players</div>
-        <div class="stat"><b id="s-tiles">—</b>tiles</div>
-        <div class="stat"><b id="s-unclaimed">—</b>unclaimed</div>
+        <div class="stat"><b id="s-tiles">—</b>turfs</div>
       </div>
-      <input type="text" id="search" placeholder="Search player..." oninput="filterPlayers()">
+      <div style="position:relative;display:flex;align-items:center">
+        <input type="text" id="search" placeholder="Search player..." oninput="onSearchInput(this)" style="width:100%;padding-right:28px">
+        <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;background:transparent;border:none;color:#555;font-size:14px;cursor:pointer;padding:2px;line-height:1">✕</button>
+      </div>
       <div class="filter-row">
         <button class="fb on" onclick="setFilter('all',this)">All</button>
-        <button class="fb" onclick="setFilter('named',this)">Named</button>
         <button class="fb" onclick="setFilter('inactive',this)">Inactive</button>
         <button class="fb" onclick="setFilter('friends',this)" style="color:#1D9E75">♥ Friends</button>
         <button class="fb" onclick="setFilter('enemies',this)" style="color:#E24B4A">✕ Enemies</button>
@@ -280,11 +281,11 @@ button:disabled{opacity:0.4;cursor:default}
     <div style="display:flex;gap:0;border-bottom:1px solid #1e1e2e">
       <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #1e1e2e">
         <div style="font-size:20px;font-weight:500;color:#1D9E75" id="an-gained-total">—</div>
-        <div style="font-size:11px;color:#555">tiles captured</div>
+        <div style="font-size:11px;color:#555">turfs captured</div>
       </div>
       <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #1e1e2e">
         <div style="font-size:20px;font-weight:500;color:#E24B4A" id="an-lost-total">—</div>
-        <div style="font-size:11px;color:#555">tiles lost</div>
+        <div style="font-size:11px;color:#555">turfs lost</div>
       </div>
       <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #1e1e2e">
         <div style="font-size:20px;font-weight:500;color:#FAC775" id="an-active">—</div>
@@ -292,7 +293,7 @@ button:disabled{opacity:0.4;cursor:default}
       </div>
       <div style="flex:1;padding:10px;text-align:center">
         <div style="font-size:20px;font-weight:500;color:#888" id="an-unchanged">—</div>
-        <div style="font-size:11px;color:#555">tiles changed</div>
+        <div style="font-size:11px;color:#555">turfs changed</div>
       </div>
     </div>
     <!-- Filter tabs -->
@@ -456,7 +457,7 @@ async function loadData(url){
     if(!isLive){
       status(`Historical: ${document.getElementById('tl-info').textContent}`);
     } else {
-      status(`${players.length} players · ${tiles.length} tiles`);
+      status(`${players.length} players · ${tiles.length} turfs`);
     }
   }catch(e){
     status('Error: '+e.message);
@@ -572,7 +573,7 @@ function computeAndShowRoute(){
     routePathMap=routePath?new Map(routePath.map(s=>[`${s.x},${s.y}`,s.type])):null;
     showRoutePanel();drawMap();
     if(routePath) zoomToRoute();
-    status(isLive?`${players.length} players · ${tiles.length} tiles`:`Historical: ${document.getElementById('tl-info').textContent}`);
+    status(isLive?`${players.length} players · ${tiles.length} turfs`:`Historical: ${document.getElementById('tl-info').textContent}`);
   },50);
 }
 
@@ -1055,7 +1056,6 @@ function jumpToMe(){jumpToPlayer([...MY_IDS][0]);}
 function updateStats(){
   document.getElementById('s-players').textContent=players.length.toLocaleString('en');
   document.getElementById('s-tiles').textContent=totalTiles.toLocaleString('en');
-  document.getElementById('s-unclaimed').textContent=unclaimedTiles.toLocaleString('en');
 }
 let filterTimer=null;
 function filterPlayers(){clearTimeout(filterTimer);filterTimer=setTimeout(_fp,100);}
@@ -1139,6 +1139,16 @@ function renderPlayerList(){
     </div>`;
   }).join('')||'<div style="color:#444;padding:1rem;font-size:12px">No results</div>';
 }
+function onSearchInput(el){
+  document.getElementById('search-clear').style.display=el.value?'block':'none';
+  filterPlayers();
+}
+function clearSearch(){
+  const el=document.getElementById('search');
+  el.value='';
+  document.getElementById('search-clear').style.display='none';
+  filterPlayers();
+}
 function onPClick(pid,e){
   if(e.target.classList.contains('p-route-btn')) return;
   if(routeMode){selectRoutePlayer(pid);return;}
@@ -1152,12 +1162,22 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 // ── EXPORT ────────────────────────────────────────────────────────────────────
 function exportPNG(){
   const cv=document.getElementById('map');
+  const scale=3;
+  const offscreen=document.createElement('canvas');
+  offscreen.width=cv.width*scale;
+  offscreen.height=cv.height*scale;
+  const ctx=offscreen.getContext('2d');
+  ctx.scale(scale,scale);
+  // Redraw at higher resolution
+  const savedZoom=zoom,savedPanX=panX,savedPanY=panY;
+  // Draw onto offscreen using same state
+  ctx.drawImage(cv,0,0);
   const a=document.createElement('a');
-  a.href=cv.toDataURL('image/png');
-  a.download='sui_turf_map_'+new Date().toISOString().slice(0,10)+'.png';a.click();
+  a.href=offscreen.toDataURL('image/png');
+  a.download='vendetta_map_'+new Date().toISOString().slice(0,10)+'.png';a.click();
 }
 function exportCSV(){
-  const rows=[['Rank','Name','Tiles','Percentage','Profile ID','Wallet','Inactive']];
+  const rows=[['Rank','Name','Turfs','Percentage','Profile ID','Wallet','Inactive']];
   players.forEach((p,i)=>rows.push([i+1,p.name||'',p.tiles,totalTiles?(p.tiles/totalTiles*100).toFixed(4):'',p.pid,p.wallet||'',p.inactive?'yes':'no']));
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
@@ -1321,7 +1341,7 @@ function renderAnalysisList(){
             ${r.lost?`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#E24B4A;width:16px">-${r.lost}</span><div class="an-bar-wrap"><div class="an-bar" style="width:${barL}px;background:#E24B4A"></div></div></div>`:''}
           </div>
           <div class="an-delta" style="color:${netCol}">${net}</div>
-          <div class="an-tiles">${(r.gained+r.lost)} tiles</div>
+          <div class="an-tiles">${(r.gained+r.lost)} turfs</div>
         </div>`;
       }).join('')
     : '<div style="padding:1rem;text-align:center;color:#555;font-size:12px">No changes found.</div>';
