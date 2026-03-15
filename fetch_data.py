@@ -200,22 +200,7 @@ for i in range(0, len(tile_ids), BATCH):
         if not pid or pid == NULL_ID:
             unclaimed += 1; continue
         # ── GARRISON (v2.6) ──────────────────────────────────────────────────
-        g_h = g_b = g_e = 0
         garrison_count = int(f.get("garrison_count", 0) or 0)
-        if garrison_count > 0:
-            gar = f.get("garrison") or {}
-            units = []
-            if isinstance(gar, dict):
-                units = gar.get("fields", {}).get("contents", []) or \
-                        gar.get("contents", []) or []
-            elif isinstance(gar, list):
-                units = gar
-            for unit in units:
-                ufields = unit.get("fields", unit) if isinstance(unit, dict) else {}
-                name = (ufields.get("gangster_name") or ufields.get("name") or "").lower()
-                if "henchman" in name:   g_h += 1
-                elif "bouncer" in name:  g_b += 1
-                elif "enforcer" in name: g_e += 1
         raw_tiles.append({"x": x, "y": y, "pid": pid, "hq": tile_id in hq_set,
                           "g_h": g_h, "g_b": g_b, "g_e": g_e})
         owner_count[pid] = owner_count.get(pid, 0) + 1
@@ -260,9 +245,7 @@ for t in raw_tiles:
     if idx is None: continue
     entry = {"x": t["x"], "y": t["y"], "p": idx}
     if t["hq"]: entry["hq"] = True
-    if t.get("g_h"): entry["g_h"] = t["g_h"]
-    if t.get("g_b"): entry["g_b"] = t["g_b"]
-    if t.get("g_e"): entry["g_e"] = t["g_e"]
+    if t.get("garrison_count"): entry["gc"] = t["garrison_count"]
     compact_tiles.append(entry)
 
 now_utc = datetime.now(timezone.utc)

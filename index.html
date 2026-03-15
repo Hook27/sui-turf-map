@@ -507,7 +507,7 @@ async function loadData(url){
       const p=players[t.p]; if(!p) continue;
       const isMe=MY_IDS.has(p.pid);
       tiles.push({x:t.x,y:t.y,pid:p.pid,isHQ:!!t.hq,isMe,color:p.color,pidIdx:t.p,
-        gH:t.g_h||0,gB:t.g_b||0,gE:t.g_e||0});
+        gc:t.gc||0});
       tileMap.set(`${t.x},${t.y}`,tiles.length-1);
     }
     if(tiles.length){
@@ -904,7 +904,7 @@ mapWrap.addEventListener('mousemove',e=>{
       tip.querySelector('.tname').textContent=p.name||'[unknown]';
       tip.querySelector('.tpos').textContent=`Position: (${wx}, ${wy})`;
       tip.querySelector('.thq').textContent=t.isHQ?'⌂ Headquarters':'';
-      const gar=(t.gH||t.gB||t.gE)?`👥 ${t.gH}H · ${t.gB}B · ${t.gE}E`:'';
+      const gar=t.gc?`👥 ${t.gc} units`:'';
       tip.querySelector('.tgar').textContent=gar;
       tip.style.display='block';
       const r2=mapWrap.getBoundingClientRect();
@@ -1078,7 +1078,7 @@ function _handleTouchEnd(e){
           tt.querySelector('.tname').textContent = p.name || '[unknown]';
           tt.querySelector('.tpos').textContent  = `Position: (${wx}, ${wy})`;
           tt.querySelector('.thq').textContent   = tile.isHQ ? '⌂ Headquarters' : '';
-          tt.querySelector('.tgar').textContent  = (tile.gH||tile.gB||tile.gE)?`👥 ${tile.gH}H · ${tile.gB}B · ${tile.gE}E`:'';
+          tt.querySelector('.tgar').textContent  = tile.gc?`👥 ${tile.gc} units`:'';
           tt.style.display = 'block';
           clearTimeout(_tooltipTimer);
           _tooltipTimer = setTimeout(() => { tt.style.display = 'none'; }, 3000);
