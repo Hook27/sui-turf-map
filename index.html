@@ -176,7 +176,7 @@ button:disabled{opacity:0.4;cursor:default}
 <body>
 
 <div id="toolbar">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v2.3</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:10px;color:#555;margin-right:4px;flex-shrink:0">v2.4</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#3a3a1e;color:#FAC775">⚡ Refresh data</button>
   <div class="sep"></div>
@@ -1184,7 +1184,6 @@ function exportPNG(){
 
 async function exportGIF(){
   if(snapshots.length<2){alert('Need at least 2 snapshots to create an animation.');return;}
-  if(typeof GifEncoder==='undefined'&&typeof gifenc==='undefined'){alert('GIF library not loaded yet, please try again.');return;}
 
   const btn=document.getElementById('gifBtn');
   btn.disabled=true;
@@ -1192,69 +1191,181 @@ async function exportGIF(){
   const cv=document.getElementById('map');
   const W=cv.width, H=cv.height;
   const GW=Math.round(W/2), GH=Math.round(H/2);
-
   const frames=snapshots.slice(0,Math.min(20,snapshots.length)).reverse();
+
   const offscreen=document.createElement('canvas');
   offscreen.width=GW; offscreen.height=GH;
   const octx=offscreen.getContext('2d');
 
-  // gifenc API
-  const {GIFEncoder,quantize,applyPalette}=gifenc;
-  const encoder=GIFEncoder();
+  // Collect raw pixel data per frame
+  const framePixels=[];
 
   for(let i=0;i<frames.length;i++){
     const snap=frames[i];
     btn.textContent=`⏳ Frame ${i+1}/${frames.length}...`;
     await new Promise(r=>setTimeout(r,5));
-
     try{
       const d=await fetch(snap.file+'?t='+Date.now()).then(r=>r.json());
       const snapPlayers=d.players||[];
-      const snapTiles=[];
+      octx.fillStyle='#080810';
+      octx.fillRect(0,0,GW,GH);
+      const cs=CELL*zoom*0.5;
       for(const t of (d.tiles||[])){
         const p=snapPlayers[t.p]; if(!p) continue;
         const isMe=MY_IDS.has(p.pid);
         const mark=getMark(p.pid);
         const col=mark==='friend'?'#1D9E75':mark==='enemy'?'#E24B4A':p.color;
-        snapTiles.push({x:t.x,y:t.y,isHQ:!!t.hq,isMe,col});
-      }
-
-      octx.fillStyle='#080810';
-      octx.fillRect(0,0,GW,GH);
-      const cs=CELL*zoom*0.5;
-      for(const t of snapTiles){
         const sx=(t.x-minX)*cs+panX*0.5, sy=(maxY-t.y)*cs+panY*0.5;
         if(sx<-cs||sx>GW||sy<-cs||sy>GH) continue;
-        octx.fillStyle=t.isHQ?(t.isMe?'#533AB7':'#6B1A1A'):t.col;
+        octx.fillStyle=t.hq?(isMe?'#533AB7':'#6B1A1A'):col;
         octx.fillRect(sx+0.5,sy+0.5,Math.max(1,cs-1),Math.max(1,cs-1));
       }
-      octx.fillStyle='rgba(0,0,0,0.6)';
-      octx.fillRect(3,3,148,18);
-      octx.fillStyle='rgba(255,255,255,0.85)';
-      octx.font='11px sans-serif';
+      octx.fillStyle='rgba(0,0,0,0.6)';octx.fillRect(3,3,148,18);
+      octx.fillStyle='rgba(255,255,255,0.85)';octx.font='11px sans-serif';
       octx.textAlign='left';octx.textBaseline='top';
       octx.fillText(snap.label,6,5);
-
-      const imageData=octx.getImageData(0,0,GW,GH);
-      const palette=quantize(imageData.data,256);
-      const index=applyPalette(imageData.data,palette);
-      encoder.writeFrame(index,GW,GH,{palette,delay:70,repeat:0}); // delay in 1/100s
+      framePixels.push({pixels:octx.getImageData(0,0,GW,GH).data, label:snap.label});
     }catch(e){console.warn('Frame failed:',e);}
   }
 
   btn.textContent='⏳ Encoding...';
   await new Promise(r=>setTimeout(r,10));
 
-  encoder.finish();
-  const blob=new Blob([encoder.bytes()],{type:'image/gif'});
+  // Build GIF using inline encoder
+  const gif=buildGIF(framePixels,GW,GH,70);
+  const blob=new Blob([gif],{type:'image/gif'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download=`vendetta_map_${fileTimestamp()}.gif`;
   a.click();
-
-  btn.disabled=false;
-  btn.textContent='🎬 GIF';
+  btn.disabled=false;btn.textContent='🎬 GIF';
   status(`${players.length} players · ${tiles.length} turfs`);
+}
+
+// ── Minimal inline GIF encoder ────────────────────────────────────────────────
+function buildGIF(frames,w,h,delay){
+  // Quantize RGBA pixels to 256-color palette using median-cut approximation
+  function quantize(rgba){
+    const buckets=[[...Array(rgba.length/4).keys()]];
+    while(buckets.length<256){
+      let best=-1,bestRange=0;
+      for(let i=0;i<buckets.length;i++){
+        const b=buckets[i];
+        let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
+        for(const p of b){
+          const o=p*4;
+          if(rgba[o]<rMin)rMin=rgba[o];if(rgba[o]>rMax)rMax=rgba[o];
+          if(rgba[o+1]<gMin)gMin=rgba[o+1];if(rgba[o+1]>gMax)gMax=rgba[o+1];
+          if(rgba[o+2]<bMin)bMin=rgba[o+2];if(rgba[o+2]>bMax)bMax=rgba[o+2];
+        }
+        const range=Math.max(rMax-rMin,gMax-gMin,bMax-bMin);
+        if(range>bestRange){bestRange=range;best=i;}
+      }
+      if(best<0||bestRange===0) break;
+      const b=buckets[best];
+      let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
+      for(const p of b){
+        const o=p*4;
+        if(rgba[o]<rMin)rMin=rgba[o];if(rgba[o]>rMax)rMax=rgba[o];
+        if(rgba[o+1]<gMin)gMin=rgba[o+1];if(rgba[o+1]>gMax)gMax=rgba[o+1];
+        if(rgba[o+2]<bMin)bMin=rgba[o+2];if(rgba[o+2]>bMax)bMax=rgba[o+2];
+      }
+      const rRange=rMax-rMin,gRange=gMax-gMin,bRange=bMax-bMin;
+      const ch=rRange>=gRange&&rRange>=bRange?0:gRange>=bRange?1:2;
+      b.sort((a,z)=>rgba[a*4+ch]-rgba[z*4+ch]);
+      const mid=b.length>>1;
+      buckets.splice(best,1,b.slice(0,mid),b.slice(mid));
+    }
+    const palette=new Uint8Array(256*3);
+    const map=new Map();
+    buckets.forEach((b,i)=>{
+      let r=0,g=0,bl=0;
+      for(const p of b){const o=p*4;r+=rgba[o];g+=rgba[o+1];bl+=rgba[o+2];}
+      palette[i*3]=r/b.length|0;palette[i*3+1]=g/b.length|0;palette[i*3+2]=bl/b.length|0;
+      for(const p of b)map.set(p,i);
+    });
+    return{palette,map};
+  }
+
+  function nearestColor(r,g,b,palette){
+    let best=0,bestD=1e9;
+    for(let i=0;i<256;i++){
+      const dr=r-palette[i*3],dg=g-palette[i*3+1],db=b-palette[i*3+2];
+      const d=dr*dr+dg*dg+db*db;
+      if(d<bestD){bestD=d;best=i;}
+    }
+    return best;
+  }
+
+  function lzwEncode(indices,minCode){
+    const out=[];let buf=0,bits=0;
+    const write=(v,n)=>{buf|=v<<bits;bits+=n;while(bits>=8){out.push(buf&255);buf>>=8;bits-=8;}};
+    let codeSize=minCode+1,codeLimit=1<<codeSize;
+    const clear=1<<minCode,eoi=clear+1;
+    let table=new Map(),next=eoi+1;
+    const resetTable=()=>{table.clear();next=eoi+1;codeSize=minCode+1;codeLimit=1<<codeSize;};
+    write(clear,codeSize);resetTable();
+    let buf2=indices[0];
+    for(let i=1;i<indices.length;i++){
+      const c=indices[i],key=buf2*4096+c;
+      if(table.has(key)){buf2=table.get(key);}
+      else{
+        write(buf2,codeSize);
+        if(next>=4096){write(clear,codeSize);resetTable();buf2=c;}
+        else{table.set(key,next++);if(next>codeLimit&&codeSize<12){codeSize++;codeLimit<<=1;}buf2=c;}
+      }
+    }
+    write(buf2,codeSize);write(eoi,codeSize);
+    if(bits>0){out.push(buf&255);}
+    return out;
+  }
+
+  function packSubBlocks(data){
+    const out=[];
+    for(let i=0;i<data.length;i+=255){
+      const chunk=data.slice(i,i+255);
+      out.push(chunk.length,...chunk);
+    }
+    out.push(0);return out;
+  }
+
+  // Use first frame's palette for all frames (global palette)
+  const{palette}=quantize(frames[0].pixels);
+
+  const bytes=[];
+  const push=(...v)=>bytes.push(...v);
+  const pushStr=(s)=>{for(let i=0;i<s.length;i++)push(s.charCodeAt(i));};
+  const push16=(v)=>{push(v&255,(v>>8)&255);};
+
+  // Header
+  pushStr('GIF89a');
+  push16(w);push16(h);
+  push(0b11110111,0,0); // global color table, 256 colors
+  bytes.push(...palette);
+
+  // Netscape looping extension
+  push(0x21,0xFF,11);pushStr('NETSCAPE2.0');push(3,1,0,0,0);
+
+  for(const frame of frames){
+    // Map pixels to palette indices
+    const n=w*h;
+    const indices=new Uint8Array(n);
+    for(let i=0;i<n;i++){
+      const o=i*4;
+      indices[i]=nearestColor(frame.pixels[o],frame.pixels[o+1],frame.pixels[o+2],palette);
+    }
+    // Graphic control extension
+    push(0x21,0xF9,4,0);push16(delay);push(0,0);
+    // Image descriptor
+    push(0x2C);push16(0);push16(0);push16(w);push16(h);push(0);
+    // LZW
+    const minCode=8;
+    push(minCode);
+    const lzw=lzwEncode(indices,minCode);
+    bytes.push(...packSubBlocks(lzw));
+  }
+  push(0x3B);
+  return new Uint8Array(bytes);
 }
 function exportCSV(){
   const rows=[['Rank','Name','Turfs','Percentage','Profile ID','Wallet','Inactive']];
@@ -1459,7 +1570,6 @@ resizeCanvas();
 loadHistory();
 loadLatest();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/gifenc@1.0.1/dist/gifenc.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js" onload="initHammer()"></script>
 </body>
 </html>
