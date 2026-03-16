@@ -269,6 +269,15 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #ruler-x .ruler-tick{top:2px;transform:translateX(-50%)}
 #ruler-y .ruler-tick{left:1px;transform:translateY(-50%)}
 
+/* ── INACTIVITY FILTER ── */
+#inactivity-row{display:flex;align-items:center;gap:4px;margin-top:5px;font-family:var(--font-mono);font-size:9px}
+#inactivity-row label{color:#555;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+#inactivity-select{background:#0a0a0a;color:#aaa;border:2px solid #2a2a2a;border-radius:0;padding:2px 4px;font-size:9px;font-family:var(--font-mono);flex:1}
+#inactivity-select:focus{outline:none;border-color:var(--v-gold)}
+.plcd{font-size:9px;color:#666;flex-shrink:0;white-space:nowrap}
+.plcd.warn{color:#FAC775}
+.plcd.old{color:#ff8483}
+
 /* ── EXPORT DROPDOWN ── */
 #export-dropdown{position:relative;display:inline-block}
 #export-menu{display:none;position:absolute;top:100%;left:0;background:#111;border:2px solid #333;box-shadow:4px 4px 0 #000;z-index:200;min-width:120px;margin-top:2px}
@@ -418,6 +427,18 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
           <button class="fb" onclick="setFilter('friends',this)" style="color:#1D9E75">♥ Friends</button>
           <button class="fb" onclick="setFilter('enemies',this)" style="color:#E24B4A">✕ Enemies</button>
           <button class="fb" id="compact-btn" onclick="toggleCompact(this)" style="margin-left:auto" title="Compact view">⊟</button>
+        </div>
+        <div id="inactivity-row">
+          <label>Hide inactive &gt;</label>
+          <select id="inactivity-select" onchange="filterPlayers()">
+            <option value="0">Off</option>
+            <option value="3">3 days</option>
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="21">21 days</option>
+            <option value="35">35 days</option>
+            <option value="70" selected>70 days</option>
+          </select>
         </div>
       </div>
       <div id="player-list"></div>
@@ -1402,11 +1423,13 @@ function setFilter(f,btn){activeFilter=f;document.querySelectorAll('.fb').forEac
 function _fp(){
   const q=document.getElementById('search').value.toLowerCase();
   const marks=loadMarks();
+  const inactDays=parseInt(document.getElementById('inactivity-select')?.value||'0');
   filteredPlayers=players.filter(p=>{
     if(activeFilter==='named'&&!p.name) return false;
     if(activeFilter==='inactive'&&!p.inactive) return false;
     if(activeFilter==='friends'&&marks[p.pid]!=='friend') return false;
     if(activeFilter==='enemies'&&marks[p.pid]!=='enemy') return false;
+    if(inactDays>0&&p.lcd!=null&&p.lcd>=inactDays) return false;
     if(q&&!p.name.toLowerCase().includes(q)&&!p.pid.includes(q)&&!(p.wallet||'').includes(q)) return false;
     return true;
   });
@@ -1486,11 +1509,14 @@ function renderPlayerList(){
     const enemyCls=mark==='enemy'?'mark-enemy':'';
     const dotCol=markColor(p.pid,p.color);
     const hasGar=garrisonedPids.has(p.pid);
+    const lcdTxt=p.lcd!=null?`${p.lcd}d`:'';
+    const lcdCls=p.lcd>=70?'old':p.lcd>=35?'warn':'';
     parts[i]=`<div class="${rowCls}${hasGar?' has-garrison':''}" onclick="onPClick('${p.pid}',event)">` +
       `<span class="prank">${i+1}</span>` +
       `<span class="pdot" style="background:${dotCol}"></span>` +
       nm +
       `<span class="ptiles">${p.tiles.toLocaleString('en')}</span>` +
+      (lcdTxt?`<span class="plcd ${lcdCls}">${lcdTxt}</span>`:'') +
       `<div class="pbar"><div class="pbar-fill" style="width:${Math.round(p.tiles/maxT*100)}%;background:${dotCol}"></div></div>` +
       `<button class="p-gar-btn" onclick="openGarrison('${p.pid}',event)" title="Garrison overview">🛡</button>` +
       `<button class="p-mark-btn ${friendCls}" onclick="toggleMark('${p.pid}','friend',event)" title="Mark as friend">♥</button>` +

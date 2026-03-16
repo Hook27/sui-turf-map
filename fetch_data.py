@@ -273,6 +273,64 @@ output = {
     "tiles":       compact_tiles,
 }
 
+
+# ── LAST CHANGE TRACKING ──────────────────────────────────────────────────────
+# Compare current turf counts against previous snapshots to find when each
+# player's count last changed. Scans snapshots newest-first, stops when change found.
+print("Computing last-change days per player...")
+current_counts = {p["pid"]: p["tiles"] for p in player_list}
+last_change_days = {}  # pid -> days since last change (None = never changed in history)
+
+all_snaps_sorted = sorted(glob.glob(f"{SNAPSHOTS_DIR}/data_*.json"), reverse=True)
+# Skip the snapshot we just wrote (index 0 = current)
+for snap_path in all_snaps_sorted[1:]:
+    basename = os.path.basename(snap_path)
+    ts_str = basename[5:-5]
+    try:
+        dt = datetime.strptime(ts_str, "%Y-%m-%d_%H%M").replace(tzinfo=timezone.utc)
+    except ValueError:
+        continue
+    days_ago = (now_utc - dt).total_seconds() / 86400
+    try:
+        snap_data = json.loads(open(snap_path, encoding="utf-8").read())
+        snap_counts = {p["pid"]: p["tiles"] for p in snap_data.get("players", [])}
+    except Exception:
+        continue
+    # For each player not yet resolved, check if count differs from current
+    for pid, cur_count in current_counts.items():
+        if pid in last_change_days:
+            continue  # already found their last change
+        snap_count = snap_counts.get(pid)
+        if snap_count is None:
+            # Player didn't exist yet in this snapshot — count as change
+            last_change_days[pid] = round(days_ago)
+        elif snap_count != cur_count:
+            # Count changed between this snapshot and a newer one
+            last_change_days[pid] = round(days_ago)
+
+# Players with no change found in all history: days since oldest snapshot
+oldest_days = None
+if all_snaps_sorted[1:]:
+    oldest_snap = all_snaps_sorted[-1]
+    ts_str = os.path.basename(oldest_snap)[5:-5]
+    try:
+        dt = datetime.strptime(ts_str, "%Y-%m-%d_%H%M").replace(tzinfo=timezone.utc)
+        oldest_days = round((now_utc - dt).total_seconds() / 86400)
+    except ValueError:
+        pass
+
+for pid in current_counts:
+    if pid not in last_change_days:
+        last_change_days[pid] = oldest_days  # unchanged since oldest snapshot
+
+# Add last_change_days to player_list
+for p in player_list:
+    lcd = last_change_days.get(p["pid"])
+    if lcd is not None:
+        p["lcd"] = lcd  # days since last turf count change
+
+print(f"  Done — {sum(1 for p in player_list if 'lcd' in p)} players with change data")
+
 output_json = json.dumps(output, separators=(",", ":"), ensure_ascii=False)
 size_kb = len(output_json) / 1024
 
