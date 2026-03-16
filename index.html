@@ -294,7 +294,6 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #garrison-legend.visible{display:block}
 #garrison-legend .gl-title{color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .gl-row{display:flex;align-items:center;gap:6px;margin-bottom:2px}
-.gl-swatch{width:14px;height:14px;border:1px solid #333;flex-shrink:0}
 
 /* ── TOP 10 MODE ── */
 button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-gold);box-shadow:2.5px 2.5px 0 #3a2a00}
@@ -368,10 +367,9 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <div id="zoom-indicator">zoom ×1.0</div>
     <div id="garrison-legend">
       <div class="gl-title">Garrison</div>
-      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.15)"></div><span>1–3 units</span></div>
-      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.35)"></div><span>4–6 units</span></div>
-      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.50)"></div><span>7–9 units</span></div>
-      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.65)"></div><span>10 units (max)</span></div>
+      <div class="gl-row"><span style="color:#ff8483">■</span><span>Enforcer</span></div>
+      <div class="gl-row"><span style="color:#6fffa9">■</span><span>Bouncer</span></div>
+      <div class="gl-row"><span style="color:#aaa">■</span><span>Henchman</span></div>
     </div>
     <div id="tip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div><div class="tgar"></div></div>
     <div id="zoom-btns">
@@ -968,13 +966,29 @@ function drawMap(){
     // Garrison overlay — darken tile based on total defender count (max 10)
     const gc=(t.gH||0)+(t.gB||0)+(t.gE||0);
     if(gc>0){
-      const alpha=0.15+(gc/10)*0.5; // linear: 1=0.20, 5=0.40, 10=0.65
+      const alpha=0.15+(gc/10)*0.5;
       ctx.fillStyle=`rgba(0,0,0,${alpha})`;
       ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
-      // Show count as number when zoomed in enough
-      if(zoom>2){
+      if(zoom>11&&(t.gE||t.gB||t.gH)){
+        // Show per-type breakdown: E in red, B in green, H in grey
+        const fs=Math.round(cs*0.18);
+        ctx.font=`bold ${fs}px monospace`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        const lines=[];
+        if(t.gE) lines.push({txt:`${t.gE}E`,col:'#ff8483'});
+        if(t.gB) lines.push({txt:`${t.gB}B`,col:'#6fffa9'});
+        if(t.gH) lines.push({txt:`${t.gH}H`,col:'#aaaaaa'});
+        const lh=fs+2;
+        const totalH=lines.length*lh;
+        const startY=sy+cs/2-totalH/2+lh/2;
+        lines.forEach((l,i)=>{
+          ctx.fillStyle=l.col;
+          ctx.fillText(l.txt,sx+cs/2,startY+i*lh);
+        });
+      } else if(zoom>2){
+        // Just show total count
         ctx.fillStyle='rgba(255,255,255,0.9)';
-        ctx.font=`bold ${Math.round(cs*0.35)}px var(--font-mono,monospace)`;
+        ctx.font=`bold ${Math.round(cs*0.35)}px monospace`;
         ctx.textAlign='center';ctx.textBaseline='middle';
         ctx.fillText(gc,sx+cs/2,sy+cs/2);
       }
@@ -985,7 +999,7 @@ function drawMap(){
   // Grid drawn after tiles — visible on black background, zoom > 0.5
   if(zoom>0.5){
     const gridAlpha=Math.min(0.6, (zoom-0.5)*0.5);
-    ctx.strokeStyle=`rgba(55,55,70,${gridAlpha})`;ctx.lineWidth=0.5;
+    ctx.strokeStyle=`rgba(72,72,90,${gridAlpha})`;ctx.lineWidth=0.5;
     for(let x=Math.max(minX,wx0);x<=Math.min(maxX+1,wx1);x++){const sx=(x-minX)*cs+panX;ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,H);ctx.stroke();}
     for(let y=Math.max(minY,wy0);y<=Math.min(maxY+1,wy1);y++){const sy=(maxY-y)*cs+panY;ctx.beginPath();ctx.moveTo(0,sy);ctx.lineTo(W,sy);ctx.stroke();}
   }
