@@ -2176,6 +2176,14 @@ async function executeRecall(){
   // So actually each call in calls[] is ONE Move call, not count calls
   // Based on the transaction: each call moves N units of one type from one turf
   const totalCalls=calls.length;
+  console.log('📋 Recall summary:', {
+    dvdId: dvdId.slice(0,16)+'...', profileId: profileId.slice(0,16)+'...',
+    hqOid: hqTile.oid?.slice(0,16)+'...', totalCalls,
+    calls: calls.map(c=>({fromOid:c.fromOid?.slice(0,16)+'...',type:c.type,count:c.count}))
+  });
+  if(!totalCalls){
+    walletStatus('❌ No valid calls to submit — check garrison selection','var(--v-red)'); return;
+  }
   const batches=[];
   for(let i=0;i<calls.length;i+=MAX_CALLS_PER_TX){
     batches.push(calls.slice(i,i+MAX_CALLS_PER_TX));
@@ -2196,7 +2204,9 @@ async function executeRecall(){
       prog.textContent=`✓ Tx ${b+1}/${batches.length} done · ${done}/${totalCalls} calls submitted`;
       prog.style.color='var(--v-green)';
     }catch(err){
-      prog.textContent=`❌ Tx ${b+1} failed: ${err.message}`;
+      const msg=err?.message||err?.msg||(typeof err==='string'?err:JSON.stringify(err))||'Unknown error';
+      console.error('❌ Recall tx error — type:',typeof err,'val:',err);
+      prog.textContent=`❌ Tx ${b+1} failed: ${msg}`;
       prog.style.color='var(--v-red)';
       break;
     }
@@ -2209,7 +2219,8 @@ async function loadSuiSdk(){
   await new Promise((resolve,reject)=>{
     const s=document.createElement('script');
     s.src='https://unpkg.com/@mysten/sui@1.21.2/dist/umd/index.js';
-    s.onload=resolve; s.onerror=reject;
+    s.onload=resolve;
+    s.onerror=()=>reject(new Error('Failed to load SUI SDK from CDN (network or CORS issue)'));
     document.head.appendChild(s);
   });
   window.__suiSdkLoaded=true;
@@ -2218,12 +2229,15 @@ async function loadSuiSdk(){
 }
 
 async function buildAndSignTx(calls, dvdId, profileId, hqOid){
+  console.log('🔧 [1/5] Loading SUI SDK...');
   await loadSuiSdk();
   const {Transaction, SuiClient, getFullnodeUrl}=window.sui||{};
   if(!Transaction) throw new Error('SUI SDK not loaded. Check CDN connection.');
+  console.log('🔧 [2/5] SDK ready. Building tx with',calls.length,'calls...');
 
   const tx=new Transaction();
   for(const c of calls){
+    console.log('  → moveCall: fromOid=',c.fromOid?.slice(0,16)+'...','type=',c.type,'count=',c.count);
     tx.moveCall({
       target:`${GAME_PKG}::game::move_gangster_free`,
       arguments:[
@@ -2246,6 +2260,7 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
   const rawAccount=walletApi.accounts?.[0]||walletApi.w.accounts?.[0];
   const address=rawAccount?.address;
   if(!address) throw new Error('No account address found. Reconnect wallet.');
+  console.log('🔧 [3/5] Sender:',address.slice(0,16)+'...');
 
   // Build bytes ourselves — sidesteps class identity mismatch
   const suiClient=new SuiClient({url:getFullnodeUrl('mainnet')});
@@ -2253,15 +2268,19 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
   let txBytes;
   try{
     txBytes=await tx.build({client:suiClient});
+    console.log('🔧 [4/5] Tx built OK,',txBytes.length,'bytes');
   }catch(buildErr){
+    console.error('❌ tx.build() failed:', buildErr);
     throw new Error('Transaction build failed: '+(buildErr?.message??String(buildErr)));
   }
 
   const features=walletApi.w.features||{};
+  console.log('🔧 [5/5] Wallet features:', Object.keys(features).filter(k=>k.startsWith('sui:')).join(', '));
 
   // Strategy A — sui:signTransaction (v2) + manual execute via RPC
   const signOnlyFeat=features['sui:signTransaction'];
   if(signOnlyFeat?.signTransaction){
+    console.log('  → Trying Strategy A: sui:signTransaction...');
     try{
       const {bytes,signature}=await signOnlyFeat.signTransaction({
         transaction:tx,
@@ -2276,13 +2295,14 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
       console.log('✅ Executed via sui:signTransaction, digest:',result.digest);
       return result;
     }catch(err){
-      console.warn('sui:signTransaction path failed:',err?.message??err,'— trying fallback');
+      console.warn('  ⚠ Strategy A failed — type:',typeof err,'val:',err,'message:',err?.message);
     }
   }
 
   // Strategy B — sui:signAndExecuteTransaction (v2)
   const signExecFeat=features['sui:signAndExecuteTransaction'];
   if(signExecFeat?.signAndExecuteTransaction){
+    console.log('  → Trying Strategy B: sui:signAndExecuteTransaction...');
     const allAccounts=walletApi.w.accounts||[];
     const matchedAccount=allAccounts.find(a=>a.address===address)||rawAccount;
     try{
@@ -2294,12 +2314,13 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
       console.log('✅ Executed via sui:signAndExecuteTransaction');
       return result;
     }catch(err){
-      console.log('Slush rejection:',typeof err,err,err?Object.keys(err):'none');
-      throw new Error(err?.message??'Wallet rejected (no reason given)');
+      console.error('  ✕ Strategy B failed — type:',typeof err,'val:',err);
+      const msg=err?.message||(typeof err==='string'?err:null)||'Wallet rejected (no reason given)';
+      throw new Error(msg);
     }
   }
 
-  throw new Error('No supported signing feature found on wallet.');
+  throw new Error('No supported signing feature found on wallet. Available: '+Object.keys(features).join(', '));
 }
 
 document.getElementById('wallet-modal').addEventListener('click',e=>{
