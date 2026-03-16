@@ -2093,13 +2093,18 @@ async function connectWallet(){
   walletStatus('Looking for wallet...','#888');
   walletApi=null;
 
-  // Give Slush a moment to register if it hasn't yet
-  await new Promise(r=>setTimeout(r,200));
+  // Re-fire app-ready so Slush registers if it wasn't ready at page load
+  try{
+    const reg=window.getWallets?.();
+    if(reg) window.dispatchEvent(new CustomEvent('wallet-standard:app-ready',{detail:{register:reg.register}}));
+  }catch(e){}
+  await new Promise(r=>setTimeout(r,500));
 
   try{
     const reg=window.getWallets?.();
     if(reg){
       const list=typeof reg.get==='function'?reg.get():(reg.wallets||[]);
+      console.log('Registered wallets:', list.length, list.map(w=>w.name));
       if(list.length>0) return connectStandardWallet(list[0]);
     }
   }catch(e){}
