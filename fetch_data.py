@@ -23,13 +23,13 @@ RPC_ENDPOINTS = [
 ]
 
 BATCH      = 50
-DELAY      = 0.06
-DELAY_PAGE = 0.15
+DELAY      = 0.2
+DELAY_PAGE = 0.3
 
 # ── RPC ────────────────────────────────────────────────────────────────────────
 rpc_index = 0
 
-def rpc(method, params, retries=3):
+def rpc(method, params, retries=5):
     global rpc_index
     for attempt in range(retries):
         url = RPC_ENDPOINTS[rpc_index % len(RPC_ENDPOINTS)]
@@ -42,18 +42,18 @@ def rpc(method, params, retries=3):
                     raise ValueError(data["error"])
                 return data["result"]
         except urllib.error.HTTPError as e:
-            if e.code == 429:
+            if e.code in (429, 403):
                 wait = 2 ** (attempt + 1)
-                print(f"  Rate limited, waiting {wait}s...")
+                print(f"  Rate limited ({e.code}), waiting {wait}s...")
                 time.sleep(wait)
                 continue
             rpc_index += 1
             if attempt == retries - 1: raise
-            time.sleep(1)
+            time.sleep(3)
         except Exception:
             rpc_index += 1
             if attempt == retries - 1: raise
-            time.sleep(1)
+            time.sleep(3)
 
 def signed(v, neg):
     v = int(v)
