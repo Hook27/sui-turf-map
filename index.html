@@ -884,7 +884,7 @@ function drawMap(){
   const wx1=Math.ceil((W-panX)/(CELL*zoom))+minX+1;
   const wy0=Math.floor(maxY-(H-panY)/(CELL*zoom))-1;
   const wy1=Math.ceil(maxY-(-panY)/(CELL*zoom))+1;
-  if(zoom>0.8){
+  if(zoom>0.3){
     ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
     for(let x=Math.max(minX,wx0);x<=Math.min(maxX+1,wx1);x++){const sx=(x-minX)*cs+panX;ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,H);ctx.stroke();}
     for(let y=Math.max(minY,wy0);y<=Math.min(maxY+1,wy1);y++){const sy=(maxY-y)*cs+panY;ctx.beginPath();ctx.moveTo(0,sy);ctx.lineTo(W,sy);ctx.stroke();}
@@ -902,6 +902,14 @@ function drawMap(){
     else{col=markColor(t.pid,t.color);}
     if(routePath&&routePathMap&&!routePathMap.has(key)) ctx.globalAlpha=0.35;
     ctx.fillStyle=col;ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
+    // Garrison overlay — darken tile based on total defender count
+    const gc=(t.gH||0)+(t.gB||0)+(t.gE||0);
+    if(gc>0){
+      // Scale: 1-9 units = slight dark, 10-49 = medium, 50-99 = dark, 100+ = very dark
+      const alpha=Math.min(0.65, 0.15 + Math.log10(gc+1)*0.22);
+      ctx.fillStyle=`rgba(0,0,0,${alpha})`;
+      ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
+    }
     ctx.globalAlpha=1;
     if(t.isHQ&&zoom>1.5){ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font=`${Math.round(cs*0.6)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('\u2302',sx+cs/2,sy+cs/2);}
   }
