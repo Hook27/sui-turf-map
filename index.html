@@ -368,10 +368,10 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <div id="zoom-indicator">zoom ×1.0</div>
     <div id="garrison-legend">
       <div class="gl-title">Garrison</div>
-      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.15)"></div><span>1–9 units</span></div>
-      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.35)"></div><span>10–49 units</span></div>
-      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.50)"></div><span>50–99 units</span></div>
-      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.65)"></div><span>100+ units</span></div>
+      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.15)"></div><span>1–3 units</span></div>
+      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.35)"></div><span>4–6 units</span></div>
+      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.50)"></div><span>7–9 units</span></div>
+      <div class="gl-row"><div class="gl-swatch" style="background:rgba(0,0,0,0.65)"></div><span>10 units (max)</span></div>
     </div>
     <div id="tip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div><div class="tgar"></div></div>
     <div id="zoom-btns">
@@ -965,13 +965,19 @@ function drawMap(){
     }
     if(routePath&&routePathMap&&!routePathMap.has(key)) ctx.globalAlpha=0.35;
     ctx.fillStyle=col;ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
-    // Garrison overlay — darken tile based on total defender count
+    // Garrison overlay — darken tile based on total defender count (max 10)
     const gc=(t.gH||0)+(t.gB||0)+(t.gE||0);
     if(gc>0){
-      // Scale: 1-9 units = slight dark, 10-49 = medium, 50-99 = dark, 100+ = very dark
-      const alpha=Math.min(0.65, 0.15 + Math.log10(gc+1)*0.22);
+      const alpha=0.15+(gc/10)*0.5; // linear: 1=0.20, 5=0.40, 10=0.65
       ctx.fillStyle=`rgba(0,0,0,${alpha})`;
       ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
+      // Show count as number when zoomed in enough
+      if(zoom>2){
+        ctx.fillStyle='rgba(255,255,255,0.9)';
+        ctx.font=`bold ${Math.round(cs*0.35)}px var(--font-mono,monospace)`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(gc,sx+cs/2,sy+cs/2);
+      }
     }
     ctx.globalAlpha=1;
     if(t.isHQ&&zoom>1.5){ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font=`${Math.round(cs*0.6)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('\u2302',sx+cs/2,sy+cs/2);}
