@@ -486,11 +486,6 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
   <div id="refresh-box">
     <h2>⚡ Trigger data refresh</h2>
     <p>This triggers the GitHub Actions workflow to re-fetch all blockchain data. It runs in the background and takes about 10 minutes. The map will update automatically on next reload.</p>
-    <p>Enter your GitHub Personal Access Token (needs <code>workflow</code> scope):<br>
-    <a href="https://github.com/settings/tokens/new?scopes=workflow&description=SUI+Turf+Map" target="_blank" style="color:#378ADD;font-size:11px">Create token on GitHub →</a></p>
-    <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx">
-    <p style="font-size:11px;color:#555">Repository (owner/repo):</p>
-    <input type="text" id="gh-repo" placeholder="Hook27/sui-turf-map" value="Hook27/sui-turf-map">
     <div id="refresh-result"></div>
     <div class="modal-btns">
       <button onclick="closeRefreshModal()">Cancel</button>
@@ -1683,15 +1678,17 @@ function exportCSV(){
 function openRefreshModal(){document.getElementById('refresh-modal').classList.add('open');}
 function closeRefreshModal(){document.getElementById('refresh-modal').classList.remove('open');document.getElementById('refresh-result').textContent='';}
 async function triggerRefresh(){
-  const token=document.getElementById('gh-token').value.trim();
-  const repo=document.getElementById('gh-repo').value.trim();
   const el=document.getElementById('refresh-result');
-  if(!token||!repo){el.style.color='#E24B4A';el.textContent='Please fill in both fields.';return;}
   el.style.color='#888';el.textContent='Triggering workflow...';
   try{
-    const r=await fetch(`https://api.github.com/repos/${repo}/actions/workflows/update.yml/dispatches`,{
-      method:'POST',headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
-      body:JSON.stringify({ref:'main'})
+    const r=await fetch('https://api.github.com/repos/Hook27/sui-turf-map/dispatches',{
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer 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',
+        'Accept':'application/vnd.github.v3+json',
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({event_type:'refresh-map'})
     });
     if(r.status===204){el.style.color='#1D9E75';el.textContent='✓ Workflow started! Data will update in ~10 minutes.';}
     else{const d=await r.json();el.style.color='#E24B4A';el.textContent='Error '+r.status+': '+(d.message||'unknown');}
