@@ -207,7 +207,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #ticker-bar.visible{display:flex}
 #ticker-label{font-family:var(--font-bangers);font-size:13px;color:var(--v-gold);letter-spacing:1px;padding:0 10px;white-space:nowrap;flex-shrink:0;border-right:2px solid #2a2000;height:100%;display:flex;align-items:center}
 #ticker-track{flex:1;overflow:hidden;position:relative;height:100%}
-#ticker-inner{position:absolute;white-space:nowrap;font-family:var(--font-mono);font-size:10px;color:#888;top:50%;transform:translateY(-50%);will-change:transform}
+#ticker-inner{position:absolute;white-space:nowrap;font-family:var(--font-mono);font-size:10px;color:#888;top:50%;transform:translateY(-50%);will-change:transform;left:0}
 #ticker-inner:hover{--ticker-paused:1}
 .tk-gold{color:var(--v-gold)}
 .tk-green{color:var(--v-green)}
@@ -2085,7 +2085,7 @@ function startTicker(){
   inner.innerHTML=inner.innerHTML+inner.innerHTML;
 
   const trackW=track.offsetWidth;
-  const contentW=inner.scrollWidth/2; // half because we duplicated
+  const contentW=inner.scrollWidth/2;
   const speed=50; // pixels per second
   if(_tickerX===null) _tickerX=trackW;
 
@@ -2094,10 +2094,12 @@ function startTicker(){
     if(last===null) last=ts;
     const dt=(ts-last)/1000;
     last=ts;
-    if(!_tickerPaused) _tickerX-=speed*dt;
-    // Seamless reset: when first copy scrolled off, jump back
-    if(_tickerX<=-contentW) _tickerX+=contentW;
-    inner.style.left=_tickerX+'px';
+    if(!_tickerPaused){
+      _tickerX-=speed*dt;
+      if(_tickerX<=-contentW) _tickerX+=contentW;
+      // Use transform instead of left for GPU-accelerated rendering
+      inner.style.transform=`translateY(-50%) translateX(${_tickerX}px)`;
+    }
     _tickerRaf=requestAnimationFrame(tick);
   }
   if(_tickerRaf) cancelAnimationFrame(_tickerRaf);
@@ -2105,6 +2107,11 @@ function startTicker(){
 
   inner.addEventListener('mouseenter',()=>{_tickerPaused=true;});
   inner.addEventListener('mouseleave',()=>{_tickerPaused=false;});
+
+  // Pause ticker during map touch to reduce GPU load on mobile
+  const mapEl=document.getElementById('map');
+  mapEl.addEventListener('touchstart',()=>{_tickerPaused=true;},{passive:true});
+  mapEl.addEventListener('touchend',()=>{setTimeout(()=>{_tickerPaused=false;},200);},{passive:true});
 }
 
 function renderTopMovers(){
