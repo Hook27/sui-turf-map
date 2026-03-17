@@ -361,6 +361,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
   <div id="ticker-track">
     <div id="ticker-inner"></div>
   </div>
+  <button onclick="closeTicker()" style="background:transparent;border:none;color:#555;cursor:pointer;font-size:14px;padding:0 8px;line-height:1;margin-left:4px;box-shadow:none;flex-shrink:0" title="Close ticker">✕</button>
 </div>
 
 <!-- Timeline bar -->
@@ -2076,7 +2077,11 @@ function toggleBattleHistory(){
 // ── TICKER ───────────────────────────────────────────────────────────────────
 let _tickerX=null, _tickerRaf=null, _tickerPaused=false;
 
-function startTicker(){
+function closeTicker(){
+  if(_tickerRaf) cancelAnimationFrame(_tickerRaf);
+  _tickerRaf=null;
+  document.getElementById('ticker-bar').classList.remove('visible');
+}
   const track=document.getElementById('ticker-track');
   const inner=document.getElementById('ticker-inner');
   if(!track||!inner||!inner.innerHTML) return;
