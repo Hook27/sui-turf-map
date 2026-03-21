@@ -185,6 +185,17 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #report-content em{color:#b09040}
 #report-loading{padding:40px;text-align:center;color:#555;font-family:var(--font-mono);font-size:11px}
 
+@media print{
+  body > *:not(#report-print-frame){display:none!important}
+  #report-print-frame{display:block!important;position:fixed;inset:0;background:#fff;z-index:9999;overflow:auto;padding:32px 48px;font-family:Georgia,'Times New Roman',serif;font-size:13px;color:#111;line-height:1.85}
+  #report-print-frame h1{font-size:32px;text-align:center;margin-bottom:4px;text-transform:uppercase;letter-spacing:3px}
+  #report-print-frame h2{font-size:11px;text-align:center;margin-bottom:20px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:10px;color:#555}
+  #report-print-frame h3{font-size:16px;margin:16px 0 6px;text-transform:uppercase}
+  #report-print-frame p{margin-bottom:10px;text-align:justify}
+  #report-print-frame blockquote{border:1px solid #aaa;padding:12px 16px;margin:12px 0;font-style:italic;background:#f9f9f9}
+  #report-print-frame hr{border:none;border-top:1px solid #ccc;margin:16px 0}
+}
+
 /* ── REFRESH MODAL ── */
 #refresh-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:300;align-items:center;justify-content:center}
 #refresh-modal.open{display:flex}
@@ -559,6 +570,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
         <div id="report-head-meta">—</div>
       </div>
       <button id="report-close" onclick="closeReport()">✕</button>
+      <button onclick="printReport()" style="font-size:10px;padding:3px 10px;border-color:#4a3a0a;color:var(--v-gold);background:#0e0c07;box-shadow:2px 2px 0 #2a1a00;margin-right:6px">⬇ PDF</button>
     </div>
     <div id="report-content"><div id="report-loading">Loading report...</div></div>
   </div>
@@ -2798,6 +2810,20 @@ function openReport(){
   meta.textContent = `${fmt(start)} – ${fmt(end)} · ${weeklyReport.stats?.hq_captures??0} HQ raids · Generated ${new Date(weeklyReport.generated).toLocaleDateString('en-GB')}`;
   content.innerHTML = weeklyReport.html || '<p>No content.</p>';
   document.getElementById('report-modal').classList.add('open');
+}
+
+function printReport(){
+  if(!weeklyReport) return;
+  // Inject a temporary print frame with the report content
+  let frame = document.getElementById('report-print-frame');
+  if(!frame){
+    frame = document.createElement('div');
+    frame.id = 'report-print-frame';
+    frame.style.display = 'none';
+    document.body.appendChild(frame);
+  }
+  frame.innerHTML = weeklyReport.html || '';
+  window.print();
 }
 
 function closeReport(){
