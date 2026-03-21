@@ -230,10 +230,14 @@ MY_IDS = {
     "0xdb2b57ea07dae7acd91d56f4c5e20a077313abb50a9924f84529ef67030ab273",
 }
 
-def pid_color(pid):
+def pid_color(pid, tile_count=0):
     h = 0
     for c in pid: h = (h * 31 + ord(c)) & 0xFFFFFFFF
-    return f"hsl({(h % 300) + 30},60%,45%)"
+    hue = (h % 300) + 30
+    # Vary saturation and lightness slightly per player so nearby hues look distinct
+    sat = 55 + (h >> 8 & 0xF)        # 55–70 %
+    lig = 38 + (h >> 4 & 0xF)        # 38–53 %
+    return f"hsl({hue},{sat}%,{lig}%)"
 
 player_list = []
 pid_to_index = {}
@@ -249,7 +253,7 @@ for pid, count in sorted(owner_count.items(), key=lambda x: -x[1]):
         "inactive":p.get("isInactive", False),
         "tiles":   count,
         "me":      is_me,
-        "color":   "#7F77DD" if is_me else pid_color(pid),
+        "color":   "#7F77DD" if is_me else pid_color(pid, count),
     })
 
 compact_tiles = []
