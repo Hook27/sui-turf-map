@@ -387,8 +387,10 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 /* ── TOP 10 MODE ── */
 button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-gold);box-shadow:2.5px 2.5px 0 #3a2a00}
 
-/* ── COORDINATE DISPLAY IN TOOLTIP ── */
-#tip .tpos{color:#666;font-size:10px}
+/* ── GARRISON LEGEND ── */
+#garrison-legend{display:none;position:absolute;bottom:14px;left:14px;background:rgba(0,0,0,0.75);border:1px solid #333;padding:6px 10px;font-size:9px;font-family:var(--font-mono);color:#666;z-index:10;pointer-events:none}
+#garrison-legend.visible{display:block}
+#garrison-legend .gl-title{color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 
 /* ── ANALYSIS TABS ── */
 .an-tab{background:#0a0a0a;color:#555;cursor:pointer;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px;border-radius:0;border:2px solid #222}
@@ -407,7 +409,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 <body>
 
 <div id="toolbar">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#555;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.0</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#555;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.1</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh data</button>
   <div class="sep"></div>
@@ -465,6 +467,12 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     </div>
     <button id="sidebar-toggle" onclick="toggleSidebar()" title="Player list">☰</button>
     <div id="touch-tooltip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div><div class="tgar"></div></div>
+    <div id="garrison-legend">
+      <div class="gl-title">Garrison</div>
+      <div class="gl-row"><span style="display:inline-block;width:8px;height:8px;background:#ff8483;margin-right:4px"></span>Enforcer</div>
+      <div class="gl-row"><span style="display:inline-block;width:8px;height:8px;background:#89c6ff;margin-right:4px"></span>Bouncer</div>
+      <div class="gl-row"><span style="display:inline-block;width:8px;height:8px;background:#aaa;margin-right:4px"></span>Henchman</div>
+    </div>
     <div id="route-panel">
       <h3>🗺 Shortest route</h3>
       <div class="route-player">
@@ -842,12 +850,16 @@ async function loadData(url){
       tileMap.set(`${t.x},${t.y}`,tiles.length-1);
     }
     if(tiles.length){
-      minX=Math.min(...tiles.map(t=>t.x)); maxX=Math.max(...tiles.map(t=>t.x));
-      minY=Math.min(...tiles.map(t=>t.y)); maxY=Math.max(...tiles.map(t=>t.y));
+      minX=Infinity; maxX=-Infinity; minY=Infinity; maxY=-Infinity;
+      for(const t of tiles){
+        if(t.x<minX) minX=t.x; if(t.x>maxX) maxX=t.x;
+        if(t.y<minY) minY=t.y; if(t.y>maxY) maxY=t.y;
+      }
     }
 
     computeNeighborMap();
     buildGarrisonIndex();
+    updateGarrisonLegend();
     updateStats();
     filterPlayers();
     document.getElementById('csvBtn').style.display='';
@@ -902,8 +914,8 @@ function findRoute(pidA,pidB){
   const tilesA=tiles.filter(t=>t.pid===pidA);
   const tilesB=tiles.filter(t=>t.pid===pidB);
   if(!tilesA.length||!tilesB.length) return null;
-  const bx0=Math.min(...tilesB.map(t=>t.x)),bx1=Math.max(...tilesB.map(t=>t.x));
-  const by0=Math.min(...tilesB.map(t=>t.y)),by1=Math.max(...tilesB.map(t=>t.y));
+  let bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
+  for(const t of tilesB){if(t.x<bx0)bx0=t.x;if(t.x>bx1)bx1=t.x;if(t.y<by0)by0=t.y;if(t.y>by1)by1=t.y;}
   function h(x,y){return Math.max(Math.max(0,bx0-x,x-bx1),Math.max(0,by0-y,y-by1));}
   const cxB=(bx0+bx1)/2,cyB=(by0+by1)/2;
   let st=tilesA[0],bd=Infinity;
@@ -1014,9 +1026,9 @@ function clearRoute(){
 
 function zoomToRoute(){
   if(!routePath||!routePath.length) return;
-  const xs=routePath.map(s=>s.x),ys=routePath.map(s=>s.y);
+  let rx0=Infinity,rx1=-Infinity,ry0=Infinity,ry1=-Infinity;
+  for(const s of routePath){if(s.x<rx0)rx0=s.x;if(s.x>rx1)rx1=s.x;if(s.y<ry0)ry0=s.y;if(s.y>ry1)ry1=s.y;}
   const cv=document.getElementById('map');
-  const rx0=Math.min(...xs),rx1=Math.max(...xs),ry0=Math.min(...ys),ry1=Math.max(...ys);
   zoom=Math.max(0.5,Math.min(20,Math.min(cv.width/((rx1-rx0+10)*CELL),cv.height/((ry1-ry0+10)*CELL))));
   panX=cv.width/2-((rx0+rx1)/2-minX)*CELL*zoom;
   panY=cv.height/2-(maxY-(ry0+ry1)/2)*CELL*zoom;
@@ -1600,8 +1612,8 @@ function jumpToPlayer(pid){
   if(!tiles.length) return;
   if(pid===selectedPid) return; // already viewing this player, do nothing
   const pt=tiles.filter(t=>t.pid===pid);if(!pt.length) return;
-  const xs=pt.map(t=>t.x),ys=pt.map(t=>t.y);
-  const bx0=Math.min(...xs),bx1=Math.max(...xs),by0=Math.min(...ys),by1=Math.max(...ys);
+  let bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
+  for(const t of pt){if(t.x<bx0)bx0=t.x;if(t.x>bx1)bx1=t.x;if(t.y<by0)by0=t.y;if(t.y>by1)by1=t.y;}
   const cv=document.getElementById('map');
   const fitZoom=Math.max(0.2,Math.min(20,Math.min(cv.width/((bx1-bx0+7)*CELL),cv.height/((by1-by0+7)*CELL))));
   zoom=Math.max(zoom,fitZoom);
@@ -1611,7 +1623,7 @@ function jumpToPlayer(pid){
   // Enable ghost button and recompute if mode is active
   const ghostBtn=document.getElementById('ghost-btn');
   ghostBtn.disabled=false;
-  if(ghostMode){ computeGhostTiles(); }
+  if(ghostMode){ computeGhostTiles(); _startGhostLoop(); }
   drawMap();drawMinimap();
   setTimeout(()=>{highlightPid=null;drawMap();},2000);
 }
@@ -1660,6 +1672,12 @@ function buildGarrisonIndex(){
   for(const t of tiles){
     if(t.gH||t.gB||t.gE) garrisonedPids.add(t.pid);
   }
+}
+
+// ── GARRISON LEGEND ───────────────────────────────────────────────────────
+function updateGarrisonLegend(){
+  const hasGar=tiles.some(t=>t.gH||t.gB||t.gE);
+  document.getElementById('garrison-legend').classList.toggle('visible', hasGar);
 }
 
 function toggleMark(pid, type, e){
@@ -2033,6 +2051,16 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('#export-dropdown')) closeExportMenu();
 });
 
+// ── SHARED UTILS ─────────────────────────────────────────────────────────────
+function tileOwnerMap(d){
+  const m=new Map();
+  for(const t of (d.tiles||[])){
+    const p=d.players[t.p];
+    if(p) m.set(`${t.x},${t.y}`,{pid:p.pid,name:p.name,color:p.color});
+  }
+  return m;
+}
+
 // ── SNAPSHOT ANALYSIS ────────────────────────────────────────────────────────
 let analysisData = null;   // {changes, snapA, snapB}
 let analysisFilter = 'all';
@@ -2064,14 +2092,6 @@ async function openAnalysis(){
     ]);
 
     // Build tile ownership maps: "x,y" → pid
-    function tileOwnerMap(d){
-      const m = new Map();
-      for(const t of (d.tiles||[])){
-        const p = d.players[t.p];
-        if(p) m.set(`${t.x},${t.y}`, {pid:p.pid, name:p.name, color:p.color});
-      }
-      return m;
-    }
     const mapA = tileOwnerMap(dA);
     const mapB = tileOwnerMap(dB);
 
@@ -2220,11 +2240,6 @@ async function loadBattleHistory(){
       fetch(oldest.file+'?t='+Date.now()).then(r=>r.json()),
       fetch(newest.file+'?t='+Date.now()).then(r=>r.json()),
     ]);
-    function tileOwnerMap(d){
-      const m=new Map();
-      for(const t of (d.tiles||[])){const p=d.players[t.p];if(p) m.set(`${t.x},${t.y}`,{pid:p.pid,name:p.name,color:p.color});}
-      return m;
-    }
     const mapOld=tileOwnerMap(dOld),mapNew=tileOwnerMap(dNew);
     const changedTiles=[];
     const playerChanges=new Map();
@@ -2775,6 +2790,18 @@ async function buildAndSignTx(calls, dvdId, profileId, hqOid){
     throw new Error('Transaction build failed: '+(buildErr?.message??String(buildErr)));
   }
 
+  // Dry-run to catch errors before committing gas
+  try{
+    const dryRun=await suiClient.dryRunTransactionBlock({transactionBlock:btoa(String.fromCharCode(...txBytes))});
+    const effects=dryRun?.effects;
+    if(effects?.status?.status==='failure'){
+      throw new Error('Dry-run failed: '+(effects.status.error||'unknown error'));
+    }
+  }catch(dryErr){
+    if(dryErr.message.startsWith('Dry-run failed:')) throw dryErr;
+    console.warn('Dry-run skipped (non-fatal):',dryErr.message);
+  }
+
   const features=walletApi.w.features||{};
 
   // Strategy A — sui:signTransaction (v2) + manual execute via RPC
@@ -2838,8 +2865,8 @@ function updateRuler(){
 
   // X ruler
   const rx=document.getElementById('ruler-x');
-  const wx0=Math.ceil((0-panX)/(cs)+minX/1);
-  const wx1=Math.floor((W-panX)/(cs)+minX/1);
+  const wx0=Math.ceil((0-panX)/cs+minX);
+  const wx1=Math.floor((W-panX)/cs+minX);
   const xStart=Math.ceil((Math.floor((0-panX)/cs)+minX)/step)*step;
   let xHtml='';
   for(let wx=xStart;wx<=(Math.floor((W-panX)/cs)+minX);wx+=step){
@@ -2900,19 +2927,23 @@ function updateZoomIndicator(){
 
 // ── PLAYER HISTORY ────────────────────────────────────────────────────────────
 let playerHistory = null;
+let playerHistoryLoaded = false; // track whether load was attempted
 
 async function loadPlayerHistory(){
   try{
     const r = await fetch('player_history.json?t='+Date.now());
     if(r.ok) playerHistory = await r.json();
-  }catch(e){}
+  }catch(e){ /* no history data available */ }
+  playerHistoryLoaded = true;
 }
 
 function renderGarrisonHistory(){
   const el = document.getElementById('gar-history-chart');
   if(!garrisonPid){ el.innerHTML='<div id="gar-history-empty">No player selected.</div>'; return; }
   if(!playerHistory){
-    el.innerHTML='<div id="gar-history-empty">History data not available yet.<br>Will appear after next data refresh.</div>';
+    el.innerHTML=playerHistoryLoaded
+      ?'<div id="gar-history-empty">No history data available for this player.<br>Will appear after next data refresh.</div>'
+      :'<div id="gar-history-empty">Loading history data...</div>';
     return;
   }
   const counts = playerHistory.players?.[garrisonPid];
@@ -3022,14 +3053,28 @@ function renderGarrisonRaids(){
 }
 let ghostMode = false;
 let ghostTiles = []; // [{x,y,pid,name,dist}] closest ghost turfs
+let _ghostRaf = 0;   // dedicated rAF handle for ghost pulse animation
 
 function toggleGhostMode(){
   ghostMode = !ghostMode;
   const btn = document.getElementById('ghost-btn');
   btn.classList.toggle('ghost-active', ghostMode);
-  if(ghostMode) computeGhostTiles();
-  else ghostTiles = [];
+  if(ghostMode){ computeGhostTiles(); _startGhostLoop(); }
+  else{ ghostTiles = []; _stopGhostLoop(); }
   drawMap();
+}
+
+function _startGhostLoop(){
+  if(_ghostRaf) return;
+  function loop(){
+    if(!ghostMode || !ghostTiles.length){ _ghostRaf=0; return; }
+    drawMap();
+    _ghostRaf = requestAnimationFrame(loop);
+  }
+  _ghostRaf = requestAnimationFrame(loop);
+}
+function _stopGhostLoop(){
+  if(_ghostRaf){ cancelAnimationFrame(_ghostRaf); _ghostRaf=0; }
 }
 
 function computeGhostTiles(){
@@ -3053,7 +3098,7 @@ function computeGhostTiles(){
   const scored = ghosts.map(g => {
     let minDist = Infinity;
     for(const m of myTiles){
-      const d = Math.abs(g.x - m.x) + Math.abs(g.y - m.y);
+      const d = Math.max(Math.abs(g.x - m.x), Math.abs(g.y - m.y));
       if(d < minDist) minDist = d;
     }
     return {x:g.x, y:g.y, pid:g.pid, name:pidName[g.pid]||'', dist:minDist};
@@ -3091,7 +3136,6 @@ function drawGhostTiles(ctx){
       ctx.fillText(i+1, sx + cs/2, sy + cs/2);
     }
   });
-  requestAnimationFrame(()=>drawMap());
 }
 // Expose drawGhostTiles to be called from drawMap
 
@@ -3116,8 +3160,27 @@ function openReport(){
   const end     = new Date(weeklyReport.period_end);
   const fmt     = d => d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
   meta.textContent = `${fmt(start)} – ${fmt(end)} · ${weeklyReport.stats?.hq_captures??0} HQ raids · Generated ${new Date(weeklyReport.generated).toLocaleDateString('en-GB')}`;
-  content.innerHTML = weeklyReport.html || '<p>No content.</p>';
+  content.innerHTML = sanitizeReportHTML(weeklyReport.html || '<p>No content.</p>');
   document.getElementById('report-modal').classList.add('open');
+}
+
+// Strip scripts, iframes, event handlers, and dangerous attributes from report HTML
+function sanitizeReportHTML(html){
+  const div=document.createElement('div');
+  div.innerHTML=html;
+  // Remove dangerous elements
+  div.querySelectorAll('script,iframe,object,embed,form,link,style,base,meta').forEach(el=>el.remove());
+  // Remove event handler attributes and javascript: URLs
+  div.querySelectorAll('*').forEach(el=>{
+    for(const attr of [...el.attributes]){
+      if(attr.name.startsWith('on')||
+         (attr.name==='href'&&attr.value.trim().toLowerCase().startsWith('javascript:'))||
+         (attr.name==='src'&&attr.value.trim().toLowerCase().startsWith('javascript:'))){
+        el.removeAttribute(attr.name);
+      }
+    }
+  });
+  return div.innerHTML;
 }
 
 function printReport(){
@@ -3130,7 +3193,7 @@ function printReport(){
     frame.style.display = 'none';
     document.body.appendChild(frame);
   }
-  frame.innerHTML = weeklyReport.html || '';
+  frame.innerHTML = sanitizeReportHTML(weeklyReport.html || '');
   window.print();
 }
 
