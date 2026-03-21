@@ -104,6 +104,41 @@ for c in week_captures:
         hq_loss_count.get(c["prev_name"] or c["prev_pid"][:8], 0) + 1
 top_hq_victims = sorted(hq_loss_count.items(), key=lambda x: -x[1])[:5]
 
+# ── RAID STATS THIS WEEK ──────────────────────────────────────────────────────
+RAIDS_FILE = "raids.json"
+try:
+    with open(RAIDS_FILE, encoding="utf-8") as f:
+        all_raids = json.load(f)
+except Exception:
+    all_raids = []
+
+week_raids = [
+    r for r in all_raids
+    if datetime.fromisoformat(r["timestamp"]) >= cutoff
+]
+
+# Top raiders by number of raids
+raid_count = {}
+for r in week_raids:
+    name = r.get("attacker_name") or r.get("attacker_pid","")[:8]
+    raid_count[name] = raid_count.get(name, 0) + 1
+top_raiders = sorted(raid_count.items(), key=lambda x: -x[1])[:5]
+
+# Most raided victims
+victim_count = {}
+for r in week_raids:
+    name = r.get("defender_name") or r.get("defender_pid","")[:8]
+    victim_count[name] = victim_count.get(name, 0) + 1
+top_victims = sorted(victim_count.items(), key=lambda x: -x[1])[:5]
+
+# Total loot this week
+total_cash    = sum(r.get("cash", 0)    for r in week_raids)
+total_weapons = sum(r.get("weapons", 0) for r in week_raids)
+total_xp      = sum(r.get("xp", 0)     for r in week_raids)
+
+# Most lucrative single raid (by cash + weapons combined)
+biggest_raid = max(week_raids, key=lambda r: r.get("cash",0)+r.get("weapons",0), default=None)
+
 # ── BUILD STATS SUMMARY ───────────────────────────────────────────────────────
 def fmt_list(items, key_name="name", val_name="net", prefix="+"):
     lines = []
@@ -113,6 +148,22 @@ def fmt_list(items, key_name="name", val_name="net", prefix="+"):
         sign = "+" if val > 0 else ""
         lines.append(f"  - {name}: {sign}{val} turfs")
     return "\n".join(lines) if lines else "  (none)"
+
+raid_section = f"""
+RAIDS THIS WEEK: {len(week_raids)} total
+- Total cash looted:    {total_cash:,.2f}
+- Total weapons looted: {total_weapons:,.2f}
+- Total XP looted:      {total_xp:,.2f}
+
+MOST ACTIVE RAIDERS:
+{chr(10).join(f"  - {name}: {cnt} raid(s)" for name, cnt in top_raiders) or "  (none)"}
+
+MOST RAIDED PLAYERS:
+{chr(10).join(f"  - {name}: raided {cnt} time(s)" for name, cnt in top_victims) or "  (none)"}
+
+BIGGEST SINGLE RAID:
+{f"  - {biggest_raid['attacker_name'] or '[unknown]'} raided {biggest_raid['defender_name'] or '[unknown]'} — ${biggest_raid['cash']:.2f} cash, {biggest_raid['weapons']:.2f} arms, {biggest_raid['xp']:.2f} XP" if biggest_raid else "  (none)"}
+""".strip()
 
 stats_text = f"""
 WEEK: {dt_oldest.strftime('%B %d')} – {dt_newest.strftime('%B %d, %Y')}
@@ -145,6 +196,8 @@ MOST FEARED ATTACKERS (HQ captures):
 
 MOST TARGETED BOSSES (HQ losses):
 {chr(10).join(f"  - {name}: lost HQ {cnt} time(s)" for name, cnt in top_hq_victims) or "  (none)"}
+
+{raid_section}
 """.strip()
 
 print("Stats computed. Calling Anthropic API...")
@@ -371,6 +424,8 @@ report = {
         "total_tiles_start": total_old,
         "total_tiles_end":   total_new,
         "hq_captures":       len(week_captures),
+        "raids":             len(week_raids),
+        "total_cash_looted": round(total_cash, 2),
         "newcomers":         len(newcomers),
         "vanished":          len(vanished),
         "top_gainer":        gainers[0]["name"] if gainers else None,
