@@ -339,8 +339,8 @@ for p in player_list:
 print(f"  Done — {sum(1 for p in player_list if 'lcd' in p)} players with change data")
 
 # ── HQ CAPTURE TRACKING ───────────────────────────────────────────────────────
-# Compare current HQ register against previous snapshots to detect captured HQs.
-# Stores hq_captures.json: list of {oid, prev_pid, new_pid, timestamp}
+# Scan all consecutive snapshot pairs to detect HQ ownership changes.
+# This catches captures that happened between any two snapshots, not just the last two.
 print("Computing HQ captures...")
 HQ_CAPTURES_FILE = "hq_captures.json"
 try:
@@ -348,64 +348,66 @@ try:
 except Exception:
     existing_captures = []
 
-# Load previous snapshot's HQ register (most recent = index 0, since new snapshot not yet written)
-prev_hq_register = {}
-if all_snaps_sorted:
+# Build set of already-known capture keys to avoid duplicates
+known_keys = {f"{c['oid']}_{c['timestamp']}" for c in existing_captures}
+
+# Load all snapshots oldest-first that have a hq_register
+snaps_with_hq = []
+for snap_path in sorted(glob.glob(f"{SNAPSHOTS_DIR}/data_*.json")):
+    basename = os.path.basename(snap_path)
+    ts_str = basename[5:-5]
     try:
-        prev_data = json.loads(open(all_snaps_sorted[0], encoding="utf-8").read())
-        prev_hq_register = prev_data.get("hq_register", {})
-        print(f"  Previous snapshot: {os.path.basename(all_snaps_sorted[0])} — {len(prev_hq_register)} HQ entries")
-    except Exception as e:
-        print(f"  Could not load previous snapshot: {e}")
-else:
-    print("  No previous snapshots found")
+        dt = datetime.strptime(ts_str, "%Y-%m-%d_%H%M").replace(tzinfo=timezone.utc)
+    except ValueError:
+        continue
+    try:
+        snap_data = json.loads(open(snap_path, encoding="utf-8").read())
+        hq_reg = snap_data.get("hq_register", {})
+        if hq_reg:
+            snaps_with_hq.append((dt, hq_reg, {p["pid"]: p.get("name","") for p in snap_data.get("players",[])}))
+    except Exception:
+        continue
 
-print(f"  Current HQ register: {len(hq_register)} entries")
+print(f"  Snapshots with hq_register: {len(snaps_with_hq)}")
 
-# Detect changes: same OID, different owner
-new_captures = []
+# Also add current run as the latest entry
 pid_to_name = {p["pid"]: p.get("name","") for p in player_list}
-# Also build from prev snapshot players
-try:
-    prev_players = {p["pid"]: p.get("name","") for p in prev_data.get("players",[])}
-except Exception:
-    prev_players = {}
+snaps_with_hq.append((now_utc, hq_register, pid_to_name))
 
-for oid, new_owner in hq_register.items():
-    prev_owner = prev_hq_register.get(oid)
-    if prev_owner and prev_owner != new_owner:
-        new_captures.append({
-            "oid":       oid,
-            "prev_pid":  prev_owner,
-            "prev_name": prev_players.get(prev_owner, ""),
-            "new_pid":   new_owner,
-            "new_name":  pid_to_name.get(new_owner, ""),
-            "timestamp": now_utc.isoformat(),
-        })
-
-# Debug: show a sample comparison to verify matching
-sample = list(hq_register.items())[:3]
-for oid, new_owner in sample:
-    prev_owner = prev_hq_register.get(oid, "NOT FOUND")
-    print(f"  Sample OID {oid[:16]}... prev={prev_owner[:16] if prev_owner != 'NOT FOUND' else 'NOT FOUND'} new={new_owner[:16]}")
+# Compare each consecutive pair
+new_captures = []
+for i in range(1, len(snaps_with_hq)):
+    dt_prev, reg_prev, names_prev = snaps_with_hq[i-1]
+    dt_curr, reg_curr, names_curr = snaps_with_hq[i]
+    ts_curr = dt_curr.isoformat()
+    for oid, new_owner in reg_curr.items():
+        prev_owner = reg_prev.get(oid)
+        if prev_owner and prev_owner != new_owner:
+            key = f"{oid}_{ts_curr}"
+            if key not in known_keys:
+                new_captures.append({
+                    "oid":       oid,
+                    "prev_pid":  prev_owner,
+                    "prev_name": names_prev.get(prev_owner, ""),
+                    "new_pid":   new_owner,
+                    "new_name":  names_curr.get(new_owner, ""),
+                    "timestamp": ts_curr,
+                })
+                known_keys.add(key)
 
 if new_captures:
     print(f"  {len(new_captures)} new HQ captures detected!")
+else:
+    print(f"  No new HQ captures detected")
 
-# Merge with existing, keep last 500, deduplicate by oid+timestamp
+# Merge, sort by timestamp, keep last 500
 all_captures = existing_captures + new_captures
-seen = set()
-deduped = []
-for c in reversed(all_captures):
-    key = f"{c['oid']}_{c['timestamp']}"
-    if key not in seen:
-        seen.add(key)
-        deduped.append(c)
-deduped = list(reversed(deduped))[-500:]
+all_captures.sort(key=lambda c: c["timestamp"])
+all_captures = all_captures[-500:]
 
 with open(HQ_CAPTURES_FILE, "w", encoding="utf-8") as f:
-    json.dump(deduped, f, separators=(",", ":"), ensure_ascii=False)
-print(f"  hq_captures.json updated ({len(deduped)} total captures)")
+    json.dump(all_captures, f, separators=(",", ":"), ensure_ascii=False)
+print(f"  hq_captures.json updated ({len(all_captures)} total captures)")
 
 output_json = json.dumps(output, separators=(",", ":"), ensure_ascii=False)
 size_kb = len(output_json) / 1024
