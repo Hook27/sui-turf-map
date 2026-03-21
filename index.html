@@ -2987,8 +2987,35 @@ function computeGhostTiles(){
   ghostTiles = scored.slice(0, 20);
 }
 
-function drawGhostTiles(ctx){\n  if(!ghostMode || !ghostTiles.length) return;\n  const cs = CELL * zoom;\n  const now = performance.now();\n  ghostTiles.forEach((g, i) => {\n    const sx = (g.x - minX) * cs + panX;\n    const sy = (maxY - g.y) * cs + panY;\n    if(sx < -cs || sx > ctx.canvas.width + cs) return;\n    if(sy < -cs || sy > ctx.canvas.height + cs) return;\n\n    // Pulsing border — top 5 pulse faster and brighter\n    const speed = i < 5 ? 1800 : 2800;\n    const pulse = 0.5 + 0.5 * Math.sin(now / speed * Math.PI * 2);\n    const baseAlpha = i < 5 ? 0.9 : i < 10 ? 0.65 : 0.4;\n    const alpha = baseAlpha * (0.6 + 0.4 * pulse);\n    const bw = Math.max(1.5, cs * 0.14);\n\n    // Subtle fill so the tile is visible even at low zoom\n    ctx.fillStyle = `rgba(111,255,169,${alpha * 0.18})`;\n    ctx.fillRect(sx, sy, cs, cs);\n\n    // Bright border\n    ctx.strokeStyle = `rgba(111,255,169,${alpha})`;\n    ctx.lineWidth = bw;\n    ctx.strokeRect(sx + bw/2, sy + bw/2, cs - bw, cs - bw);\n\n    // Rank number for top 5\n    if(i < 5 && cs >= 14){\n      ctx.fillStyle = `rgba(111,255,169,${alpha})`;\n      ctx.font = `bold ${Math.min(10, cs*0.45)}px monospace`;\n      ctx.textAlign = 'center';\n      ctx.textBaseline = 'middle';\n      ctx.fillText(i+1, sx + cs/2, sy + cs/2);\n    }\n  });\n  // Schedule redraw for pulse animation\n  requestAnimationFrame(()=>drawMap());\n}
-
+function drawGhostTiles(ctx){
+  if(!ghostMode || !ghostTiles.length) return;
+  const cs = CELL * zoom;
+  const now = performance.now();
+  ghostTiles.forEach((g, i) => {
+    const sx = (g.x - minX) * cs + panX;
+    const sy = (maxY - g.y) * cs + panY;
+    if(sx < -cs || sx > ctx.canvas.width + cs) return;
+    if(sy < -cs || sy > ctx.canvas.height + cs) return;
+    const speed = i < 5 ? 1800 : 2800;
+    const pulse = 0.5 + 0.5 * Math.sin(now / speed * Math.PI * 2);
+    const baseAlpha = i < 5 ? 0.9 : i < 10 ? 0.65 : 0.4;
+    const alpha = baseAlpha * (0.6 + 0.4 * pulse);
+    const bw = Math.max(1.5, cs * 0.14);
+    ctx.fillStyle = `rgba(111,255,169,${alpha * 0.18})`;
+    ctx.fillRect(sx, sy, cs, cs);
+    ctx.strokeStyle = `rgba(111,255,169,${alpha})`;
+    ctx.lineWidth = bw;
+    ctx.strokeRect(sx + bw/2, sy + bw/2, cs - bw, cs - bw);
+    if(i < 5 && cs >= 14){
+      ctx.fillStyle = `rgba(111,255,169,${alpha})`;
+      ctx.font = `bold ${Math.min(10, cs*0.45)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(i+1, sx + cs/2, sy + cs/2);
+    }
+  });
+  requestAnimationFrame(()=>drawMap());
+}
 // Expose drawGhostTiles to be called from drawMap
 
 // ── WEEKLY REPORT ─────────────────────────────────────────────────────────────
