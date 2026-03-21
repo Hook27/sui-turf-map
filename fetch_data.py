@@ -519,10 +519,10 @@ RAIDS_FILE  = "raids.json"
 MAX_RAIDS   = 500
 # Exact event type addresses from on-chain inspection
 RAID_EVENT_TYPES = [
-    # Primary: RaidEvent — attacker/defender names, cash, weapon, timestamp
+    # Primary: RaidEvent — attacker/defender names, cash, weapon
     "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::RaidEvent",
-    # Fallback: RaidSearchEvent — also has XP and defender_turf
-    "0x2fcf76003b9933066d87b82fe852cbd1a125322acef8976336035409d5cae6d8::game_events::RaidSearchEvent",
+    # XP source: SimulationResultEvent — has raided_resources {cash, weapon, xp}
+    "0x63081c5dd824a49289b6557d9f9bcf8613fe801e89dbad728616348a58b4b40a::ibattle::SimulationResultEvent",
 ]
 
 try:
@@ -536,6 +536,34 @@ existing_raids = [r for r in existing_raids if r.get("cash", 0) <= 1_000_000 and
 
 known_digests = {r["digest"] for r in existing_raids if r.get("digest")}
 
+# ── XP BACKFILL ──────────────────────────────────────────────────────────────
+# For existing entries where xp=0, fetch the TX events directly to retrieve XP
+# from SimulationResultEvent (which has raided_resources.xp).
+RAID_SEARCH_TYPE = "0x63081c5dd824a49289b6557d9f9bcf8613fe801e89dbad728616348a58b4b40a::ibattle::SimulationResultEvent"
+SCALE = 18446744073709551616  # 2^64
+
+needs_xp = [r for r in existing_raids if r.get("xp", 0) == 0 and r.get("digest")]
+if needs_xp:
+    print(f"  Backfilling XP for {len(needs_xp)} entries...")
+    backfilled = 0
+    for r in needs_xp:
+        try:
+            tx = rpc("sui_getTransactionBlock", [r["digest"], {"showEvents": True}])
+            for ev in (tx.get("events") or []):
+                if ev.get("type") == RAID_SEARCH_TYPE:
+                    parsed = ev.get("parsedJson") or {}
+                    res    = parsed.get("raided_resources") or {}
+                    raw_xp = int(res.get("xp", 0) or 0)
+                    if raw_xp > 0:
+                        r["xp"] = raw_xp / SCALE
+                        backfilled += 1
+                    break
+            time.sleep(DELAY)
+        except Exception as e:
+            print(f"    Warning: backfill failed for {r['digest'][:16]}: {e}")
+            continue
+    print(f"  XP backfilled for {backfilled} entries")
+
 def parse_raid_event(ev):
     """Extract raid fields from a raw SUI event dict."""
     parsed = ev.get("parsedJson") or ev.get("parsed_json") or {}
@@ -547,7 +575,6 @@ def parse_raid_event(ev):
         ts = now_utc.isoformat()
 
     # Values are stored as fixed-point integers scaled by 2^64
-    SCALE = 18446744073709551616  # 2^64
     res = parsed.get("raided_resources") or {}
     raw_cash   = int(parsed.get("raided_cash",   res.get("cash",   0)) or 0)
     raw_weapon = int(parsed.get("raided_weapon", res.get("weapon", 0)) or 0)
@@ -576,7 +603,7 @@ def parse_raid_event(ev):
 new_raids = []
 
 # Fetch all event types and merge results.
-# RaidEvent has cash/weapon; RaidSearchEvent has the same tx but also XP.
+# RaidEvent has cash/weapon; SimulationResultEvent has the same tx but also XP.
 # We merge by tx digest so the final entry has all three values.
 new_raids_by_digest = {}
 
