@@ -624,5 +624,4 @@ print(f"  Players:   {len(player_list)}")
 print(f"  Tiles:     {len(compact_tiles)}")
 print(f"  Size:      {size_kb:.0f} KB")
 print(f"  Snapshots: {len(history_entries)} stored (max {MAX_SNAPSHOTS})")
--e 
 print(f"\nDone!")
