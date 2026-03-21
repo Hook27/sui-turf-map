@@ -517,12 +517,12 @@ print("Fetching raid events...")
 
 RAIDS_FILE  = "raids.json"
 MAX_RAIDS   = 500
-GAME_PKG    = "0x54a96d233f754afe62ad0e8b600b977d3f819be8b8c125391d135c3a4419332e"
-# Try both known event type names — use whichever returns results
+# Exact event type addresses from on-chain inspection
 RAID_EVENT_TYPES = [
-    f"{GAME_PKG}::game_events::RaidBattleEvent",
-    f"{GAME_PKG}::game_events::RaidEvent",
-    f"{GAME_PKG}::game_events::RaidResultEvent",
+    # Primary: RaidEvent — attacker/defender names, cash, weapon, timestamp
+    "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::RaidEvent",
+    # Fallback: RaidSearchEvent — also has XP and defender_turf
+    "0x2fcf76003b9933066d87b82fe852cbd1a125322acef8976336035409d5cae6d8::game_events::RaidSearchEvent",
 ]
 
 try:
@@ -534,33 +534,37 @@ known_digests = {r["digest"] for r in existing_raids if r.get("digest")}
 
 def parse_raid_event(ev):
     """Extract raid fields from a raw SUI event dict."""
-    parsed   = ev.get("parsedJson") or ev.get("parsed_json") or {}
-    tx       = ev.get("id", {}).get("txDigest") or ev.get("txDigest") or ""
-    ts_ms    = ev.get("timestampMs") or ev.get("timestamp_ms")
+    parsed = ev.get("parsedJson") or ev.get("parsed_json") or {}
+    tx     = ev.get("id", {}).get("txDigest") or ev.get("txDigest") or ""
+    ts_ms  = ev.get("timestampMs") or ev.get("timestamp_ms") or parsed.get("timestamp")
     if ts_ms:
         ts = datetime.fromtimestamp(int(ts_ms)/1000, tz=timezone.utc).isoformat()
     else:
         ts = now_utc.isoformat()
 
-    # Resource fields — handle both nested and flat layouts
-    res = parsed.get("raided_resources") or parsed.get("loot") or {}
-    if isinstance(res, dict):
-        cash    = int(res.get("cash",    res.get("coins", 0)) or 0)
-        weapons = int(res.get("weapons", res.get("arms",  0)) or 0)
-        xp      = int(res.get("xp",     res.get("exp",   0)) or 0)
-    else:
-        cash = weapons = xp = 0
+    # RaidEvent: flat fields raided_cash / raided_weapon
+    # RaidSearchEvent: nested raided_resources {cash, weapon, xp}
+    res = parsed.get("raided_resources") or {}
+    raw_cash   = int(parsed.get("raided_cash",   res.get("cash",   0)) or 0)
+    raw_weapon = int(parsed.get("raided_weapon", res.get("weapon", 0)) or 0)
+    raw_xp     = int(res.get("xp", 0) or 0)
 
-    attacker_pid  = parsed.get("attacker_id")  or parsed.get("attacker_pid")  or ""
+    # Values are stored as internal u64/u128 — cap at a reasonable display max
+    # to guard against overflow sentinel values (2^63 * 1000 etc.)
+    MAX_DISPLAY = 10_000_000_000  # 10 billion; anything above is likely a sentinel
+    cash    = min(raw_cash,   MAX_DISPLAY)
+    weapons = min(raw_weapon, MAX_DISPLAY)
+    xp      = min(raw_xp,     MAX_DISPLAY)
+
+    # Name fields differ between event types
     attacker_name = parsed.get("attacker_name") or parsed.get("attacker_player_name") or ""
-    defender_pid  = parsed.get("defender_id")  or parsed.get("defender_pid")  or ""
     defender_name = parsed.get("defender_name") or parsed.get("defender_player_name") or ""
 
     return {
         "digest":         tx,
-        "attacker_pid":   attacker_pid,
+        "attacker_pid":   parsed.get("attacker_id")  or "",
         "attacker_name":  attacker_name,
-        "defender_pid":   defender_pid,
+        "defender_pid":   parsed.get("defender_id")  or "",
         "defender_name":  defender_name,
         "cash":           cash,
         "weapons":        weapons,
