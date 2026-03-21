@@ -186,8 +186,8 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #report-loading{padding:40px;text-align:center;color:#555;font-family:var(--font-mono);font-size:11px}
 
 @media print{
-  body > *:not(#report-print-frame){display:none!important}
-  #report-print-frame{display:block!important;position:fixed;inset:0;background:#fff;z-index:9999;overflow:auto;padding:32px 48px;font-family:Georgia,'Times New Roman',serif;font-size:13px;color:#111;line-height:1.85}
+  body > *{display:none!important}
+  #report-print-frame{display:block!important;background:#fff;padding:32px 48px;font-family:Georgia,'Times New Roman',serif;font-size:13px;color:#111;line-height:1.85}
   #report-print-frame h1{font-size:32px;text-align:center;margin-bottom:4px;text-transform:uppercase;letter-spacing:3px}
   #report-print-frame h2{font-size:11px;text-align:center;margin-bottom:20px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:10px;color:#555}
   #report-print-frame h3{font-size:16px;margin:16px 0 6px;text-transform:uppercase}
