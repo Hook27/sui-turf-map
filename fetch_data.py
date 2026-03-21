@@ -669,4 +669,89 @@ print(f"  Players:   {len(player_list)}")
 print(f"  Tiles:     {len(compact_tiles)}")
 print(f"  Size:      {size_kb:.0f} KB")
 print(f"  Snapshots: {len(history_entries)} stored (max {MAX_SNAPSHOTS})")
+
+# ── PLAYER ACTIVITY TRACKING ──────────────────────────────────────────────────
+# Fetches FeedPeopleEvent and ClaimResourcesEvent to detect active players
+# who haven't changed turf count but are still playing.
+# Writes player_activity.json: {pid: days_since_last_active}
+print("Fetching player activity events...")
+
+ACTIVITY_FILE = "player_activity.json"
+ACTIVITY_EVENT_TYPES = [
+    "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::FeedPeopleEvent",
+    "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::ClaimResourcesEvent",
+]
+
+from datetime import timedelta
+
+try:
+    existing_activity = json.loads(open(ACTIVITY_FILE, encoding="utf-8").read()).get("raw", {})
+except Exception:
+    existing_activity = {}
+
+# Scan events from last 30 days (newest first), track latest activity per player
+ACTIVITY_CUTOFF = now_utc - timedelta(days=30)
+latest_activity = dict(existing_activity)
+
+for event_type in ACTIVITY_EVENT_TYPES:
+    etype_short = event_type.split("::")[-1]
+    cursor = None
+    pages  = 0
+    found  = 0
+    stop   = False
+    try:
+        while pages < 20 and not stop:
+            params = [{"MoveEventType": event_type}, cursor, 50, True]
+            result = rpc("suix_queryEvents", params)
+            events = result.get("data", [])
+            if not events and pages == 0:
+                print(f"  {etype_short}: no events found")
+                break
+            for ev in events:
+                ts_ms = ev.get("timestampMs") or ev.get("timestamp_ms")
+                if not ts_ms:
+                    continue
+                ev_dt = datetime.fromtimestamp(int(ts_ms)/1000, tz=timezone.utc)
+                if ev_dt < ACTIVITY_CUTOFF:
+                    stop = True
+                    break
+                parsed = ev.get("parsedJson") or {}
+                pid = parsed.get("player_id") or ""
+                if not pid:
+                    continue
+                ts_iso = ev_dt.isoformat()
+                if pid not in latest_activity or ts_iso > latest_activity[pid]:
+                    latest_activity[pid] = ts_iso
+                    found += 1
+            pages += 1
+            if not result.get("hasNextPage"):
+                break
+            cursor = result.get("nextCursor")
+            time.sleep(DELAY)
+        print(f"  {etype_short}: {pages} page(s), {found} updates")
+    except Exception as e:
+        print(f"  Warning: {etype_short} failed: {e}")
+        continue
+
+# Convert to days_since_last_active for current players only
+activity_days = {}
+for p in player_list:
+    pid = p["pid"]
+    ts = latest_activity.get(pid)
+    if ts:
+        try:
+            dt = datetime.fromisoformat(ts)
+            activity_days[pid] = round((now_utc - dt).total_seconds() / 86400, 1)
+        except Exception:
+            pass
+
+with open(ACTIVITY_FILE, "w", encoding="utf-8") as f:
+    json.dump({
+        "updated": now_utc.isoformat(),
+        "raw":     latest_activity,
+        "days":    activity_days,
+    }, f, separators=(",", ":"), ensure_ascii=False)
+
+print(f"  player_activity.json updated ({len(activity_days)} players with activity data)")
+
 print(f"\nDone!")

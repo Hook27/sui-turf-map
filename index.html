@@ -3065,7 +3065,8 @@ function updateZoomIndicator(){
 
 // ── PLAYER HISTORY ────────────────────────────────────────────────────────────
 let playerHistory = null;
-let playerHistoryLoaded = false; // track whether load was attempted
+let playerHistoryLoaded = false;
+let playerActivity = null; // {pid: days_since_last_active}
 
 async function loadPlayerHistory(){
   try{
@@ -3073,6 +3074,13 @@ async function loadPlayerHistory(){
     if(r.ok) playerHistory = await r.json();
   }catch(e){ /* no history data available */ }
   playerHistoryLoaded = true;
+}
+
+async function loadPlayerActivity(){
+  try{
+    const r = await fetch('player_activity.json?t='+Date.now());
+    if(r.ok){ const d=await r.json(); playerActivity=d.days||{}; }
+  }catch(e){}
 }
 
 function renderGarrisonHistory(){
@@ -3318,12 +3326,23 @@ function renderSoftTargets(){
   const myTiles = tiles.filter(t => t.pid === selectedPid);
   if(!myTiles.length){ el.innerHTML='<div style="padding:16px;color:#444;font-size:11px;font-family:var(--font-mono)">No tiles found for selected player.</div>'; return; }
 
-  // Candidates: inactive players (lcd >= 3) with > 1 tile, not own profile
+  // True inactivity = both lcd (turf changes) AND activity events (feed/claim) are old.
+  // If activity data available: use min(lcd, activity_days) as the real inactivity metric.
+  // A player with lcd=10 but activity=1 is still playing (just not expanding).
+  function realInactivity(p){
+    const lcdDays = p.lcd ?? 0;
+    if(!playerActivity) return lcdDays; // fallback if no activity data yet
+    const actDays = playerActivity[p.pid];
+    if(actDays == null) return lcdDays; // no activity record = use lcd only
+    return Math.max(lcdDays, actDays); // both must be old to be truly inactive
+  }
+
+  // Candidates: truly inactive (>= 3 days on BOTH metrics), > 1 tile, not own
   const candidates = players.filter(p =>
     p.tiles > 1 &&
     !MY_IDS.has(p.pid) &&
     p.pid !== selectedPid &&
-    p.lcd != null && p.lcd >= 3
+    realInactivity(p) >= 3
   );
 
   if(!candidates.length){
@@ -3347,26 +3366,30 @@ function renderSoftTargets(){
         if(d < minDist) minDist = d;
       }
     }
-    // Score: high tiles + high lcd + low distance = best target
-    // Normalize: tiles * lcd / (distance + 1)
-    const score = (p.tiles * p.lcd) / (minDist + 1);
-    return {p, dist: minDist, score};
+    const inact = realInactivity(p);
+    const score = (p.tiles * inact) / (minDist + 1);
+    return {p, dist: minDist, score, inact};
   });
 
   scored.sort((a,b) => b.score - a.score);
   const top = scored.slice(0, 30);
 
-  const myName = players.find(pl=>pl.pid===selectedPid)?.name || '?';
   document.getElementById('softtarget-subtitle').textContent =
-    `${candidates.length} inactive targets found — showing top ${top.length}`;
+    `${candidates.length} inactive targets found — showing top ${top.length}` +
+    (playerActivity ? '' : ' (activity data loading...)');
 
-  el.innerHTML = top.map(({p, dist}) => {
-    const lcdCls = p.lcd >= 14 ? 'old' : p.lcd >= 7 ? 'warn' : '';
+  el.innerHTML = top.map(({p, dist, inact}) => {
+    const lcdCls = inact >= 14 ? 'old' : inact >= 7 ? 'warn' : '';
     const distTxt = dist === Infinity ? '—' : dist === 0 ? 'adjacent' : dist + ' tiles';
-    return `<div class="st-row" onclick="closeSoftTargets();jumpToPlayer('${p.pid}')">
-      <span class="st-name" title="${esc(p.name)}">${esc(p.name||'[unknown]')}</span>
+    const actDays = playerActivity?.[p.pid];
+    // Show tooltip: turf lcd vs last activity
+    const tipTxt = actDays != null
+      ? `Turf change: ${p.lcd??'?'}d ago · Last active: ${actDays}d ago`
+      : `Turf change: ${p.lcd??'?'}d ago`;
+    return `<div class="st-row" onclick="closeSoftTargets();jumpToPlayer('${p.pid}')" title="${tipTxt}">
+      <span class="st-name">${esc(p.name||'[unknown]')}</span>
       <span class="st-tiles">${p.tiles}</span>
-      <span class="st-lcd ${lcdCls}">${p.lcd}d</span>
+      <span class="st-lcd ${lcdCls}">${inact}d</span>
       <span class="st-dist">${distTxt}</span>
       <span class="st-btn"><button class="st-route-btn" onclick="event.stopPropagation();closeSoftTargets();onNeighborRoute('${selectedPid}','${p.pid}',event)">🗺 Route</button></span>
     </div>`;
@@ -3529,6 +3552,7 @@ loadHistory();
 loadLatest();
 loadWeeklyReport();
 loadPlayerHistory();
+loadPlayerActivity();
 </script>
 
 </body>
