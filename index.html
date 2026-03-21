@@ -207,8 +207,9 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #ticker-bar.visible{display:flex}
 #ticker-label{font-family:var(--font-bangers);font-size:13px;color:var(--v-gold);letter-spacing:1px;padding:0 10px;white-space:nowrap;flex-shrink:0;border-right:2px solid #2a2000;height:100%;display:flex;align-items:center}
 #ticker-track{flex:1;overflow:hidden;position:relative;height:100%}
-#ticker-inner{position:absolute;white-space:nowrap;font-family:var(--font-mono);font-size:10px;color:#888;top:50%;transform:translateY(-50%);will-change:transform;left:0}
-#ticker-inner:hover{--ticker-paused:1}
+#ticker-inner{position:absolute;white-space:nowrap;font-family:var(--font-mono);font-size:10px;color:#888;top:50%;transform:translateY(-50%);will-change:transform;left:0;animation:ticker-scroll var(--ticker-dur,60s) linear infinite}
+#ticker-inner:hover,#ticker-inner.paused{animation-play-state:paused}
+@keyframes ticker-scroll{from{transform:translateY(-50%) translateX(0)}to{transform:translateY(-50%) translateX(-50%)}}
 .tk-gold{color:var(--v-gold)}
 .tk-green{color:var(--v-green)}
 .tk-red{color:var(--v-red)}
@@ -989,18 +990,42 @@ function onNeighborRoute(pidA,pidB,e){
 }
 
 // ── CANVAS ────────────────────────────────────────────────────────────────────
+// Cached DOM references (set once after first resize)
+let _mapCv=null, _mapCtx=null, _mmCv=null;
+
 function resizeCanvas(){
   const wrap=document.getElementById('map-wrap');
   const cv=document.getElementById('map');
   cv.width=wrap.clientWidth;cv.height=wrap.clientHeight;
+  _mapCv=cv; _mapCtx=cv.getContext('2d');
+  _mmCv=document.getElementById('minimap-canvas');
 }
 window.addEventListener('resize',()=>{resizeCanvas();drawMap();drawMinimap();});
 function worldToScreen(wx,wy){return{sx:(wx-minX)*CELL*zoom+panX,sy:(maxY-wy)*CELL*zoom+panY};}
 function screenToWorld(sx,sy){return{wx:Math.round((sx-panX)/(CELL*zoom)+minX),wy:Math.round(maxY-(sy-panY)/(CELL*zoom))};}
 
+// ── rAF draw coalescing ──────────────────────────────────────────────────────
+// During continuous interaction (touch drag, pinch), multiple move events fire
+// per frame. This coalesces them into a single drawMap() per animation frame
+// and defers drawMinimap() until interaction ends.
+let _drawRaf=0, _touchActive=false, _mmDirty=false;
+
+function requestDraw(){
+  _mmDirty=true;
+  if(_drawRaf) return; // already scheduled
+  _drawRaf=requestAnimationFrame(()=>{
+    _drawRaf=0;
+    drawMap();
+    if(!_touchActive){ drawMinimap(); _mmDirty=false; }
+  });
+}
+function flushMinimap(){
+  if(_mmDirty){ drawMinimap(); _mmDirty=false; }
+}
+
 function drawMap(){
-  const cv=document.getElementById('map');
-  const ctx=cv.getContext('2d');
+  const cv=_mapCv||document.getElementById('map');
+  const ctx=_mapCtx||cv.getContext('2d');
   const W=cv.width,H=cv.height;
   ctx.fillStyle='#080810';ctx.fillRect(0,0,W,H);
   updateZoomIndicator();
@@ -1141,7 +1166,7 @@ function drawMap(){
 }
 
 function drawMinimap(){
-  const mc=document.getElementById('minimap-canvas');
+  const mc=_mmCv||document.getElementById('minimap-canvas');
   // Sync canvas pixel size to CSS display size
   const rect=mc.getBoundingClientRect();
   if(rect.width>0&&rect.height>0){
@@ -1190,7 +1215,7 @@ mapWrap.addEventListener('mousedown',e=>{
 mapWrap.addEventListener('mousemove',e=>{
   if(e.buttons===1){
     const moved=Math.abs(e.clientX-dragStartX)+Math.abs(e.clientY-dragStartY);
-    if(moved>3){dragging=true;panX=dragPanX+(e.clientX-dragStartX);panY=dragPanY+(e.clientY-dragStartY);drawMap();drawMinimap();}
+    if(moved>3){dragging=true;panX=dragPanX+(e.clientX-dragStartX);panY=dragPanY+(e.clientY-dragStartY);requestDraw();}
   }
   if(!dragging&&tiles.length){
     const rect=mapWrap.getBoundingClientRect();
@@ -1273,6 +1298,7 @@ function _pinchGeometry(){
 mapWrap.addEventListener('touchstart', e => {
   if(_isBtn(e.target)) return;
   e.preventDefault();
+  _touchActive=true;
 
   const rect = mapWrap.getBoundingClientRect();
   for(const t of e.changedTouches) _syncPointer(t, rect);
@@ -1327,7 +1353,7 @@ mapWrap.addEventListener('touchmove', e => {
     if(_touchMoved){
       panX = _panStart.panX + dx;
       panY = _panStart.panY + dy;
-      drawMap(); drawMinimap();
+      requestDraw();
     }
 
   } else if(activePointers.size === 2 && _pinchStart){
@@ -1349,7 +1375,7 @@ mapWrap.addEventListener('touchmove', e => {
     panY += midY - _pinchStart.midY;
 
     zoom = newZoom;
-    drawMap(); drawMinimap();
+    requestDraw();
   }
 }, { passive: false });
 
@@ -1363,6 +1389,8 @@ function _handleTouchEnd(e){
 
   if(activePointers.size === 0){
     // ── All fingers lifted ──
+    _touchActive=false;
+    flushMinimap();
     if(!_touchMoved && _panStart){
       // It was a tap — show tooltip or select route
       const {wx, wy} = screenToWorld(_panStart.x, _panStart.y);
@@ -2107,12 +2135,9 @@ function toggleBattleHistory(){
 }
 
 // ── TOP MOVERS BANNER ─────────────────────────────────────────────────────────
-// ── TICKER ───────────────────────────────────────────────────────────────────
-let _tickerX=null, _tickerRaf=null, _tickerPaused=false;
+// ── TICKER (CSS animation — runs on compositor thread, no main-thread cost) ──
 
 function closeTicker(){
-  if(_tickerRaf) cancelAnimationFrame(_tickerRaf);
-  _tickerRaf=null;
   document.getElementById('ticker-bar').classList.remove('visible');
 }
 
@@ -2124,34 +2149,16 @@ function startTicker(){
   // Duplicate content for seamless loop
   inner.innerHTML=inner.innerHTML+inner.innerHTML;
 
-  const trackW=track.offsetWidth;
+  // Compute animation duration: full content width at 50px/sec
   const contentW=inner.scrollWidth/2;
   const speed=50; // pixels per second
-  if(_tickerX===null) _tickerX=trackW;
+  const dur=contentW/speed;
+  inner.style.setProperty('--ticker-dur', dur+'s');
 
-  let last=null;
-  function tick(ts){
-    if(last===null) last=ts;
-    const dt=(ts-last)/1000;
-    last=ts;
-    if(!_tickerPaused){
-      _tickerX-=speed*dt;
-      if(_tickerX<=-contentW) _tickerX+=contentW;
-      // Use transform instead of left for GPU-accelerated rendering
-      inner.style.transform=`translateY(-50%) translateX(${_tickerX}px)`;
-    }
-    _tickerRaf=requestAnimationFrame(tick);
-  }
-  if(_tickerRaf) cancelAnimationFrame(_tickerRaf);
-  _tickerRaf=requestAnimationFrame(tick);
-
-  inner.addEventListener('mouseenter',()=>{_tickerPaused=true;});
-  inner.addEventListener('mouseleave',()=>{_tickerPaused=false;});
-
-  // Pause ticker during map touch to reduce GPU load on mobile
-  const mapEl=document.getElementById('map');
-  mapEl.addEventListener('touchstart',()=>{_tickerPaused=true;},{passive:true});
-  mapEl.addEventListener('touchend',()=>{setTimeout(()=>{_tickerPaused=false;},200);},{passive:true});
+  // Restart animation cleanly
+  inner.style.animation='none';
+  inner.offsetHeight; // force reflow
+  inner.style.animation='';
 }
 
 function renderTopMovers(){
@@ -2238,9 +2245,7 @@ function renderTopMovers(){
   inner.innerHTML=items.join(sep)+sep;
   document.getElementById('ticker-bar').classList.add('visible');
 
-  // Reset and start JS ticker
-  _tickerX=null;
-  if(_tickerRaf) cancelAnimationFrame(_tickerRaf);
+  // Reset and start CSS ticker
   setTimeout(startTicker, 50); // wait for DOM paint
 }
 
