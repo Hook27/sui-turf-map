@@ -340,7 +340,12 @@ print(f"  Done — {sum(1 for p in player_list if 'lcd' in p)} players with chan
 
 # ── HQ CAPTURE TRACKING ───────────────────────────────────────────────────────
 # Scan all consecutive snapshot pairs to detect HQ ownership changes.
-# This catches captures that happened between any two snapshots, not just the last two.
+# Two cases are handled:
+#   Case 1 – attacker moves their own HQ to the captured tile:
+#             the tile OID stays in hq_register but with a new owner_pid.
+#   Case 2 – attacker does NOT use the captured tile as their HQ:
+#             the tile OID disappears from hq_register entirely.
+#             Detected via coordinate lookup: find who now owns that (x,y).
 print("Computing HQ captures...")
 HQ_CAPTURES_FILE = "hq_captures.json"
 try:
@@ -348,10 +353,25 @@ try:
 except Exception:
     existing_captures = []
 
-# Build set of already-known capture keys to avoid duplicates
-known_keys = {f"{c['oid']}_{c['timestamp']}" for c in existing_captures}
+# Deduplicate existing captures by (oid + minute-precision timestamp).
+# Fixes stale duplicate entries caused by timestamp-precision differences
+# between on-disk snapshots (filename → minute) and live runs (now_utc → microsecond).
+_seen_caps: set = set()
+_deduped = []
+for c in existing_captures:
+    _k = f"{c['oid']}_{c['timestamp'][:16]}"
+    if _k not in _seen_caps:
+        _seen_caps.add(_k)
+        _deduped.append(c)
+existing_captures = _deduped
 
-# Load all snapshots oldest-first that have a hq_register
+# Use minute-precision keys throughout to prevent cross-run duplicates.
+known_keys = {f"{c['oid']}_{c['timestamp'][:16]}" for c in existing_captures}
+
+# Load all snapshots oldest-first that have a hq_register.
+# For each snapshot also build:
+#   oid_to_xy    – {tile_oid: (x, y)} for tiles with stored OIDs (HQ / garrison)
+#   coord_to_pid – {(x, y): pid} for ALL occupied tiles (needed for Case 2 lookup)
 snaps_with_hq = []
 for snap_path in sorted(glob.glob(f"{SNAPSHOTS_DIR}/data_*.json")):
     basename = os.path.basename(snap_path)
@@ -361,29 +381,51 @@ for snap_path in sorted(glob.glob(f"{SNAPSHOTS_DIR}/data_*.json")):
     except ValueError:
         continue
     try:
-        snap_data = json.loads(open(snap_path, encoding="utf-8").read())
-        hq_reg = snap_data.get("hq_register", {})
-        if hq_reg:
-            snaps_with_hq.append((dt, hq_reg, {p["pid"]: p.get("name","") for p in snap_data.get("players",[])}))
-    except Exception:
+        snap_data   = json.loads(open(snap_path, encoding="utf-8").read())
+        hq_reg      = snap_data.get("hq_register", {})
+        if not hq_reg:
+            continue
+        players     = snap_data.get("players", [])
+        names       = {p["pid"]: p.get("name", "") for p in players}
+        pid_by_idx  = {i: p["pid"] for i, p in enumerate(players)}
+        oid_to_xy   = {}
+        coord_to_pid = {}
+        for tile in snap_data.get("tiles", []):
+            x, y = tile.get("x"), tile.get("y")
+            if "oid" in tile:
+                oid_to_xy[tile["oid"]] = (x, y)
+            p_idx = tile.get("p")
+            pid   = pid_by_idx.get(p_idx)
+            if pid and x is not None and y is not None:
+                coord_to_pid[(x, y)] = pid
+        snaps_with_hq.append((dt, hq_reg, names, oid_to_xy, coord_to_pid))
+    except Exception as e:
+        print(f"  Warning: skipping {snap_path}: {e}")
         continue
 
 print(f"  Snapshots with hq_register: {len(snaps_with_hq)}")
 
-# Also add current run as the latest entry
-pid_to_name = {p["pid"]: p.get("name","") for p in player_list}
-snaps_with_hq.append((now_utc, hq_register, pid_to_name))
+# Append current run as the latest entry
+curr_oid_to_xy    = {t["oid"]: (t["x"], t["y"]) for t in raw_tiles if t.get("oid")}
+curr_coord_to_pid = {(t["x"], t["y"]): t["pid"] for t in raw_tiles}
+pid_to_name       = {p["pid"]: p.get("name", "") for p in player_list}
+snaps_with_hq.append((now_utc, hq_register, pid_to_name, curr_oid_to_xy, curr_coord_to_pid))
 
 # Compare each consecutive pair
 new_captures = []
 for i in range(1, len(snaps_with_hq)):
-    dt_prev, reg_prev, names_prev = snaps_with_hq[i-1]
-    dt_curr, reg_curr, names_curr = snaps_with_hq[i]
-    ts_curr = dt_curr.isoformat()
+    dt_prev, reg_prev, names_prev, oid_xy_prev, coord_pid_prev = snaps_with_hq[i - 1]
+    dt_curr, reg_curr, names_curr, oid_xy_curr, coord_pid_curr = snaps_with_hq[i]
+    # Minute-truncated key + stored timestamp — consistent across runs regardless of
+    # whether dt_curr comes from a filename (minute precision) or now_utc (microsecond).
+    ts_min   = dt_curr.strftime("%Y-%m-%dT%H:%M")
+    ts_store = dt_curr.replace(second=0, microsecond=0).isoformat()
+
+    # ── Case 1: tile OID still in hq_register, but owner changed ──────────────
     for oid, new_owner in reg_curr.items():
         prev_owner = reg_prev.get(oid)
         if prev_owner and prev_owner != new_owner:
-            key = f"{oid}_{ts_curr}"
+            key = f"{oid}_{ts_min}"
             if key not in known_keys:
                 new_captures.append({
                     "oid":       oid,
@@ -391,7 +433,30 @@ for i in range(1, len(snaps_with_hq)):
                     "prev_name": names_prev.get(prev_owner, ""),
                     "new_pid":   new_owner,
                     "new_name":  names_curr.get(new_owner, ""),
-                    "timestamp": ts_curr,
+                    "timestamp": ts_store,
+                })
+                known_keys.add(key)
+
+    # ── Case 2: tile OID was HQ in prev, gone from curr (no new HQ established)
+    # The attacker simply took the tile without moving their own HQ there.
+    # Detect by looking up who currently owns the tile at the same coordinates.
+    for oid, prev_owner in reg_prev.items():
+        if oid in reg_curr:
+            continue  # already handled by Case 1
+        xy = oid_xy_prev.get(oid)
+        if xy is None:
+            continue  # no coordinate info available (old snapshot format without tile OIDs)
+        new_owner = coord_pid_curr.get(xy)
+        if new_owner and new_owner != prev_owner:
+            key = f"{oid}_{ts_min}"
+            if key not in known_keys:
+                new_captures.append({
+                    "oid":       oid,
+                    "prev_pid":  prev_owner,
+                    "prev_name": names_prev.get(prev_owner, ""),
+                    "new_pid":   new_owner,
+                    "new_name":  names_curr.get(new_owner, ""),
+                    "timestamp": ts_store,
                 })
                 known_keys.add(key)
 
