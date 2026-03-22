@@ -109,7 +109,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #route-no-path{color:var(--v-red);font-size:10px;display:none;font-family:var(--font-mono);text-transform:uppercase}
 
 /* ── SIDEBAR ── */
-#right-panel{width:320px;flex-shrink:0;display:flex;flex-direction:column;border-left:2px solid #222;background:#0a0a0a;overflow:hidden}
+#right-panel{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-left:2px solid #222;background:#0a0a0a;overflow:hidden}
 #sidebar{flex:1;display:flex;flex-direction:column;overflow:hidden}
 #sidebar-head{padding:10px 12px;border-bottom:2px solid #1a1a1a;flex-shrink:0}
 .stats-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
@@ -133,7 +133,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .prow.route-b{background:#0f0505;border-left:3px solid var(--v-red)}
 .prank{color:#2a2a2a;font-size:9px;width:20px;text-align:right;flex-shrink:0}
 .pdot{width:8px;height:8px;border-radius:0;flex-shrink:0}
-.pname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aaa;font-size:11px}
+.pname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aaa;font-size:12px}
 .pname.me{color:var(--v-gold)}
 .pname.unnamed{color:#333;font-style:italic}
 .ptiles{color:#444;font-size:10px;flex-shrink:0;min-width:32px;text-align:right;margin-right:4px}
@@ -141,8 +141,11 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .pbar-fill{height:2px;border-radius:0}
 .p-route-btn{width:18px;height:18px;padding:0;font-size:9px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;display:none;background:#111;border:1px solid #333;box-shadow:1px 1px 0 #000;color:#888}
 .route-mode-active .p-route-btn{display:block}
-.p-mark-btn{width:18px;height:18px;padding:0;font-size:11px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;background:transparent;border:1px solid #2a2a2a;color:#555;margin-left:2px;box-shadow:none}
+.p-mark-btn{width:18px;height:18px;padding:0;font-size:11px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;background:transparent;border:1px solid #2a2a2a;color:#555;margin-left:2px;box-shadow:none;opacity:0;transition:opacity .1s}
 .p-mark-btn:hover{border-color:#888;color:#ccc}
+.prow:hover .p-mark-btn{opacity:1}
+.prow .p-mark-btn.friend{opacity:1;border-color:var(--v-green);color:var(--v-green)}
+.prow .p-mark-btn.enemy{opacity:1;border-color:var(--v-red);color:var(--v-red)}
 .mark-friend{color:var(--v-green)!important;border-color:var(--v-green)!important}
 .mark-enemy{color:var(--v-red)!important;border-color:var(--v-red)!important}
 .prow.friend{border-left:3px solid var(--v-green)}
@@ -370,8 +373,9 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .gar-h{color:#aaa;text-align:right;padding-right:8px}
 .gar-total{color:#555;font-size:10px;text-align:right}
 .gar-hq-badge{font-size:9px;color:var(--v-gold);border:1px solid var(--v-gold);padding:1px 4px;margin-left:4px}
-.p-gar-btn{width:18px;height:18px;padding:0;font-size:10px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;background:#111;border:1px solid #333;box-shadow:1px 1px 0 #000;color:#89c6ff;visibility:hidden}
-.has-garrison .p-gar-btn{visibility:visible}
+.p-gar-btn{width:18px;height:18px;padding:0;font-size:10px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;background:#111;border:1px solid #333;box-shadow:1px 1px 0 #000;color:#89c6ff;visibility:hidden;opacity:0;transition:opacity .1s}
+.has-garrison .p-gar-btn{visibility:visible;opacity:0}
+.prow:hover .p-gar-btn{opacity:1}
 
 /* ── GARRISON RECALL ── */
 #garrison-recall-bar{display:none;align-items:center;gap:8px;padding:8px 18px;border-top:2px solid #222;background:#0a0a0a;flex-shrink:0}
