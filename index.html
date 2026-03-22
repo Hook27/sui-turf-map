@@ -2487,9 +2487,16 @@ function renderTopMovers(){
   // HQ captures in last 24h
   const now24=Date.now()-86400000;
   const hqRecent24=hqCaptures.filter(c=>new Date(c.timestamp).getTime()>=now24);
-  // Last 3 captures for feed (newest first)
-  const recentHqFeed=hqCaptures.slice(-3).reverse();
-  function hqAge(ts){const h=Math.round((Date.now()-new Date(ts))/3600000);return h<1?'just now':h+'h ago';}
+  // Last 3 captures for feed — only show if within 7 days
+  const now7d = Date.now() - 7*86400000;
+  const recentHqFeed = hqCaptures.filter(c=>new Date(c.timestamp).getTime()>=now7d).slice(-3).reverse();
+  function hqAge(ts){
+    const ms=Date.now()-new Date(ts);
+    const h=Math.round(ms/3600000);
+    if(h<1) return 'just now';
+    if(h<24) return h+'h ago';
+    return Math.floor(h/24)+'d ago';
+  }
 
   // Raids
   const raids=battleHistoryData.raids||[];
