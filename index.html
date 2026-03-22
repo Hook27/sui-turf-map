@@ -437,15 +437,10 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #player-list.compact .ptiles{font-size:9px}
 
 
-.gl-row{display:flex;align-items:center;gap:6px;margin-bottom:2px}
 
 /* ── TOP 10 MODE ── */
 button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-gold);box-shadow:2.5px 2.5px 0 #3a2a00}
 
-/* ── GARRISON LEGEND ── */
-#garrison-legend{display:none;position:absolute;bottom:14px;left:14px;background:rgba(0,0,0,0.75);border:1px solid #333;padding:6px 10px;font-size:9px;font-family:var(--font-mono);color:#666;z-index:10;pointer-events:none}
-#garrison-legend.visible{display:block}
-#garrison-legend .gl-title{color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 
 /* ── ANALYSIS TABS ── */
 .an-tab{background:#0a0a0a;color:#555;cursor:pointer;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px;border-radius:0;border:2px solid #222}
@@ -531,12 +526,6 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     </div>
     <button id="sidebar-toggle" onclick="toggleSidebar()" title="Player list">☰</button>
     <div id="touch-tooltip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div><div class="tgar"></div></div>
-    <div id="garrison-legend">
-      <div class="gl-title">Garrison</div>
-      <div class="gl-row"><span style="display:inline-block;width:8px;height:8px;background:#ff8483;margin-right:4px"></span>Enforcer</div>
-      <div class="gl-row"><span style="display:inline-block;width:8px;height:8px;background:#89c6ff;margin-right:4px"></span>Bouncer</div>
-      <div class="gl-row"><span style="display:inline-block;width:8px;height:8px;background:#aaa;margin-right:4px"></span>Henchman</div>
-    </div>
     <div id="route-panel">
       <h3>🗺 Shortest route</h3>
       <div class="route-player">
@@ -962,7 +951,6 @@ async function loadData(url){
 
     computeNeighborMap();
     buildGarrisonIndex();
-    updateGarrisonLegend();
     updateStats();
     filterPlayers();
     resizeCanvas();
@@ -1785,11 +1773,6 @@ function buildGarrisonIndex(){
   }
 }
 
-// ── GARRISON LEGEND ───────────────────────────────────────────────────────
-function updateGarrisonLegend(){
-  const hasGar=tiles.some(t=>t.gH||t.gB||t.gE);
-  document.getElementById('garrison-legend').classList.toggle('visible', hasGar);
-}
 
 function toggleMark(pid, type, e){
   if(e){ e.stopPropagation(); }
