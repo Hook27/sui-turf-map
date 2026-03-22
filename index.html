@@ -264,6 +264,13 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #refresh-result{font-size:11px;margin-top:8px;min-height:18px;font-family:var(--font-mono)}
 
 /* ── MOBILE ── */
+/* ── MAP-ONLY MODE (mobile fullscreen map) ── */
+#maponly-btn{display:none;position:fixed;bottom:80px;left:20px;z-index:100;width:48px;height:48px;padding:0;font-size:20px;border-radius:0;background:#111;border:2px solid #555;box-shadow:3px 3px 0 #000;color:#ccc;align-items:center;justify-content:center}
+#maponly-btn.active{background:#1a0a00;border-color:var(--v-gold);color:var(--v-gold);box-shadow:3px 3px 0 #3a2000}
+body.map-only #toolbar{display:none}
+body.map-only #ticker-bar{display:none!important}
+body.map-only #timeline-bar{display:none!important}
+body.map-only #analyse-btn{display:none!important}
 #sidebar-toggle{display:none;position:fixed;bottom:20px;left:20px;z-index:100;width:48px;height:48px;padding:0;font-size:20px;border-radius:0;background:#111;border:2px solid #555;box-shadow:3px 3px 0 #000;color:#ccc}
 #sidebar-toggle.open{background:#050d18;border-color:var(--v-blue);box-shadow:3px 3px 0 #0a2040;color:var(--v-blue)}
 #touch-tooltip{position:fixed;display:none;background:#111;border:2px solid #555;border-radius:0;padding:10px 14px;font-size:13px;z-index:60;pointer-events:none;line-height:1.8;max-width:260px;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:5px 5px 0 #000;font-family:var(--font-mono)}
@@ -284,6 +291,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
   #right-panel{position:fixed;right:0;top:0;bottom:0;z-index:50;transform:translateX(100%);transition:transform 0.25s ease;box-shadow:-6px 0 20px rgba(0,0,0,0.8);width:300px}
   #right-panel.open{transform:translateX(0)}
   #sidebar-toggle{display:flex;align-items:center;justify-content:center}
+  #maponly-btn{display:flex}
   #route-panel{left:8px;right:8px;max-width:none;bottom:80px}
   #minimap-canvas{width:100%!important;height:120px!important;border-top:2px solid #222}
   #zoom-btns{top:auto;bottom:20px;right:20px;flex-direction:row;gap:5px}
@@ -524,6 +532,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
       <button onclick="resetView()" style="font-size:11px">⊡</button>
     </div>
     <button id="sidebar-toggle" onclick="toggleSidebar()" title="Player list">☰</button>
+    <button id="maponly-btn" onclick="toggleMapOnly()" title="Map only">⛶</button>
     <div id="touch-tooltip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div><div class="tgar"></div></div>
     <div id="route-panel">
       <h3>🗺 Shortest route</h3>
@@ -1662,6 +1671,16 @@ function _handleTouchEnd(e){
 
 mapWrap.addEventListener('touchend',    _handleTouchEnd, { passive: false });
 mapWrap.addEventListener('touchcancel', _handleTouchEnd, { passive: false });
+
+// ── MAP-ONLY MODE (mobile) ─────────────────────────────────────────────────
+function toggleMapOnly(){
+  const btn = document.getElementById('maponly-btn');
+  const active = document.body.classList.toggle('map-only');
+  btn.classList.toggle('active', active);
+  btn.title = active ? 'Exit map-only' : 'Map only';
+  btn.textContent = active ? '✕' : '⛶';
+  setTimeout(()=>{ resizeCanvas(); drawMap(); drawMinimap(); }, 50);
+}
 
 // ── SIDEBAR TOGGLE (mobile) ───────────────────────────────────────────────────
 function toggleSidebar(){
