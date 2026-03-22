@@ -109,7 +109,8 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #route-no-path{color:var(--v-red);font-size:10px;display:none;font-family:var(--font-mono);text-transform:uppercase}
 
 /* ── SIDEBAR ── */
-#right-panel{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-left:2px solid #222;background:#0a0a0a;overflow:hidden}
+#right-panel{width:380px;flex-shrink:0;display:flex;flex-direction:column;border-left:2px solid #222;background:#0a0a0a;overflow:hidden;transition:width .2s ease}
+#right-panel.compact{width:280px}
 #sidebar{flex:1;display:flex;flex-direction:column;overflow:hidden}
 #sidebar-head{padding:10px 12px;border-bottom:2px solid #1a1a1a;flex-shrink:0}
 .stats-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
@@ -3020,8 +3021,11 @@ function closeMoreMenu(){ document.getElementById('more-dropdown').classList.rem
 function toggleCompact(btn){
   compactMode=!compactMode;
   document.getElementById('player-list').classList.toggle('compact',compactMode);
+  document.getElementById('right-panel').classList.toggle('compact',compactMode);
   btn.classList.toggle('on',compactMode);
   btn.title=compactMode?'Normal view':'Compact view';
+  // Resize canvas after transition completes
+  setTimeout(()=>{ resizeCanvas(); drawMap(); drawMinimap(); }, 220);
 }
 
 // ── TOP 10 MODE ───────────────────────────────────────────────────────────────
