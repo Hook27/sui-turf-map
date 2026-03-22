@@ -375,12 +375,18 @@ print(f"  Snapshots with hq_register: {len(snaps_with_hq)}")
 pid_to_name = {p["pid"]: p.get("name","") for p in player_list}
 snaps_with_hq.append((now_utc, hq_register, pid_to_name))
 
+# Build coord->pid lookup from current tiles for Case 2
+coord_to_pid = {(t["x"], t["y"]): player_list[t["p"]]["pid"]
+                for t in compact_tiles if "p" in t and t["p"] < len(player_list)}
+
 # Compare each consecutive pair
 new_captures = []
 for i in range(1, len(snaps_with_hq)):
     dt_prev, reg_prev, names_prev = snaps_with_hq[i-1]
     dt_curr, reg_curr, names_curr = snaps_with_hq[i]
     ts_curr = dt_curr.isoformat()
+
+    # Case 1: OID still exists but changed owner
     for oid, new_owner in reg_curr.items():
         prev_owner = reg_prev.get(oid)
         if prev_owner and prev_owner != new_owner:
@@ -395,6 +401,62 @@ for i in range(1, len(snaps_with_hq)):
                     "timestamp": ts_curr,
                 })
                 known_keys.add(key)
+
+    # Case 2: OID disappeared from register (HQ destroyed/captured, attacker
+    # didn't plant their own HQ there). Only do this for the last pair
+    # (current snapshot) to avoid re-detecting old disappearances.
+    if i == len(snaps_with_hq) - 1:
+        # Build coord->oid map from previous snapshot's raw tiles
+        # We need to know where the disappeared HQ was located
+        # Use the snapshot file for the previous entry
+        snap_files = sorted(glob.glob(f"{SNAPSHOTS_DIR}/data_*.json"))
+        prev_snap_data = None
+        # Find the snapshot matching dt_prev
+        for sp in snap_files:
+            ts_str = os.path.basename(sp)[5:-5]
+            try:
+                dt_sp = datetime.strptime(ts_str, "%Y-%m-%d_%H%M").replace(tzinfo=timezone.utc)
+                if abs((dt_sp - dt_prev).total_seconds()) < 60:
+                    prev_snap_data = json.loads(open(sp, encoding="utf-8").read())
+                    break
+            except Exception:
+                continue
+
+        if prev_snap_data:
+            # Build coord->pid from prev snapshot
+            prev_players = prev_snap_data.get("players", [])
+            prev_tiles   = prev_snap_data.get("tiles", [])
+            prev_coord_pid = {}
+            for t in prev_tiles:
+                if "p" in t and t["p"] < len(prev_players):
+                    prev_coord_pid[(t["x"], t["y"])] = prev_players[t["p"]]["pid"]
+
+            # Build oid->coord from prev snapshot
+            prev_oid_coord = {}
+            for t in prev_tiles:
+                if t.get("oid") and t.get("hq"):
+                    prev_oid_coord[t["oid"]] = (t["x"], t["y"])
+
+            for oid, prev_owner in reg_prev.items():
+                if oid not in reg_curr:
+                    # HQ OID disappeared — find current owner at those coords
+                    coords = prev_oid_coord.get(oid)
+                    if not coords:
+                        continue
+                    new_owner = coord_to_pid.get(coords)
+                    if not new_owner or new_owner == prev_owner:
+                        continue
+                    key = f"{oid}_{ts_curr}"
+                    if key not in known_keys:
+                        new_captures.append({
+                            "oid":       oid,
+                            "prev_pid":  prev_owner,
+                            "prev_name": names_prev.get(prev_owner, ""),
+                            "new_pid":   new_owner,
+                            "new_name":  names_curr.get(new_owner, ""),
+                            "timestamp": ts_curr,
+                        })
+                        known_keys.add(key)
 
 if new_captures:
     print(f"  {len(new_captures)} new HQ captures detected!")
