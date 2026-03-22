@@ -3320,7 +3320,7 @@ function renderSoftTargets(){
     const lcdDays = p.lcd ?? 0;
     if(!playerActivity) return lcdDays; // fallback if no activity data yet
     const actDays = playerActivity[p.pid];
-    if(actDays == null) return lcdDays; // no activity record = use lcd only
+    if(actDays == null) return Math.max(lcdDays, 30); // no record in 30 days = inactive
     return Math.max(lcdDays, actDays); // both must be old to be truly inactive
   }
 
@@ -3369,10 +3369,11 @@ function renderSoftTargets(){
     const lcdCls = inact >= 14 ? 'old' : inact >= 7 ? 'warn' : '';
     const distTxt = dist === Infinity ? '—' : dist === 0 ? 'adjacent' : dist + ' tiles';
     const actDays = playerActivity?.[p.pid];
-    // Show tooltip: turf lcd vs last activity
     const tipTxt = actDays != null
       ? `Turf change: ${p.lcd??'?'}d ago · Last active: ${actDays}d ago`
-      : `Turf change: ${p.lcd??'?'}d ago`;
+      : playerActivity
+        ? `Turf change: ${p.lcd??'?'}d ago · No activity in 30d`
+        : `Turf change: ${p.lcd??'?'}d ago`;
     return `<div class="st-row" onclick="closeSoftTargets();jumpToPlayer('${p.pid}')" title="${tipTxt}">
       <span class="st-name">${esc(p.name||'[unknown]')}</span>
       <span class="st-tiles">${p.tiles}</span>
