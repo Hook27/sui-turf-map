@@ -115,6 +115,7 @@ except Exception:
 week_raids = [
     r for r in all_raids
     if datetime.fromisoformat(r["timestamp"]) >= cutoff
+    and r.get("defender_name")  # exclude failed raids / free turf attacks
 ]
 
 # Top raiders by number of raids

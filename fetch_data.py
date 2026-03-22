@@ -560,6 +560,8 @@ except Exception:
 # Migration: discard any entry where cash or weapons > 1,000,000
 # (these are pre-scaling sentinel values from a previous incorrect run)
 existing_raids = [r for r in existing_raids if r.get("cash", 0) <= 1_000_000 and r.get("weapons", 0) <= 1_000_000]
+# Strip existing failed-raid entries (no defender)
+existing_raids = [r for r in existing_raids if r.get("defender_name") or r.get("defender_pid")]
 
 known_digests = {r["digest"] for r in existing_raids if r.get("digest")}
 
@@ -654,6 +656,9 @@ for event_type in RAID_EVENT_TYPES:
             for ev in events:
                 r = parse_raid_event(ev)
                 if not r["digest"]:
+                    continue
+                # Skip failed raids / free turf attacks (no defender)
+                if not r.get("defender_name") and not r.get("defender_pid"):
                     continue
                 if r["digest"] in known_digests:
                     # Already stored — but merge XP if we have it now
