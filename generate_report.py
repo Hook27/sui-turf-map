@@ -112,6 +112,13 @@ try:
 except Exception:
     all_raids = []
 
+HQ_DESTROYED_FILE = "hq_destroyed.json"
+try:
+    with open(HQ_DESTROYED_FILE, encoding="utf-8") as f:
+        all_hqd = json.load(f)
+except Exception:
+    all_hqd = []
+
 week_raids = [
     r for r in all_raids
     if datetime.fromisoformat(r["timestamp"]) >= cutoff
@@ -135,6 +142,17 @@ top_victims = sorted(victim_count.items(), key=lambda x: -x[1])[:5]
 # Separate pure raids from raids-that-were-also-captures
 capture_raids  = [r for r in week_raids if r.get("is_capture")]
 pure_raids     = [r for r in week_raids if not r.get("is_capture")]
+
+week_hqd = [
+    d for d in all_hqd
+    if datetime.fromisoformat(d["timestamp"]) >= cutoff
+]
+# Top HQ destroyers
+hqd_count = {}
+for d in week_hqd:
+    name = d.get("attacker_name") or d.get("attacker_pid","")[:8]
+    hqd_count[name] = hqd_count.get(name, 0) + 1
+top_hqd = sorted(hqd_count.items(), key=lambda x: -x[1])[:5]
 
 # Total loot this week
 total_cash    = sum(r.get("cash", 0)    for r in week_raids)
@@ -161,6 +179,9 @@ RAIDS THIS WEEK: {len(week_raids)} total
 - Total cash looted:    {total_cash:,.2f}
 - Total weapons looted: {total_weapons:,.2f}
 - Total XP looted:      {total_xp:,.2f}
+
+HQ DESTROYED (attacked but defender held ground): {len(week_hqd)} total
+{chr(10).join(f"  - {name}: destroyed {cnt} HQ(s)" for name, cnt in top_hqd) or "  (none)"}
 
 MOST ACTIVE RAIDERS:
 {chr(10).join(f"  - {name}: {cnt} raid(s)" for name, cnt in top_raiders) or "  (none)"}

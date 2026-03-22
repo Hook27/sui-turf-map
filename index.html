@@ -2406,6 +2406,11 @@ async function loadBattleHistory(){
       const rdr=await fetch('raids.json?t='+Date.now());
       if(rdr.ok) battleHistoryData.raids=await rdr.json();
     }catch(e){}
+    // Load HQ destroyed events
+    try{
+      const hqdr=await fetch('hq_destroyed.json?t='+Date.now());
+      if(hqdr.ok) battleHistoryData.hqDestroyed=await hqdr.json();
+    }catch(e){}
     renderTopMovers();
   }catch(e){console.warn('Battle history error:',e);}
 }
@@ -2498,6 +2503,11 @@ function renderTopMovers(){
     return Math.floor(h/24)+'d ago';
   }
 
+  // HQ destroyed (attacked but not captured)
+  const hqDestroyed=battleHistoryData?.hqDestroyed||[];
+  const hqdRecent24=hqDestroyed.filter(d=>new Date(d.timestamp).getTime()>=now24);
+  const recentHqdFeed=hqDestroyed.filter(d=>new Date(d.timestamp).getTime()>=now7d).slice(-3).reverse();
+
   // Raids
   const raids=battleHistoryData.raids||[];
   const raidCount24=raids.filter(r=>new Date(r.timestamp).getTime()>=now24).length;
@@ -2535,6 +2545,10 @@ function renderTopMovers(){
     hqRecent24.length>0?`⚡ <span class="tk-red">${hqRecent24.length}</span> HQ${hqRecent24.length===1?'':'s'} ${hqRecent24.length===1?'has':'have'} fallen in the last 24h`:null,
     // Recent HQ captures feed (last 3, newest first)
     ...recentHqFeed.map(c=>`🏴 <span class="tk-red">${esc(c.prev_name||'Unknown')}</span>'s HQ stormed by <span class="tk-gold">${esc(c.new_name||'Unknown')}</span> — ${hqAge(c.timestamp)}`),
+    // HQ destroyed (attacked but not captured) last 24h
+    hqdRecent24.length>0?`💥 <span class="tk-gold">${hqdRecent24.length}</span> HQ${hqdRecent24.length===1?'':'s'} attacked and destroyed in the last 24h — but held their ground`:null,
+    // Recent HQ destroyed feed (last 3, newest first)
+    ...recentHqdFeed.map(d=>`💥 <span class="tk-red">${esc(d.defender_name||'Unknown')}</span>'s HQ destroyed by <span class="tk-gold">${esc(d.attacker_name||'Unknown')}</span> — still standing — ${hqAge(d.timestamp)}`),
     // Gainers
     gainers.length?`📈 24h gainers: `+gainers.map(r=>`<span class="tk-green">▲ ${esc(r.name||'?')} +${r.net}</span>`).join(' · '):null,
     // Losers
@@ -3207,9 +3221,18 @@ function renderGarrisonRaids(){
   const el = document.getElementById('gar-raids-list');
   if(!garrisonPid){ el.innerHTML='<div style="padding:16px;color:#444;font-size:11px;font-family:var(--font-mono)">No player selected.</div>'; return; }
   const raids = (battleHistoryData&&battleHistoryData.raids)||[];
-  const playerRaids = raids.filter(r=>r.attacker_pid===garrisonPid||r.defender_pid===garrisonPid)
-    .slice().reverse(); // newest first
-  if(!playerRaids.length){
+  const hqd   = (battleHistoryData&&battleHistoryData.hqDestroyed)||[];
+
+  const playerRaids = raids.filter(r=>r.attacker_pid===garrisonPid||r.defender_pid===garrisonPid);
+  // Add HQ destroyed events as a special row type
+  const playerHqd = hqd.filter(d=>d.attacker_pid===garrisonPid||d.defender_pid===garrisonPid)
+    .map(d=>({...d, _type:'hqd'}));
+
+  // Merge and sort newest first
+  const allEvents = [...playerRaids, ...playerHqd]
+    .sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+
+  if(!allEvents.length){
     el.innerHTML='<div style="padding:16px;color:#444;font-size:11px;font-family:var(--font-mono)">No raids found for this player.<br><span style="color:#333">Raid data is collected from the next run onwards.</span></div>';
     return;
   }
@@ -3221,14 +3244,25 @@ function renderGarrisonRaids(){
     if(r.xp>0)      parts.push(`<span style="color:#89c6ff">${r.xp.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})} XP</span>`);
     return parts.length?parts.join(' · '):'<span style="color:#333">nothing looted</span>';
   }
-  const p = players.find(pl=>pl.pid===garrisonPid)||{};
-  const myName = p.name||'[unknown]';
-  el.innerHTML = playerRaids.map(r=>{
+  el.innerHTML = allEvents.map(r=>{
     const isAtk = r.attacker_pid===garrisonPid;
+    if(r._type==='hqd'){
+      // HQ destroyed event
+      const rowCls = isAtk?'gar-raid-row as-attacker':'gar-raid-row as-defender';
+      const dir = isAtk
+        ? `<span style="color:#ff8483">💥 HQ destroyed</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span> <span style="color:#555;font-size:9px">(held ground)</span>`
+        : `<span style="color:#FAC775">💥 HQ destroyed by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span> <span style="color:#555;font-size:9px">(still standing)</span>`;
+      return `<div class="${rowCls}">
+        <div>${dir}</div>
+        <div class="gar-raid-loot">${fmtLoot(r)}</div>
+        <div class="gar-raid-meta">${fmtAge(r.timestamp)}</div>
+      </div>`;
+    }
     const rowCls = isAtk?'gar-raid-row as-attacker':'gar-raid-row as-defender';
+    const captureTag = r.is_capture?` <span style="color:#6fffa9;font-size:9px">[captured]</span>`:'';
     const dir = isAtk
-      ? `<span style="color:#ff8483">⚔ Raided</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span>`
-      : `<span style="color:#89c6ff">🛡 Raided by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span>`;
+      ? `<span style="color:#ff8483">⚔ Raided</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span>${captureTag}`
+      : `<span style="color:#89c6ff">🛡 Raided by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span>${captureTag}`;
     return `<div class="${rowCls}">
       <div>${dir}</div>
       <div class="gar-raid-loot">${isAtk?'Looted: ':'Lost: '}${fmtLoot(r)}</div>
