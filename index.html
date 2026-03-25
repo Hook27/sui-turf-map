@@ -61,8 +61,8 @@ button.active{background:#0a2a18;border-color:var(--v-green);box-shadow:2.5px 2.
 button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 
 .sep{width:1px;height:20px;background:#333;flex-shrink:0}
-#status{font-size:10px;color:#555;padding:3px 8px;background:#111;border:1px solid #2a2a2a;border-radius:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-mono)}
-#age{font-size:10px;color:#444;white-space:nowrap;font-family:var(--font-mono)}
+#status{font-size:10px;color:#999;padding:3px 8px;background:#111;border:1px solid #2a2a2a;border-radius:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-mono)}
+#age{font-size:10px;color:#888;white-space:nowrap;font-family:var(--font-mono)}
 #route-indicator{display:none;font-size:10px;padding:3px 8px;background:#0a1a0a;border:2px solid var(--v-green);border-radius:0;color:var(--v-green);white-space:nowrap;font-family:var(--font-mono);box-shadow:2px 2px 0 #1a3a1a}
 
 /* ── TIMELINE ── */
@@ -73,7 +73,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #tl-live:hover{background:#1a2a1a;box-shadow:none;transform:translate(2px,2px)}
 #tl-slider{flex:1;accent-color:var(--v-gold)}
 #tl-info{font-size:10px;color:#666;white-space:nowrap;min-width:90px;text-align:right;font-family:var(--font-mono)}
-#tl-count{font-size:10px;color:#555;white-space:nowrap;font-family:var(--font-mono)}
+#tl-count{font-size:10px;color:#999;white-space:nowrap;font-family:var(--font-mono)}
 
 /* ── MAIN ── */
 #main{display:flex;flex:1;overflow:hidden}
@@ -100,12 +100,12 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .route-name{color:#fff;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .route-stats{margin-top:10px;border-top:1px solid #333;padding-top:8px;font-size:10px;font-family:var(--font-mono)}
 .route-stat-row{display:flex;justify-content:space-between;padding:2px 0}
-.route-stat-label{color:#555;text-transform:uppercase;letter-spacing:.3px}
+.route-stat-label{color:#999;text-transform:uppercase;letter-spacing:.3px}
 .route-stat-val{font-weight:700}
 .route-stat-val.conquer{color:var(--v-red)}
 .route-stat-val.free{color:var(--v-green)}
 .route-stat-val.own{color:#c4b5fd}
-#route-panel button{margin-top:8px;width:100%;font-size:10px;background:#111;color:#aaa;border-color:#444;box-shadow:2px 2px 0 #000}
+#route-panel button{margin-top:8px;width:100%;font-size:10px;background:#111;color:#aaa;border-color:#888;box-shadow:2px 2px 0 #000}
 #route-no-path{color:var(--v-red);font-size:10px;display:none;font-family:var(--font-mono);text-transform:uppercase}
 
 /* ── SIDEBAR ── */
@@ -114,14 +114,14 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #sidebar{flex:1;display:flex;flex-direction:column;overflow:hidden}
 #sidebar-head{padding:10px 12px;border-bottom:2px solid #1a1a1a;flex-shrink:0}
 .stats-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
-.stat{background:#111;border:2px solid #222;box-shadow:2px 2px 0 #000;border-radius:0;padding:5px 8px;font-size:9px;color:#555;flex:1;min-width:55px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px}
+.stat{background:#111;border:2px solid #222;box-shadow:2px 2px 0 #000;border-radius:0;padding:5px 8px;font-size:9px;color:#999;flex:1;min-width:55px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px}
 .stat b{font-size:14px;font-weight:700;color:#ddd;display:block;font-family:var(--font-bangers);letter-spacing:1px}
 #search{width:100%;background:#0a0a0a;color:#ccc;border:2px solid #2a2a2a;border-radius:0;padding:5px 8px;font-size:11px;font-family:var(--font-mono)}
 #search:focus{outline:none;border-color:var(--v-gold)}
-#search::placeholder{color:#333}
+#search::placeholder{color:#777}
 .filter-row{display:flex;gap:3px;margin-top:6px;flex-wrap:nowrap}
-.fb{padding:2px 6px;font-size:9px;border-radius:0;cursor:pointer;border:2px solid #2a2a2a;background:transparent;color:#555;font-family:var(--font-mono);text-transform:uppercase;font-weight:600;letter-spacing:.3px;box-shadow:none;white-space:nowrap}
-.fb:hover{border-color:#555;color:#aaa}
+.fb{padding:2px 6px;font-size:9px;border-radius:0;cursor:pointer;border:2px solid #2a2a2a;background:transparent;color:#999;font-family:var(--font-mono);text-transform:uppercase;font-weight:600;letter-spacing:.3px;box-shadow:none;white-space:nowrap}
+.fb:hover{border-color:#999;color:#aaa}
 .fb.on{border-color:var(--v-blue);color:var(--v-blue);background:#050d18;box-shadow:2px 2px 0 #0a2040}
 #player-list{flex:1;overflow-y:auto;font-size:11px}
 #player-list::-webkit-scrollbar{width:4px}
@@ -136,24 +136,24 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .pdot{width:8px;height:8px;border-radius:0;flex-shrink:0}
 .pname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aaa;font-size:10px}
 .pname.me{color:var(--v-gold)}
-.pname.unnamed{color:#333;font-style:italic}
-.ptiles{color:#444;font-size:9px;flex-shrink:0;min-width:32px;text-align:right;margin-right:4px}
+.pname.unnamed{color:#777;font-style:italic}
+.ptiles{color:#888;font-size:9px;flex-shrink:0;min-width:32px;text-align:right;margin-right:4px}
 .p-route-btn{width:18px;height:18px;padding:0;font-size:9px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;display:none;background:#111;border:1px solid #333;box-shadow:1px 1px 0 #000;color:#888}
 .route-mode-active .p-route-btn{display:block}
-.p-mark-btn{width:18px;height:18px;padding:0;font-size:11px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;background:transparent;border:1px solid #2a2a2a;color:#555;margin-left:2px;box-shadow:none}
+.p-mark-btn{width:18px;height:18px;padding:0;font-size:11px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;background:transparent;border:1px solid #2a2a2a;color:#999;margin-left:2px;box-shadow:none}
 .p-mark-btn:hover{border-color:#888;color:#ccc}
 .mark-friend{color:var(--v-green)!important;border-color:var(--v-green)!important}
 .mark-enemy{color:var(--v-red)!important;border-color:var(--v-red)!important}
 .prow.friend{border-left:3px solid var(--v-green)}
 .prow.enemy{border-left:3px solid var(--v-red)}
-.nmark{font-size:10px;padding:2px 5px;border-radius:0;flex-shrink:0;background:transparent;border:1px solid #2a2a2a;color:#555;box-shadow:none}
+.nmark{font-size:10px;padding:2px 5px;border-radius:0;flex-shrink:0;background:transparent;border:1px solid #2a2a2a;color:#999;box-shadow:none}
 .nmark:hover{border-color:#888;color:#ccc}
 
 /* ── NEIGHBOR POPUP ── */
 #neighbor-popup{position:fixed;background:#111;border:2px solid #444;border-radius:0;padding:0;min-width:220px;max-width:280px;max-height:400px;display:none;z-index:200;overflow:hidden;box-shadow:5px 5px 0 #000}
 #neighbor-head{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:2px solid #222;background:#0a0a0a}
 #neighbor-head h3{font-family:var(--font-bangers);font-size:13px;font-weight:400;letter-spacing:1px;color:var(--v-gold);text-transform:uppercase}
-#neighbor-close{background:transparent;border:none;color:#555;font-size:16px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
+#neighbor-close{background:transparent;border:none;color:#999;font-size:16px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
 #neighbor-close:hover{color:#fff;background:transparent}
 #neighbor-list{overflow-y:auto;max-height:320px}
 #neighbor-list::-webkit-scrollbar{width:3px}
@@ -162,8 +162,8 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .nrow:hover{background:#161616}
 .ndot{width:8px;height:8px;border-radius:0;flex-shrink:0}
 .nname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#bbb}
-.nname.unnamed{color:#333;font-style:italic}
-.ncontact{font-size:9px;color:#444;flex-shrink:0}
+.nname.unnamed{color:#777;font-style:italic}
+.ncontact{font-size:9px;color:#888;flex-shrink:0}
 .nroute{font-size:9px;padding:2px 5px;border-radius:0;flex-shrink:0;background:#0a0a0a;border:1px solid #333;color:#666;box-shadow:1px 1px 0 #000}
 .nroute:hover{background:var(--v-blue);border-color:var(--v-blue);color:#fff;box-shadow:none}
 
@@ -173,8 +173,8 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #report-box{background:#0e0c07;border:2px solid #6a5a1e;border-radius:0;width:100%;max-width:720px;overflow:hidden;margin:auto;box-shadow:6px 6px 0 #000}
 #report-head{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:2px solid #2a2000;background:#080600}
 #report-head-title{font-family:var(--font-bangers);font-size:15px;letter-spacing:2px;color:var(--v-gold);text-transform:uppercase}
-#report-head-meta{font-size:10px;color:#555;font-family:var(--font-mono)}
-#report-close{background:transparent;border:none;color:#555;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
+#report-head-meta{font-size:10px;color:#999;font-family:var(--font-mono)}
+#report-close{background:transparent;border:none;color:#999;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
 #report-close:hover{color:#fff}
 #report-content{padding:24px 32px;max-height:78vh;overflow-y:auto;font-family:Georgia,'Times New Roman',serif;color:#c8b87a;line-height:1.85;font-size:13px}
 #report-content::-webkit-scrollbar{width:3px}
@@ -188,13 +188,13 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #report-content blockquote h3{font-size:13px;margin:0 0 6px}
 #report-content strong{color:#f0d060}
 #report-content em{color:#b09040}
-#report-loading{padding:40px;text-align:center;color:#555;font-family:var(--font-mono);font-size:11px}
+#report-loading{padding:40px;text-align:center;color:#999;font-family:var(--font-mono);font-size:11px}
 
 @media print{
   body > *{display:none!important}
   #report-print-frame{display:block!important;background:#fff;padding:32px 48px;font-family:Georgia,'Times New Roman',serif;font-size:13px;color:#111;line-height:1.85}
   #report-print-frame h1{font-size:32px;text-align:center;margin-bottom:4px;text-transform:uppercase;letter-spacing:3px}
-  #report-print-frame h2{font-size:11px;text-align:center;margin-bottom:20px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:10px;color:#555}
+  #report-print-frame h2{font-size:11px;text-align:center;margin-bottom:20px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:10px;color:#999}
   #report-print-frame h3{font-size:16px;margin:16px 0 6px;text-transform:uppercase}
   #report-print-frame p{margin-bottom:10px;text-align:justify}
   #report-print-frame blockquote{border:1px solid #aaa;padding:12px 16px;margin:12px 0;font-style:italic;background:#f9f9f9}
@@ -208,8 +208,8 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #softtarget-box{background:#111;border:2px solid #555;border-radius:0;width:100%;max-width:560px;overflow:hidden;margin:auto;box-shadow:6px 6px 0 #000}
 #softtarget-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:2px solid #222;background:#0a0a0a}
 #softtarget-title{font-family:var(--font-bangers);font-size:16px;letter-spacing:1.5px;color:#ff8483;text-transform:uppercase}
-#softtarget-subtitle{font-size:10px;color:#555;font-family:var(--font-mono);margin-top:2px}
-#softtarget-close{background:transparent;border:none;color:#555;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
+#softtarget-subtitle{font-size:10px;color:#999;font-family:var(--font-mono);margin-top:2px}
+#softtarget-close{background:transparent;border:none;color:#999;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
 #softtarget-close:hover{color:#fff}
 #softtarget-list{max-height:65vh;overflow-y:auto}
 #softtarget-list::-webkit-scrollbar{width:3px}
@@ -225,7 +225,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 .st-btn{text-align:right}
 .st-route-btn{font-size:9px;padding:2px 7px;border-color:#378ADD;color:#378ADD;background:#050d18;box-shadow:1px 1px 0 #0a2040}
 .st-route-btn:hover{background:#0a1a30}
-#softtarget-colheads{display:grid;grid-template-columns:1fr 48px 48px 60px 90px;padding:5px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#333;text-transform:uppercase;letter-spacing:.5px}
+#softtarget-colheads{display:grid;grid-template-columns:1fr 48px 48px 60px 90px;padding:5px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#777;text-transform:uppercase;letter-spacing:.5px}
 
 /* ── PROFILE MODAL ── */
 #profile-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:300;align-items:center;justify-content:center}
@@ -235,21 +235,21 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #profile-box p{font-size:11px;color:#666;margin-bottom:12px;line-height:1.7;font-family:var(--font-mono)}
 #profile-search{width:100%;background:#0a0a0a;color:#ccc;border:2px solid #333;border-radius:0;padding:6px 10px;font-size:11px;margin-bottom:6px;font-family:var(--font-mono)}
 #profile-search:focus{outline:none;border-color:var(--v-gold)}
-#profile-search::placeholder{color:#333}
+#profile-search::placeholder{color:#777}
 #profile-results{max-height:160px;overflow-y:auto;border:1px solid #222;margin-bottom:12px;display:none}
 #profile-results::-webkit-scrollbar{width:3px}
 #profile-results::-webkit-scrollbar-thumb{background:#444}
 .profile-result-row{padding:6px 10px;font-size:11px;font-family:var(--font-mono);cursor:pointer;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:8px}
 .profile-result-row:hover{background:#1a1a1a}
 .profile-result-row .pr-name{color:#aaa;flex:1}
-.profile-result-row .pr-tiles{color:#444;font-size:10px}
+.profile-result-row .pr-tiles{color:#888;font-size:10px}
 #profile-current{margin-bottom:14px}
 .profile-entry{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a1a;font-size:11px;font-family:var(--font-mono)}
 .profile-entry-name{flex:1;color:#FAC775}
-.profile-entry-pid{color:#444;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
-.profile-entry-remove{background:transparent;border:1px solid #333;color:#555;font-size:10px;padding:1px 6px;cursor:pointer;box-shadow:none;border-radius:0}
+.profile-entry-pid{color:#888;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.profile-entry-remove{background:transparent;border:1px solid #333;color:#999;font-size:10px;padding:1px 6px;cursor:pointer;box-shadow:none;border-radius:0}
 .profile-entry-remove:hover{border-color:#ff8483;color:#ff8483;background:transparent;box-shadow:none}
-#profile-empty{color:#444;font-size:11px;font-family:var(--font-mono);padding:4px 0}
+#profile-empty{color:#888;font-size:11px;font-family:var(--font-mono);padding:4px 0}
 
 /* ── REFRESH MODAL ── */
 #refresh-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:300;align-items:center;justify-content:center}
@@ -259,7 +259,7 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #refresh-box p{font-size:11px;color:#666;margin-bottom:10px;line-height:1.7;font-family:var(--font-mono)}
 #refresh-box input{width:100%;background:#0a0a0a;color:#ccc;border:2px solid #333;border-radius:0;padding:6px 10px;font-size:11px;margin-bottom:8px;font-family:var(--font-mono)}
 #refresh-box input:focus{outline:none;border-color:var(--v-gold)}
-#refresh-box input::placeholder{color:#333}
+#refresh-box input::placeholder{color:#777}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end}
 #refresh-result{font-size:11px;margin-top:8px;min-height:18px;font-family:var(--font-mono)}
 
@@ -281,7 +281,7 @@ body.map-only #analyse-btn{display:none!important}
 @media (max-width: 768px){
   #toolbar-scroll{padding:6px 8px;gap:4px}
   #toolbar h1{display:none}
-  #ver{display:block!important;color:#555}
+  #ver{display:block!important;color:#999}
   .sep{display:none}
   #age{display:none}
   #route-indicator{display:none!important}
@@ -311,7 +311,7 @@ body.map-only #analyse-btn{display:none!important}
 .tk-green{color:var(--v-green)}
 .tk-red{color:var(--v-red)}
 .tk-blue{color:#89c6ff}
-.tk-sep{color:#333;margin:0 16px}
+.tk-sep{color:#777;margin:0 16px}
 
 /* ── GARRISON IN TIP ── */
 #tip .tgar,#touch-tooltip .tgar{color:#89c6ff;font-size:10px}
@@ -323,12 +323,12 @@ body.map-only #analyse-btn{display:none!important}
 #garrison-box{background:#111;border:2px solid #555;border-radius:0;width:100%;max-width:520px;overflow:hidden;margin:auto;box-shadow:6px 6px 0 #000}
 #garrison-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:2px solid #222;background:#0a0a0a}
 #garrison-title{font-family:var(--font-bangers);font-size:16px;letter-spacing:1.5px;color:#fff;text-transform:uppercase}
-#garrison-subtitle{font-size:10px;color:#555;font-family:var(--font-mono);margin-top:2px}
-#garrison-close{background:transparent;border:none;color:#555;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
+#garrison-subtitle{font-size:10px;color:#999;font-family:var(--font-mono);margin-top:2px}
+#garrison-close{background:transparent;border:none;color:#999;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
 #garrison-close:hover{color:#fff}
 /* Tabs */
 #garrison-tabs{display:flex;border-bottom:2px solid #222;background:#0a0a0a}
-.gar-tab{flex:1;padding:7px 12px;font-size:10px;font-family:var(--font-mono);font-weight:600;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;background:transparent;border:none;border-bottom:2px solid transparent;color:#444;box-shadow:none;margin-bottom:-2px;border-radius:0}
+.gar-tab{flex:1;padding:7px 12px;font-size:10px;font-family:var(--font-mono);font-weight:600;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;background:transparent;border:none;border-bottom:2px solid transparent;color:#888;box-shadow:none;margin-bottom:-2px;border-radius:0}
 .gar-tab:hover{color:#aaa;background:transparent;box-shadow:none}
 .gar-tab.active{color:var(--v-gold);border-bottom-color:var(--v-gold);background:transparent;box-shadow:none}
 #garrison-tab-navigate{display:none}
@@ -351,11 +351,11 @@ body.map-only #analyse-btn{display:none!important}
 .gar-raid-row{padding:7px 18px;border-bottom:1px solid #0f0f0f;font-size:11px;font-family:var(--font-mono);line-height:1.6}
 .gar-raid-row.as-attacker{border-left:3px solid #ff8483}
 .gar-raid-row.as-defender{border-left:3px solid #89c6ff}
-.gar-raid-meta{font-size:9px;color:#444;margin-top:2px}
+.gar-raid-meta{font-size:9px;color:#888;margin-top:2px}
 .gar-raid-loot{font-size:10px;color:#888;margin-top:2px}
 /* History tab */
 #gar-history-chart{padding:14px 18px 8px;overflow-x:auto}
-#gar-history-empty{padding:20px 18px;color:#444;font-size:11px;font-family:var(--font-mono)}
+#gar-history-empty{padding:20px 18px;color:#888;font-size:11px;font-family:var(--font-mono)}
 /* Ghost mode */
 #ghost-btn.ghost-active{background:#0a1a0a;border-color:var(--v-green);color:var(--v-green);box-shadow:2px 2px 0 #1a3a1a}
 /* Navigate tab */
@@ -380,7 +380,7 @@ body.map-only #analyse-btn{display:none!important}
 .gar-e{color:#ff8483;font-weight:700;text-align:right;padding-right:8px}
 .gar-b{color:#89c6ff;text-align:right;padding-right:8px}
 .gar-h{color:#aaa;text-align:right;padding-right:8px}
-.gar-total{color:#555;font-size:10px;text-align:right}
+.gar-total{color:#999;font-size:10px;text-align:right}
 .gar-hq-badge{font-size:9px;color:var(--v-gold);border:1px solid var(--v-gold);padding:1px 4px;margin-left:4px}
 .p-gar-btn{width:18px;height:18px;padding:0;font-size:10px;border-radius:0;flex-shrink:0;line-height:18px;text-align:center;background:#111;border:1px solid #333;box-shadow:1px 1px 0 #000;color:#89c6ff;visibility:hidden}
 .has-garrison .p-gar-btn{visibility:visible}
@@ -388,12 +388,12 @@ body.map-only #analyse-btn{display:none!important}
 /* ── GARRISON RECALL ── */
 #garrison-recall-bar{display:none;align-items:center;gap:8px;padding:8px 18px;border-top:2px solid #222;background:#0a0a0a;flex-shrink:0}
 #garrison-recall-bar.visible{display:flex}
-#garrison-recall-info{font-size:10px;color:#555;font-family:var(--font-mono);flex:1}
+#garrison-recall-info{font-size:10px;color:#999;font-family:var(--font-mono);flex:1}
 #garrison-recall-btn{background:#111;border:2px solid var(--v-gold);color:var(--v-gold);box-shadow:2px 2px 0 #3a2a00;font-size:10px;padding:3px 10px}
 #garrison-recall-btn:hover{background:#1a1200}
 .gar-row.selected{background:#0a0f05;border-left:3px solid var(--v-green)}
 .gar-check{width:14px;height:14px;cursor:pointer;flex-shrink:0;accent-color:var(--v-green)}
-#garrison-select-all{font-size:9px;padding:2px 6px;background:transparent;border:1px solid #333;color:#555;box-shadow:none}
+#garrison-select-all{font-size:9px;padding:2px 6px;background:transparent;border:1px solid #333;color:#999;box-shadow:none}
 #garrison-select-all:hover{border-color:#888;color:#ccc}
 
 /* ── WALLET MODAL ── */
@@ -401,16 +401,16 @@ body.map-only #analyse-btn{display:none!important}
 #wallet-modal.open{display:flex}
 #wallet-box{background:#111;border:2px solid #555;border-radius:0;padding:24px;width:460px;max-width:90vw;box-shadow:6px 6px 0 #000;font-family:var(--font-mono)}
 #wallet-box h2{font-family:var(--font-bangers);font-size:18px;letter-spacing:1.5px;color:#fff;text-transform:uppercase;margin-bottom:4px}
-#wallet-box .wsub{font-size:10px;color:#555;margin-bottom:16px}
+#wallet-box .wsub{font-size:10px;color:#999;margin-bottom:16px}
 .wallet-section{margin-bottom:14px}
-.wallet-label{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.wallet-label{font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .wallet-input{width:100%;background:#0a0a0a;color:#ccc;border:2px solid #333;border-radius:0;padding:6px 8px;font-size:10px;font-family:var(--font-mono)}
 .wallet-input:focus{outline:none;border-color:var(--v-gold)}
 #wallet-status{font-size:10px;min-height:16px;margin-bottom:10px}
 #wallet-connect-btn{background:var(--v-blue);border-color:var(--v-blue);box-shadow:2px 2px 0 #1a4a9a;color:#fff;font-size:11px;padding:5px 14px;margin-bottom:10px;width:100%}
 #wallet-execute-btn{background:var(--v-green);border-color:#1a5a2a;box-shadow:2px 2px 0 #0a2a0a;color:#000;font-size:11px;padding:5px 14px;width:100%;display:none;font-weight:700}
-#wallet-progress{font-size:10px;color:#555;margin-top:8px;min-height:16px}
-#wallet-close{background:transparent;border:none;color:#555;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none;float:right;margin-top:-30px}
+#wallet-progress{font-size:10px;color:#999;margin-top:8px;min-height:16px}
+#wallet-close{background:transparent;border:none;color:#999;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none;float:right;margin-top:-30px}
 
 /* ── COORDINATE RULER ── */
 #ruler-x{position:absolute;top:0;left:0;right:0;height:18px;pointer-events:none;overflow:hidden;z-index:5;background:linear-gradient(to bottom,rgba(0,0,0,0.55),transparent)}
@@ -421,7 +421,7 @@ body.map-only #analyse-btn{display:none!important}
 
 /* ── INACTIVITY FILTER ── */
 #inactivity-row{display:flex;align-items:center;gap:4px;margin-top:5px;font-family:var(--font-mono);font-size:9px}
-#inactivity-row label{color:#555;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+#inactivity-row label{color:#999;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
 #inactivity-select{background:#0a0a0a;color:#aaa;border:2px solid #2a2a2a;border-radius:0;padding:2px 4px;font-size:9px;font-family:var(--font-mono);flex:1}
 #inactivity-select:focus{outline:none;border-color:var(--v-gold)}
 .plcd{font-size:9px;color:#666;flex-shrink:0;white-space:nowrap;min-width:28px;text-align:right}
@@ -437,7 +437,7 @@ body.map-only #analyse-btn{display:none!important}
 .toolbar-dd-sep{height:1px;background:#222;margin:2px 0}
 
 /* ── ZOOM INDICATOR ── */
-#zoom-indicator{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);border:1px solid #333;padding:2px 6px;font-size:9px;font-family:var(--font-mono);color:#555;pointer-events:none;z-index:10}
+#zoom-indicator{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);border:1px solid #333;padding:2px 6px;font-size:9px;font-family:var(--font-mono);color:#999;pointer-events:none;z-index:10}
 
 /* ── COMPACT PLAYER LIST ── */
 #player-list.compact .p-mark-btn{display:none}
@@ -455,8 +455,8 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 
 /* ── ANALYSIS TABS ── */
-.an-tab{background:#0a0a0a;color:#555;cursor:pointer;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px;border-radius:0;border:2px solid #222}
-.an-tab.on{background:#111;color:#ccc;font-weight:700;border-color:#444;box-shadow:2px 2px 0 #000}
+.an-tab{background:#0a0a0a;color:#999;cursor:pointer;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px;border-radius:0;border:2px solid #222}
+.an-tab.on{background:#111;color:#ccc;font-weight:700;border-color:#888;box-shadow:2px 2px 0 #000}
 .an-tab:hover{background:#141414;color:#aaa}
 .an-row{display:flex;align-items:center;gap:8px;padding:7px 18px;border-bottom:1px solid #111;font-size:11px;cursor:pointer;font-family:var(--font-mono)}
 .an-row:hover{background:#141414}
@@ -465,14 +465,14 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 .an-delta{font-weight:700;min-width:44px;text-align:right}
 .an-bar-wrap{width:70px;height:3px;background:#1a1a1a;border-radius:0;flex-shrink:0}
 .an-bar{height:3px;border-radius:0}
-.an-tiles{color:#555;font-size:10px;min-width:50px;text-align:right}
+.an-tiles{color:#999;font-size:10px;min-width:50px;text-align:right}
 </style>
 </head>
 <body>
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#555;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.14</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.15</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh</button>
   <div class="sep"></div>
@@ -510,7 +510,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
   <div id="ticker-track">
     <div id="ticker-inner"></div>
   </div>
-  <button onclick="closeTicker()" style="background:transparent;border:none;color:#555;cursor:pointer;font-size:14px;padding:0 8px;line-height:1;margin-left:4px;box-shadow:none;flex-shrink:0" title="Close ticker">✕</button>
+  <button onclick="closeTicker()" style="background:transparent;border:none;color:#999;cursor:pointer;font-size:14px;padding:0 8px;line-height:1;margin-left:4px;box-shadow:none;flex-shrink:0" title="Close ticker">✕</button>
 </div>
 
 <!-- Timeline bar -->
@@ -545,7 +545,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
         <div class="route-dot" id="rp-dot-a" style="background:#1D9E75"></div>
         <div class="route-name" id="rp-name-a">—</div>
       </div>
-      <div style="font-size:10px;color:#444;padding-left:18px;margin-bottom:4px">↓</div>
+      <div style="font-size:10px;color:#888;padding-left:18px;margin-bottom:4px">↓</div>
       <div class="route-player">
         <div class="route-dot" id="rp-dot-b" style="background:#E24B4A"></div>
         <div class="route-name" id="rp-name-b">—</div>
@@ -570,7 +570,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
         </div>
         <div style="position:relative;display:flex;align-items:center">
           <input type="text" id="search" placeholder="Search player..." oninput="onSearchInput(this)" style="width:100%;padding-right:28px">
-          <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;background:transparent;border:none;color:#555;font-size:14px;cursor:pointer;padding:2px;line-height:1">✕</button>
+          <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;background:transparent;border:none;color:#999;font-size:14px;cursor:pointer;padding:2px;line-height:1">✕</button>
         </div>
         <div class="filter-row">
           <button class="fb on" onclick="setFilter('all',this)">All</button>
@@ -605,7 +605,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <button id="neighbor-close" onclick="closeNeighborPopup()">✕</button>
   </div>
   <div id="neighbor-attack-suggestion" style="display:none"></div>
-  <div id="neighbor-neighbors-head" style="display:none;padding:6px 14px 4px;border-top:1px solid #1a1a1a;font-size:9px;font-family:var(--font-mono);color:#444;text-transform:uppercase;letter-spacing:.5px"></div>
+  <div id="neighbor-neighbors-head" style="display:none;padding:6px 14px 4px;border-top:1px solid #1a1a1a;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px"></div>
   <div id="neighbor-list"></div>
 </div>
 
@@ -629,7 +629,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
     <!-- Tab 1: Navigate -->
     <div id="garrison-tab-navigate" class="active">
-      <div style="display:grid;grid-template-columns:1fr 50px 50px 70px 60px;padding:5px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#444;text-transform:uppercase;letter-spacing:.5px">
+      <div style="display:grid;grid-template-columns:1fr 50px 50px 70px 60px;padding:5px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
         <span>Position</span>
         <span style="color:#ff8483;text-align:right">E</span>
         <span style="color:#89c6ff;text-align:right">B</span>
@@ -641,7 +641,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
     <!-- Tab 2: Recall -->
     <div id="garrison-tab-recall">
-      <div style="display:grid;grid-template-columns:20px 120px 60px 60px 80px auto;padding:6px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#444;text-transform:uppercase;letter-spacing:.5px">
+      <div style="display:grid;grid-template-columns:20px 120px 60px 60px 80px auto;padding:6px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
         <span></span>
         <span>Position</span>
         <span style="color:#ff8483;text-align:right;padding-right:8px">E</span>
@@ -733,7 +733,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <div class="wallet-section">
       <div class="wallet-label">DVD NFT Object ID</div>
       <input class="wallet-input" id="wallet-dvd" placeholder="0xafe7c462964002efe12c9601b1d75293d0b22052bc..." title="Your DVD NFT object ID">
-      <div style="font-size:9px;color:#444;margin-top:3px">Find in Slush wallet → Assets → your Vendetta DVD NFT → Object ID</div>
+      <div style="font-size:9px;color:#888;margin-top:3px">Find in Slush wallet → Assets → your Vendetta DVD NFT → Object ID</div>
     </div>
     <div class="wallet-section">
       <div class="wallet-label">Player Profile Object ID</div>
@@ -743,7 +743,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <button id="wallet-connect-btn" onclick="connectWallet()">🔗 Connect Slush / Suiet wallet</button>
     <button id="wallet-execute-btn" onclick="executeRecall()">▶ Execute recall</button>
     <div id="wallet-progress"></div>
-    <div style="font-size:9px;color:#444;margin-top:12px;line-height:1.6">
+    <div style="font-size:9px;color:#888;margin-top:12px;line-height:1.6">
       ⚠ Only works with Slush or Suiet browser extension wallets.<br>
       ZkLogin (Google) wallets are not supported.
     </div>
@@ -756,30 +756,30 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:2px solid #222;background:#0a0a0a">
       <div>
         <div style="font-family:var(--font-bangers);font-size:16px;letter-spacing:1.5px;color:#fff;text-transform:uppercase">📊 Snapshot Analysis</div>
-        <div id="analysis-subtitle" style="font-size:10px;color:#555;margin-top:2px;font-family:var(--font-mono)">—</div>
+        <div id="analysis-subtitle" style="font-size:10px;color:#999;margin-top:2px;font-family:var(--font-mono)">—</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button id="analysis-map-btn" onclick="toggleAnalysisOverlay()" style="font-size:10px;padding:3px 10px">🗺 Show on map</button>
-        <button onclick="closeAnalysis()" style="background:transparent;border:none;color:#555;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none">✕</button>
+        <button onclick="closeAnalysis()" style="background:transparent;border:none;color:#999;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none">✕</button>
       </div>
     </div>
     <!-- Summary stats -->
     <div style="display:flex;gap:0;border-bottom:2px solid #222">
       <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #222">
         <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:var(--v-green)" id="an-gained-total">—</div>
-        <div style="font-size:10px;color:#555;font-family:var(--font-mono);text-transform:uppercase">turfs captured</div>
+        <div style="font-size:10px;color:#999;font-family:var(--font-mono);text-transform:uppercase">turfs captured</div>
       </div>
       <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #222">
         <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:var(--v-red)" id="an-lost-total">—</div>
-        <div style="font-size:10px;color:#555;font-family:var(--font-mono);text-transform:uppercase">turfs lost</div>
+        <div style="font-size:10px;color:#999;font-family:var(--font-mono);text-transform:uppercase">turfs lost</div>
       </div>
       <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #222">
         <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:var(--v-gold)" id="an-active">—</div>
-        <div style="font-size:10px;color:#555;font-family:var(--font-mono);text-transform:uppercase">active players</div>
+        <div style="font-size:10px;color:#999;font-family:var(--font-mono);text-transform:uppercase">active players</div>
       </div>
       <div style="flex:1;padding:10px;text-align:center">
         <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:#888" id="an-unchanged">—</div>
-        <div style="font-size:10px;color:#555;font-family:var(--font-mono);text-transform:uppercase">turfs changed</div>
+        <div style="font-size:10px;color:#999;font-family:var(--font-mono);text-transform:uppercase">turfs changed</div>
       </div>
     </div>
     <!-- Filter tabs -->
@@ -790,7 +790,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     </div>
     <!-- Player list -->
     <div id="analysis-list" style="max-height:50vh;overflow-y:auto;padding:8px 0"></div>
-    <div style="padding:8px 18px;border-top:2px solid #222;font-size:10px;color:#444;font-family:var(--font-mono)">
+    <div style="padding:8px 18px;border-top:2px solid #222;font-size:10px;color:#888;font-family:var(--font-mono)">
       Comparing: <span id="an-from-label" style="color:#666">—</span> → <span id="an-to-label" style="color:#666">—</span>
     </div>
   </div>
@@ -804,7 +804,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <p>Enter your GitHub Personal Access Token (needs <code>workflow</code> scope):<br>
     <a href="https://github.com/settings/tokens/new?scopes=workflow&description=SUI+Turf+Map" target="_blank" style="color:#378ADD;font-size:11px">Create token on GitHub →</a></p>
     <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx">
-    <p style="font-size:11px;color:#555">Repository (owner/repo):</p>
+    <p style="font-size:11px;color:#999">Repository (owner/repo):</p>
     <input type="text" id="gh-repo" placeholder="Hook27/sui-turf-map" value="Hook27/sui-turf-map">
     <div id="refresh-result"></div>
     <div class="modal-btns">
@@ -1212,23 +1212,45 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
   if(atkEl){
     const tile=clickedTile||null;
     const defTotal=tile?(tile.gE||0)+(tile.gB||0)+(tile.gH||0):0;
-    const defLabel=tile?[tile.gE?`<span style="color:#ff8483">${tile.gE}E</span>`:'',tile.gB?`<span style="color:#6fffa9">${tile.gB}B</span>`:'',tile.gH?`<span style="color:#aaa">${tile.gH}H</span>`:''].filter(Boolean).join(' '):null;
     if(tile){
       atkEl.style.cssText='display:block;padding:8px 14px 10px;background:#0d0d14;border-bottom:1px solid #1a1a1a';
       if(defTotal===0){
         atkEl.innerHTML=`
-          <div style="font-size:9px;color:#444;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Attack Suggestion</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--font-mono)">
-            <span>ATTACKERS: <span style="color:#6fffa9">any army wins</span></span>
-            <span>DEFENDERS: <span style="color:#555">none</span></span>
-          </div>`;
+          <div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Attack Suggestion</div>
+          <div style="font-size:10px;color:#6fffa9;font-family:var(--font-mono)">No garrison — any army wins</div>`;
       } else {
-        atkEl.innerHTML=`
-          <div style="font-size:9px;color:#444;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Attack Suggestion</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--font-mono)">
-            <span>ATTACKERS: <span style="color:#555">calculating…</span></span>
-            <span>DEFENDERS: ${defLabel}</span>
+        const GRID='display:grid;grid-template-columns:80px 28px 28px 28px 1fr 1fr;font-size:11px;align-items:center;padding:3px 0;border-top:1px solid #1a1a1a;font-family:var(--font-mono)';
+        const HDR='display:grid;grid-template-columns:80px 28px 28px 28px 1fr 1fr;font-size:9px;text-transform:uppercase;margin-bottom:4px;align-items:center;font-family:var(--font-mono)';
+        function tableHTML(aH,aB,aE,winHtml,rndHtml){
+          return `
+          <div style="${HDR}">
+            <span></span>
+            <span style="text-align:center;color:#ccc">H</span>
+            <span style="text-align:center;color:#6fffa9">B</span>
+            <span style="text-align:center;color:#ff8483">E</span>
+            <span style="text-align:right;padding-right:8px;color:#999">Win%</span>
+            <span style="text-align:right;color:#999">Rnd</span>
+          </div>
+          <div style="${GRID}">
+            <span style="font-size:9px;color:#999;text-transform:uppercase">Attackers</span>
+            <span style="text-align:center;color:#ccc">${aH}</span>
+            <span style="text-align:center;color:#6fffa9">${aB}</span>
+            <span style="text-align:center;color:#ff8483">${aE}</span>
+            <span style="text-align:right;padding-right:8px">${winHtml}</span>
+            <span style="text-align:right">${rndHtml}</span>
+          </div>
+          <div style="${GRID}">
+            <span style="font-size:9px;color:#999;text-transform:uppercase">Defenders</span>
+            <span style="text-align:center;color:#ccc">${tile.gH||0}</span>
+            <span style="text-align:center;color:#6fffa9">${tile.gB||0}</span>
+            <span style="text-align:center;color:#ff8483">${tile.gE||0}</span>
+            <span style="text-align:right;padding-right:8px;color:#666">—</span>
+            <span style="text-align:right;color:#666">—</span>
           </div>`;
+        }
+        atkEl.innerHTML=`
+          <div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Attack Suggestion</div>
+          ${tableHTML('…','…','…','<span style="color:#999">…</span>','<span style="color:#999">…</span>')}`;
         setTimeout(()=>{
           const defObj={EF:tile.gE||0,BC:tile.gB||0,HM:tile.gH||0};
           const cacheKey=_compKey(defObj);
@@ -1249,13 +1271,13 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
             best=refined[0];
           }
           const winCol=best.winPct>=80?'#6fffa9':best.winPct>=50?'#FAC775':'#E24B4A';
-          const gasWarn=best.avgRounds>16?` <span style="color:#E24B4A" title="Gas risk">⚠</span>`:'';
+          const gasWarn=best.avgRounds>16?`<span style="color:#E24B4A" title="Gas risk"> ⚠</span>`:'';
           atkEl.innerHTML=`
-            <div style="font-size:9px;color:#444;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Attack Suggestion</div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--font-mono)">
-              <span>ATTACKERS: ${_atkLabel(best)} <span style="color:${winCol}">${best.winPct.toFixed(0)}%</span> <span style="color:#555">~${best.avgRounds.toFixed(0)}rnd${gasWarn}</span></span>
-              <span>DEFENDERS: ${defLabel}</span>
-            </div>`;
+            <div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Attack Suggestion</div>
+            ${tableHTML(best.HM,best.BC,best.EF,
+              `<span style="color:${winCol}">${best.winPct.toFixed(0)}%</span>`,
+              `<span style="color:${winCol}">~${best.avgRounds.toFixed(0)}rnd${gasWarn}</span>`
+            )}`;
         },20);
       }
     } else {
@@ -1265,7 +1287,7 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
   const list=document.getElementById('neighbor-list');
   const marks=loadMarks();
   if(!nbrs||nbrs.size===0){
-    list.innerHTML='<div style="padding:1rem;color:#555;font-size:12px">No neighboring players found.</div>';
+    list.innerHTML='<div style="padding:1rem;color:#999;font-size:12px">No neighboring players found.</div>';
   } else {
     const sorted=[...nbrs.entries()].sort((a,b)=>b[1]-a[1]);
     list.innerHTML=sorted.map(([npid,cnt])=>{
@@ -1970,7 +1992,7 @@ function renderPlayerList(){
   const el=document.getElementById('player-list');
 
   if(!filteredPlayers.length){
-    el.innerHTML='<div style="color:#444;padding:1rem;font-size:12px">No results</div>';
+    el.innerHTML='<div style="color:#888;padding:1rem;font-size:12px">No results</div>';
     return;
   }
 
@@ -2349,7 +2371,7 @@ async function openAnalysis(){
   const modal = document.getElementById('analysis-modal');
   modal.style.display = 'flex';
   document.getElementById('analysis-list').innerHTML =
-    '<div style="padding:2rem;text-align:center;color:#555;font-size:12px">Loading snapshots...</div>';
+    '<div style="padding:2rem;text-align:center;color:#999;font-size:12px">Loading snapshots...</div>';
 
   try{
     // Always compare the two most recent snapshots
@@ -2463,7 +2485,7 @@ function renderAnalysisList(){
           <div class="an-tiles">${(r.gained+r.lost)} turfs</div>
         </div>`;
       }).join('')
-    : '<div style="padding:1rem;text-align:center;color:#555;font-size:12px">No changes found.</div>';
+    : '<div style="padding:1rem;text-align:center;color:#999;font-size:12px">No changes found.</div>';
 }
 
 function setAnTab(f, btn){
@@ -2772,7 +2794,7 @@ function openGarrison(pid, e){
 function renderGarrisonNavList(){
   const el=document.getElementById('gar-nav-list');
   if(!garrisonAllTiles.length){
-    el.innerHTML='<div style="padding:1rem;color:#444;font-size:11px;font-family:var(--font-mono)">No tiles found.</div>';
+    el.innerHTML='<div style="padding:1rem;color:#888;font-size:11px;font-family:var(--font-mono)">No tiles found.</div>';
     return;
   }
   el.innerHTML=garrisonAllTiles.map(t=>{
@@ -2796,7 +2818,7 @@ function garNavJump(wx,wy){
 function renderGarrisonList(){
   const el=document.getElementById('garrison-list');
   if(!garrisonRows.length){
-    el.innerHTML='<div style="padding:1rem;color:#444;font-size:11px;font-family:var(--font-mono)">No garrison data found.</div>';
+    el.innerHTML='<div style="padding:1rem;color:#888;font-size:11px;font-family:var(--font-mono)">No garrison data found.</div>';
     return;
   }
   el.innerHTML=garrisonRows.map((row,i)=>{
@@ -3369,7 +3391,7 @@ function renderGarrisonHistory(){
 
 function renderGarrisonRaids(){
   const el = document.getElementById('gar-raids-list');
-  if(!garrisonPid){ el.innerHTML='<div style="padding:16px;color:#444;font-size:11px;font-family:var(--font-mono)">No player selected.</div>'; return; }
+  if(!garrisonPid){ el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No player selected.</div>'; return; }
   const raids = (battleHistoryData&&battleHistoryData.raids)||[];
   const hqd   = (battleHistoryData&&battleHistoryData.hqDestroyed)||[];
 
@@ -3383,7 +3405,7 @@ function renderGarrisonRaids(){
     .sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
 
   if(!allEvents.length){
-    el.innerHTML='<div style="padding:16px;color:#444;font-size:11px;font-family:var(--font-mono)">No raids found for this player.<br><span style="color:#333">Raid data is collected from the next run onwards.</span></div>';
+    el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No raids found for this player.<br><span style="color:#777">Raid data is collected from the next run onwards.</span></div>';
     return;
   }
   function fmtAge(ts){const h=Math.round((Date.now()-new Date(ts))/3600000);return h<1?'just now':h<24?h+'h ago':Math.floor(h/24)+'d ago';}
@@ -3392,7 +3414,7 @@ function renderGarrisonRaids(){
     if(r.cash>0)    parts.push(`<span style="color:#FAC775">$${r.cash.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`);
     if(r.weapons>0) parts.push(`<span style="color:#ff8483">${r.weapons.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})} arms</span>`);
     if(r.xp>0)      parts.push(`<span style="color:#89c6ff">${r.xp.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})} XP</span>`);
-    return parts.length?parts.join(' · '):'<span style="color:#333">nothing looted</span>';
+    return parts.length?parts.join(' · '):'<span style="color:#777">nothing looted</span>';
   }
   el.innerHTML = allEvents.map(r=>{
     const isAtk = r.attacker_pid===garrisonPid;
@@ -3400,8 +3422,8 @@ function renderGarrisonRaids(){
       // HQ destroyed event
       const rowCls = isAtk?'gar-raid-row as-attacker':'gar-raid-row as-defender';
       const dir = isAtk
-        ? `<span style="color:#ff8483">💥 HQ destroyed</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span> <span style="color:#555;font-size:9px">(held ground)</span>`
-        : `<span style="color:#FAC775">💥 HQ destroyed by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span> <span style="color:#555;font-size:9px">(still standing)</span>`;
+        ? `<span style="color:#ff8483">💥 HQ destroyed</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span> <span style="color:#999;font-size:9px">(held ground)</span>`
+        : `<span style="color:#FAC775">💥 HQ destroyed by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span> <span style="color:#999;font-size:9px">(still standing)</span>`;
       return `<div class="${rowCls}">
         <div>${dir}</div>
         <div class="gar-raid-loot">${fmtLoot(r)}</div>
@@ -3497,16 +3519,16 @@ function _renderTileAdvice(el, tile){
 
   if(defTotal===0){
     el.innerHTML=`<div style="padding:14px 18px">
-      <div style="font-size:11px;color:#555;font-family:var(--font-mono);margin-bottom:8px">(${tile.x}, ${tile.y})${hqBadge}</div>
+      <div style="font-size:11px;color:#999;font-family:var(--font-mono);margin-bottom:8px">(${tile.x}, ${tile.y})${hqBadge}</div>
       <div style="color:#6fffa9;font-size:12px">No garrison — any army wins instantly.</div>
     </div>`;
     return;
   }
 
   el.innerHTML=`<div style="padding:14px 18px">
-    <div style="font-size:11px;color:#555;font-family:var(--font-mono);margin-bottom:4px">(${tile.x}, ${tile.y})${hqBadge}</div>
-    <div style="font-size:12px;margin-bottom:12px">Defending: ${defLabel} <span style="color:#555">(${defTotal} total)</span></div>
-    <div style="color:#444;font-size:10px;font-family:var(--font-mono)">Calculating best attack…</div>
+    <div style="font-size:11px;color:#999;font-family:var(--font-mono);margin-bottom:4px">(${tile.x}, ${tile.y})${hqBadge}</div>
+    <div style="font-size:12px;margin-bottom:12px">Defending: ${defLabel} <span style="color:#999">(${defTotal} total)</span></div>
+    <div style="color:#888;font-size:10px;font-family:var(--font-mono)">Calculating best attack…</div>
   </div>`;
 
   setTimeout(()=>{
@@ -3537,7 +3559,7 @@ function _renderTileAdvice(el, tile){
       const roundsColor=c.avgRounds>16?'#E24B4A':c.avgRounds>12?'#FAC775':'#6fffa9';
       const winColor=c.winPct>=80?'#6fffa9':c.winPct>=50?'#FAC775':'#E24B4A';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #111">
-        <div style="font-size:12px">${i===0?'<span style="color:#FAC775">★</span> ':''}${_atkLabel(c)} <span style="color:#444;font-size:10px">(${c.total})</span></div>
+        <div style="font-size:12px">${i===0?'<span style="color:#FAC775">★</span> ':''}${_atkLabel(c)} <span style="color:#888;font-size:10px">(${c.total})</span></div>
         <div style="text-align:right;font-size:11px;font-family:var(--font-mono)">
           <span style="color:${winColor}">${c.winPct.toFixed(0)}%</span>
           <span style="color:${roundsColor};margin-left:10px">${c.avgRounds>16?'⚠ ':''}~${c.avgRounds.toFixed(0)} rnd</span>
@@ -3546,11 +3568,11 @@ function _renderTileAdvice(el, tile){
     }).join('');
 
     el.innerHTML=`<div style="padding:14px 18px">
-      <div style="font-size:11px;color:#555;font-family:var(--font-mono);margin-bottom:4px">(${tile.x}, ${tile.y})${hqBadge}</div>
-      <div style="font-size:12px;margin-bottom:14px">Defending: ${defLabel} <span style="color:#555">(${defTotal} total)</span></div>
-      <div style="font-size:9px;color:#444;font-family:var(--font-mono);margin-bottom:8px">TOP 3 ATTACKS · ★ best · ⚠ gas risk (&gt;16 rnd)</div>
+      <div style="font-size:11px;color:#999;font-family:var(--font-mono);margin-bottom:4px">(${tile.x}, ${tile.y})${hqBadge}</div>
+      <div style="font-size:12px;margin-bottom:14px">Defending: ${defLabel} <span style="color:#999">(${defTotal} total)</span></div>
+      <div style="font-size:9px;color:#888;font-family:var(--font-mono);margin-bottom:8px">TOP 3 ATTACKS · ★ best · ⚠ gas risk (&gt;16 rnd)</div>
       ${rowsHtml}
-      <div style="margin-top:12px;font-size:9px;color:#444;font-family:var(--font-mono)">
+      <div style="margin-top:12px;font-size:9px;color:#888;font-family:var(--font-mono)">
         Best: ${_atkLabel(best)} · avg ${best.avgSurv.toFixed(1)} survivors
         ${gasWarn?`<div style="color:#E24B4A;margin-top:4px">⚠ High round count — risk of on-chain gas failure</div>`:''}
       </div>
@@ -3567,7 +3589,7 @@ function renderAttackAdvisor(){
     : tiles.filter(t=>t.pid===garrisonPid).sort((a,b)=>(b.gE+b.gB+b.gH)-(a.gE+a.gB+a.gH))[0];
 
   if(!tile){
-    el.innerHTML='<div style="padding:14px 18px;color:#444;font-size:11px;font-family:var(--font-mono)">No tile selected.</div>';
+    el.innerHTML='<div style="padding:14px 18px;color:#888;font-size:11px;font-family:var(--font-mono)">No tile selected.</div>';
     return;
   }
 
@@ -3583,7 +3605,7 @@ function renderAttackAdvisor(){
       return `<button onclick="_lastClickedTile=tiles[tileMap.get('${t.x},${t.y}')];renderAttackAdvisor()" style="font-size:9px;padding:3px 8px;margin:2px;font-family:var(--font-mono);background:#111;border:1px solid #222;color:#888;cursor:pointer;border-radius:2px">(${t.x},${t.y}) ${tot}u</button>`;
     }).join('');
     el.innerHTML+=`<div style="padding:0 18px 14px;border-top:1px solid #111;margin-top:4px">
-      <div style="font-size:9px;color:#333;font-family:var(--font-mono);margin:8px 0 4px">OTHER GARRISONED TILES:</div>
+      <div style="font-size:9px;color:#777;font-family:var(--font-mono);margin:8px 0 4px">OTHER GARRISONED TILES:</div>
       ${btnHtml}
     </div>`;
   }
@@ -3716,7 +3738,7 @@ document.getElementById('softtarget-modal').addEventListener('click',e=>{
 function renderSoftTargets(){
   const el = document.getElementById('softtarget-list');
   const myTiles = tiles.filter(t => t.pid === selectedPid);
-  if(!myTiles.length){ el.innerHTML='<div style="padding:16px;color:#444;font-size:11px;font-family:var(--font-mono)">No tiles found for selected player.</div>'; return; }
+  if(!myTiles.length){ el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No tiles found for selected player.</div>'; return; }
 
   // True inactivity = both lcd (turf changes) AND activity events (feed/claim) are old.
   // If activity data available: use min(lcd, activity_days) as the real inactivity metric.
@@ -3738,7 +3760,7 @@ function renderSoftTargets(){
   );
 
   if(!candidates.length){
-    el.innerHTML='<div style="padding:16px;color:#444;font-size:11px;font-family:var(--font-mono)">No inactive players found with multiple turfs.</div>';
+    el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No inactive players found with multiple turfs.</div>';
     return;
   }
 
@@ -3923,7 +3945,7 @@ function onProfileSearch(val){
     resultsEl.style.display='block';
     resultsEl.innerHTML=`<div class="profile-result-row" onclick="addProfile('${val}','${esc(name||val.slice(0,12))}');document.getElementById('profile-search').value='';document.getElementById('profile-results').style.display='none'">
       <span class="profile-result-name">${esc(name||'[unknown]')}</span>
-      <span class="profile-result-pid" style="font-size:9px;color:#444">${val.slice(0,20)}...</span>
+      <span class="profile-result-pid" style="font-size:9px;color:#888">${val.slice(0,20)}...</span>
     </div>`;
     return;
   }
@@ -3931,7 +3953,7 @@ function onProfileSearch(val){
   // Name search
   const q = val.toLowerCase();
   const matches = players.filter(p=>p.name&&p.name.toLowerCase().includes(q)).slice(0,8);
-  if(!matches.length){ resultsEl.style.display='block'; resultsEl.innerHTML='<div style="padding:6px 10px;font-size:11px;color:#444;font-family:var(--font-mono)">No players found</div>'; return; }
+  if(!matches.length){ resultsEl.style.display='block'; resultsEl.innerHTML='<div style="padding:6px 10px;font-size:11px;color:#888;font-family:var(--font-mono)">No players found</div>'; return; }
   resultsEl.style.display='block';
   resultsEl.innerHTML = matches.map(p=>`<div class="profile-result-row" onclick="addProfile('${p.pid}','${esc(p.name)}');document.getElementById('profile-search').value='';document.getElementById('profile-results').style.display='none';renderProfileCurrent()">
     <span class="pr-name">${esc(p.name)}</span>
