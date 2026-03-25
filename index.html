@@ -601,10 +601,11 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 <!-- Neighbor popup -->
 <div id="neighbor-popup">
   <div id="neighbor-head">
-    <h3 id="neighbor-title">Neighbors</h3>
+    <h3 id="neighbor-title">Player</h3>
     <button id="neighbor-close" onclick="closeNeighborPopup()">✕</button>
   </div>
-  <div id="neighbor-attack-suggestion" style="display:none;padding:8px 12px;border-bottom:1px solid #1a1a1a;background:#0d0d14"></div>
+  <div id="neighbor-attack-suggestion" style="display:none"></div>
+  <div id="neighbor-neighbors-head" style="display:none;padding:6px 14px 4px;border-top:1px solid #1a1a1a;font-size:9px;font-family:var(--font-mono);color:#444;text-transform:uppercase;letter-spacing:.5px"></div>
   <div id="neighbor-list"></div>
 </div>
 
@@ -1202,52 +1203,61 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
   const popup=document.getElementById('neighbor-popup');
   const nbrs=neighborMap.get(pid);
   const p=players.find(pl=>pl.pid===pid)||{};
-  document.getElementById('neighbor-title').textContent=`Neighbors of ${p.name||'[unknown]'} (${nbrs?nbrs.size:0})`;
+  document.getElementById('neighbor-title').textContent = p.name||'[unknown]';
 
   // ── Attack suggestion for clicked tile ──
   const atkEl=document.getElementById('neighbor-attack-suggestion');
+  const nbrsHead=document.getElementById('neighbor-neighbors-head');
+  if(nbrsHead){ nbrsHead.style.display='block'; nbrsHead.textContent=`Neighbors (${nbrs?nbrs.size:0})`; }
   if(atkEl){
     const tile=clickedTile||null;
     const defTotal=tile?(tile.gE||0)+(tile.gB||0)+(tile.gH||0):0;
-    if(tile&&defTotal>0){
-      atkEl.style.display='block';
-      atkEl.innerHTML=`<span style="color:#555;font-size:9px;font-family:var(--font-mono)">Loading attack suggestion…</span>`;
-      setTimeout(()=>{
-        const defObj={EF:tile.gE||0,BC:tile.gB||0,HM:tile.gH||0};
-        const cacheKey=_compKey(defObj);
-        let best;
-        if(_ATK_CACHE.has(cacheKey)){
-          best=_ATK_CACHE.get(cacheKey)[0];
-        } else {
-          const defArray=_armyArray(defObj);
-          const scored=_ALL_COMPS.map(comp=>{
-            const r=_atkSim(_armyArray(comp),defArray,300);
-            return {...comp,...r};
-          }).sort((a,b)=>b.winPct-a.winPct||(a.total-b.total)||(a.avgRounds-b.avgRounds));
-          const refined=scored.slice(0,3).map(comp=>{
-            const r=_atkSim(_armyArray(comp),defArray,2000);
-            return {...comp,...r};
-          }).sort((a,b)=>b.winPct-a.winPct||(a.total-b.total)||(a.avgRounds-b.avgRounds));
-          _ATK_CACHE.set(cacheKey,refined);
-          best=refined[0];
-        }
-        const defLabel=[defObj.EF?`<span style="color:#ff8483">${defObj.EF}E</span>`:'',defObj.BC?`<span style="color:#6fffa9">${defObj.BC}B</span>`:'',defObj.HM?`<span style="color:#aaa">${defObj.HM}H</span>`:''].filter(Boolean).join('·');
-        const atkLabel=_atkLabel(best);
-        const winCol=best.winPct>=80?'#6fffa9':best.winPct>=50?'#FAC775':'#E24B4A';
-        const gasWarn=best.avgRounds>16?` <span style="color:#E24B4A">⚠</span>`:'';
+    const defLabel=tile?[tile.gE?`<span style="color:#ff8483">${tile.gE}E</span>`:'',tile.gB?`<span style="color:#6fffa9">${tile.gB}B</span>`:'',tile.gH?`<span style="color:#aaa">${tile.gH}H</span>`:''].filter(Boolean).join(' '):null;
+    if(tile){
+      atkEl.style.cssText='display:block;padding:8px 14px 10px;background:#0d0d14;border-bottom:1px solid #1a1a1a';
+      if(defTotal===0){
         atkEl.innerHTML=`
-          <div style="font-size:9px;color:#444;font-family:var(--font-mono);margin-bottom:3px">⚔ (${tile.x},${tile.y}) DEF: ${defLabel}</div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-size:11px">★ ${atkLabel} <span style="color:#444;font-size:9px">(${best.total})</span></div>
-            <div style="font-size:10px;font-family:var(--font-mono)">
-              <span style="color:${winCol}">${best.winPct.toFixed(0)}%</span>
-              <span style="color:#555;margin-left:6px">~${best.avgRounds.toFixed(0)}rnd${gasWarn}</span>
-            </div>
+          <div style="font-size:9px;color:#444;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Attack Suggestion</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--font-mono)">
+            <span>ATTACKERS: <span style="color:#6fffa9">any army wins</span></span>
+            <span>DEFENDERS: <span style="color:#555">none</span></span>
           </div>`;
-      },20);
-    } else if(tile&&defTotal===0){
-      atkEl.style.display='block';
-      atkEl.innerHTML=`<div style="font-size:10px;color:#6fffa9">⚔ (${tile.x},${tile.y}) No garrison — any army wins</div>`;
+      } else {
+        atkEl.innerHTML=`
+          <div style="font-size:9px;color:#444;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Attack Suggestion</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--font-mono)">
+            <span>ATTACKERS: <span style="color:#555">calculating…</span></span>
+            <span>DEFENDERS: ${defLabel}</span>
+          </div>`;
+        setTimeout(()=>{
+          const defObj={EF:tile.gE||0,BC:tile.gB||0,HM:tile.gH||0};
+          const cacheKey=_compKey(defObj);
+          let best;
+          if(_ATK_CACHE.has(cacheKey)){
+            best=_ATK_CACHE.get(cacheKey)[0];
+          } else {
+            const defArray=_armyArray(defObj);
+            const scored=_ALL_COMPS.map(comp=>{
+              const r=_atkSim(_armyArray(comp),defArray,300);
+              return {...comp,...r};
+            }).sort((a,b)=>b.winPct-a.winPct||(a.total-b.total)||(a.avgRounds-b.avgRounds));
+            const refined=scored.slice(0,3).map(comp=>{
+              const r=_atkSim(_armyArray(comp),defArray,2000);
+              return {...comp,...r};
+            }).sort((a,b)=>b.winPct-a.winPct||(a.total-b.total)||(a.avgRounds-b.avgRounds));
+            _ATK_CACHE.set(cacheKey,refined);
+            best=refined[0];
+          }
+          const winCol=best.winPct>=80?'#6fffa9':best.winPct>=50?'#FAC775':'#E24B4A';
+          const gasWarn=best.avgRounds>16?` <span style="color:#E24B4A" title="Gas risk">⚠</span>`:'';
+          atkEl.innerHTML=`
+            <div style="font-size:9px;color:#444;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Attack Suggestion</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--font-mono)">
+              <span>ATTACKERS: ${_atkLabel(best)} <span style="color:${winCol}">${best.winPct.toFixed(0)}%</span> <span style="color:#555">~${best.avgRounds.toFixed(0)}rnd${gasWarn}</span></span>
+              <span>DEFENDERS: ${defLabel}</span>
+            </div>`;
+        },20);
+      }
     } else {
       atkEl.style.display='none';
     }
