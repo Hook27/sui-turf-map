@@ -460,7 +460,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.20</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.22</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh</button>
   <div class="sep"></div>
@@ -679,8 +679,8 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 </div>
 
 <!-- Mini-profile modal -->
-<div id="miniprofile-modal" style="display:none;position:fixed;inset:0;z-index:310;pointer-events:none">
-  <div id="miniprofile-box" style="position:absolute;background:#111;border:2px solid #222;min-width:240px;max-width:280px;font-family:var(--font-mono);pointer-events:all;box-shadow:4px 4px 0 #000">
+<div id="miniprofile-modal" onclick="if(event.target===this)closeMiniProfile()" style="display:none;position:fixed;inset:0;z-index:310;background:rgba(0,0,0,0.5)">
+  <div id="miniprofile-box" style="position:absolute;background:#111;border:2px solid #333;min-width:260px;max-width:300px;font-family:var(--font-mono);box-shadow:4px 4px 0 #000">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #222;background:#0a0a0a">
       <span id="mp-name" style="font-family:var(--font-bangers);font-size:13px;color:var(--v-gold);letter-spacing:1px"></span>
       <button onclick="closeMiniProfile()" style="font-size:11px;padding:0 6px;line-height:18px">✕</button>
@@ -3257,35 +3257,48 @@ function renderLeaderboard(){
   const el=document.getElementById('lb-list');
   el.innerHTML='<div style="padding:1rem;color:#666;font-size:11px">Loading...</div>';
 
-  // Build previous tile counts from history
-  // player_history.json: {snapshots:[{label,players:{pid:count}}]}
-  // player_history_daily.json: {entries:[{date,players:{pid:count}}]}
-  const now = Date.now();
-  const ms24 = 86400000;
-  const ms7d = 7*ms24;
+  // Build previous tile counts using correct data structures:
+  // playerHistory: {snapshots: [label,...], players: {pid: [count per snapshot]}}
+  //   snapshots[0] = newest, snapshots[N-1] = oldest
+  // playerHistoryDaily: {days: [{date, players: {pid: count}}]}
+  //   days[0] = oldest, days[N-1] = newest
 
-  let prevCounts = null; // {pid: count}
+  let prevCounts = null;
 
-  if(_lbPeriod==='24h' && playerHistory?.snapshots){
-    // Find snapshot closest to 24h ago
-    const target = now - ms24;
-    let best = null, bestDiff = Infinity;
-    for(const s of playerHistory.snapshots){
-      if(!s.players) continue;
-      // Try to parse label date — or use index-based estimation
-      const diff = Math.abs((s.ts||0)*1000 - target);
-      if(diff < bestDiff){ bestDiff=diff; best=s; }
+  // Parse timestamp from snapshot filename e.g. "snapshots/data_2026-03-25_1803.json"
+  function snapFileToMs(s){
+    if(!s) return null;
+    const m = s.match(/data_(\d{4}-\d{2}-\d{2})_(\d{2})(\d{2})/);
+    if(m) return new Date(`${m[1]}T${m[2]}:${m[3]}:00Z`).getTime();
+    return null;
+  }
+
+  if(_lbPeriod==='24h' && playerHistory?.players){
+    const snaps = playerHistory.snapshots || [];
+    const files = playerHistory.files || [];
+    const target = Date.now() - 86400000;
+    let bestIdx = Math.min(3, snaps.length - 1);
+    let bestDiff = Infinity;
+    for(let i=1; i<snaps.length; i++){
+      const ms = snapFileToMs(files[i]) || snapFileToMs(snaps[i]);
+      if(ms !== null){
+        const diff = Math.abs(ms - target);
+        if(diff < bestDiff){ bestDiff=diff; bestIdx=i; }
+      }
     }
-    // Fallback: use oldest available snapshot
-    if(!best) best = playerHistory.snapshots[playerHistory.snapshots.length-1];
-    if(best?.players) prevCounts = best.players;
-  } else if(_lbPeriod==='7d' && playerHistoryDaily?.entries){
-    const target = now - ms7d;
-    let best = null, bestDiff = Infinity;
-    for(const e of playerHistoryDaily.entries){
-      const ts = new Date(e.date).getTime();
-      const diff = Math.abs(ts - target);
-      if(diff < bestDiff){ bestDiff=diff; best=e; }
+    const prev = {};
+    for(const [pid, counts] of Object.entries(playerHistory.players)){
+      if(counts[bestIdx] != null) prev[pid] = counts[bestIdx];
+    }
+    if(Object.keys(prev).length) prevCounts = prev;
+  } else if(_lbPeriod==='7d' && playerHistoryDaily?.days?.length > 1){
+    // days are oldest first — find entry closest to 7 days ago
+    const days = playerHistoryDaily.days;
+    const target = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+    let best = days[0];
+    for(const d of days){
+      if(d.date <= target) best = d;
+      else break;
     }
     if(best?.players) prevCounts = best.players;
   }
@@ -3353,14 +3366,12 @@ function showMiniProfile(e, pid){
 
   const modal = document.getElementById('miniprofile-modal');
   const box   = document.getElementById('miniprofile-box');
-  modal.style.display='block';
 
-  // Position near click
-  const x = e.clientX, y = e.clientY;
-  const bw = 280, bh = 200;
-  const lx = (x+bw+10 > window.innerWidth)  ? x-bw-10 : x+10;
-  const ly = (y+bh+10 > window.innerHeight) ? y-bh-10 : y+10;
-  box.style.left=lx+'px'; box.style.top=ly+'px';
+  // Center the box on screen
+  modal.style.display='block';
+  box.style.left='50%';
+  box.style.top='50%';
+  box.style.transform='translate(-50%,-50%)';
 
   document.getElementById('mp-name').textContent = p.name||'[unknown]';
 
@@ -3387,40 +3398,49 @@ function showMiniProfile(e, pid){
   const markHtml = mark==='friend'?'<span style="color:#6fffa9">♥ Friend</span>':
                    mark==='enemy' ?'<span style="color:#E24B4A">✕ Enemy</span>':'';
 
+  // Tile change vs 24h ago — find correct snapshot by timestamp
+  let tileChangeHtml = '';
+  if(playerHistory?.players?.[pid] && playerHistory?.snapshots){
+    const snaps = playerHistory.snapshots;
+    const files = playerHistory.files || [];
+    const target = Date.now() - 86400000;
+    let bestIdx = Math.min(3, snaps.length - 1);
+    let bestDiff = Infinity;
+    function _snapMs(s){ if(!s) return null; const m=s.match(/data_(\d{4}-\d{2}-\d{2})_(\d{2})(\d{2})/); return m?new Date(`${m[1]}T${m[2]}:${m[3]}:00Z`).getTime():null; }
+    for(let i=1;i<snaps.length;i++){
+      const ms=_snapMs(files[i])||_snapMs(snaps[i]);
+      if(ms!==null){ const d=Math.abs(ms-target); if(d<bestDiff){bestDiff=d;bestIdx=i;} }
+    }
+    const counts = playerHistory.players[pid];
+    const prev = counts[bestIdx];
+    if(prev!=null){
+      const diff = p.tiles - prev;
+      tileChangeHtml = diff>0?`<span style="color:#6fffa9">+${diff}</span>`:
+                       diff<0?`<span style="color:#E24B4A">${diff}</span>`:
+                       '<span style="color:#666">0</span>';
+    }
+  }
+
   document.getElementById('mp-body').innerHTML=`
     <table style="width:100%;border-collapse:collapse">
-      <tr><td style="color:#666;padding:1px 0">Rank</td><td style="text-align:right;color:#FAC775">#${rank}</td></tr>
-      <tr><td style="color:#666;padding:1px 0">Turfs</td><td style="text-align:right;color:#aaa">${p.tiles}</td></tr>
-      <tr><td style="color:#666;padding:1px 0">Garrison</td><td style="text-align:right">
+      <tr><td style="color:#666;padding:2px 0">Rank</td><td style="text-align:right;color:#FAC775">#${rank}</td></tr>
+      <tr><td style="color:#666;padding:2px 0">Turfs</td><td style="text-align:right;color:#aaa">${p.tiles}${tileChangeHtml?' ('+tileChangeHtml+' 24h)':''}</td></tr>
+      <tr><td style="color:#666;padding:2px 0">Garrison</td><td style="text-align:right">
         <span style="color:#aaa">${totalH}H</span>
         <span style="color:#6fffa9;margin-left:4px">${totalB}B</span>
         <span style="color:#ff8483;margin-left:4px">${totalE}E</span>
         <span style="color:#666;margin-left:4px">(${totalGar})</span>
       </td></tr>
-      <tr><td style="color:#666;padding:1px 0">Last active</td><td style="text-align:right;color:#aaa">${actStr}</td></tr>
-      <tr><td style="color:#666;padding:1px 0">Raids (atk/def)</td><td style="text-align:right;color:#aaa">${raidsAsAtk} / ${raidsAsDef}</td></tr>
+      <tr><td style="color:#666;padding:2px 0">Last active</td><td style="text-align:right;color:#aaa">${actStr}</td></tr>
+      <tr><td style="color:#666;padding:2px 0">Raids (atk/def)</td><td style="text-align:right;color:#aaa">${raidsAsAtk} / ${raidsAsDef}</td></tr>
       ${markHtml?`<tr><td colspan="2" style="padding-top:4px">${markHtml}</td></tr>`:''}
-      ${p.inactive?'<tr><td colspan="2" style="color:#666;font-size:9px;padding-top:4px">INACTIVE</td></tr>':''}
+      ${p.inactive?'<tr><td colspan="2" style="color:#666;font-size:9px;padding-top:2px">INACTIVE</td></tr>':''}
     </table>
     <div style="display:flex;gap:6px;margin-top:10px">
-      <button onclick="closeLeaderboard();closeMiniProfile();jumpToPlayer('${pid}')" style="font-size:9px;padding:2px 8px;flex:1">🗺 Go to</button>
-      <button onclick="closeMiniProfile();openGarrison('${pid}',event)" style="font-size:9px;padding:2px 8px;flex:1">🛡 Garrison</button>
+      <button onclick="closeMiniProfile();jumpToPlayer('${pid}')" style="font-size:9px;padding:3px 8px;flex:1">🗺 Go to</button>
+      <button onclick="closeMiniProfile();openGarrison('${pid}',event)" style="font-size:9px;padding:3px 8px;flex:1">🛡 Garrison</button>
     </div>`;
 }
-
-function closeMiniProfile(){
-  document.getElementById('miniprofile-modal').style.display='none';
-}
-
-// Close mini-profile on outside click
-document.addEventListener('click', e=>{
-  const modal = document.getElementById('miniprofile-modal');
-  if(modal.style.display!=='none'){
-    const box = document.getElementById('miniprofile-box');
-    if(!box.contains(e.target)) closeMiniProfile();
-  }
-});
-
 
 // ── ZOOM INDICATOR ────────────────────────────────────────────────────────────
 function updateZoomIndicator(){
