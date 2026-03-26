@@ -792,7 +792,16 @@ ACTIVITY_FILE = "player_activity.json"
 ACTIVITY_EVENT_TYPES = [
     "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::FeedPeopleEvent",
     "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::ClaimResourcesEvent",
+    "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::MissionEvent",
+    "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::BlackmailEvent",
+    "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::CrackSafeEvent",
+    "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::HireScoutsEvent",
 ]
+
+# BlackmailEvent uses 'blackmailer' instead of 'player_id' for the acting player
+ACTIVITY_PID_FIELD = {
+    "BlackmailEvent": "blackmailer",
+}
 
 from datetime import timedelta
 
@@ -828,7 +837,9 @@ for event_type in ACTIVITY_EVENT_TYPES:
                     stop = True
                     break
                 parsed = ev.get("parsedJson") or {}
-                pid = parsed.get("player_id") or ""
+                etype_short = event_type.split("::")[-1]
+                pid_field = ACTIVITY_PID_FIELD.get(etype_short, "player_id")
+                pid = parsed.get(pid_field) or ""
                 if not pid:
                     continue
                 ts_iso = ev_dt.isoformat()

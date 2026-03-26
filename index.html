@@ -3465,10 +3465,13 @@ async function loadPlayerHistory(){
     const r = await fetch('player_history.json?t='+Date.now());
     if(r.ok) playerHistory = await r.json();
   }catch(e){ /* no history data available */ }
-  // Also load daily history for long-term chart
   try{
     const r2 = await fetch('player_history_daily.json?t='+Date.now());
     if(r2.ok) playerHistoryDaily = await r2.json();
+  }catch(e){}
+  try{
+    const r3 = await fetch('player_activity.json?t='+Date.now());
+    if(r3.ok) playerActivity = await r3.json();
   }catch(e){}
   playerHistoryLoaded = true;
 }
@@ -3476,7 +3479,7 @@ async function loadPlayerHistory(){
 async function loadPlayerActivity(){
   try{
     const r = await fetch('player_activity.json?t='+Date.now());
-    if(r.ok){ const d=await r.json(); playerActivity=d.days||{}; }
+    if(r.ok) playerActivity = await r.json();
   }catch(e){}
 }
 
@@ -3932,7 +3935,7 @@ function renderSoftTargets(){
   function realInactivity(p){
     const lcdDays = p.lcd ?? 0;
     if(!playerActivity) return lcdDays; // fallback if no activity data yet
-    const actDays = playerActivity[p.pid];
+    const actDays = playerActivity?.days?.[p.pid];
     if(actDays == null) return Math.max(lcdDays, 30); // no record in 30 days = inactive
     return Math.max(lcdDays, actDays); // both must be old to be truly inactive
   }
@@ -3981,10 +3984,10 @@ function renderSoftTargets(){
   el.innerHTML = top.map(({p, dist, inact}) => {
     const lcdCls = inact >= 14 ? 'old' : inact >= 7 ? 'warn' : '';
     const distTxt = dist === Infinity ? '—' : dist === 0 ? 'adjacent' : dist + ' tiles';
-    const actDays = playerActivity?.[p.pid];
+    const actDays = playerActivity?.days?.[p.pid];
     const tipTxt = actDays != null
       ? `Turf change: ${p.lcd??'?'}d ago · Last active: ${actDays}d ago`
-      : playerActivity
+      : playerActivity?.days
         ? `Turf change: ${p.lcd??'?'}d ago · No activity in 30d`
         : `Turf change: ${p.lcd??'?'}d ago`;
     return `<div class="st-row" onclick="closeSoftTargets();jumpToPlayer('${p.pid}')" title="${tipTxt}">
