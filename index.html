@@ -71,9 +71,15 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #tl-label{font-size:10px;color:#888;white-space:nowrap;min-width:140px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px}
 #tl-live{font-size:10px;color:var(--v-green);white-space:nowrap;cursor:pointer;padding:2px 8px;border:2px solid var(--v-green);border-radius:0;background:#0a1a0a;font-family:var(--font-mono);font-weight:700;text-transform:uppercase;box-shadow:2px 2px 0 #1a4a1a}
 #tl-live:hover{background:#1a2a1a;box-shadow:none;transform:translate(2px,2px)}
-#tl-slider{flex:1;accent-color:var(--v-gold)}
+#tl-slider{flex:1;accent-color:var(--v-gold);min-width:60px}
 #tl-info{font-size:10px;color:#666;white-space:nowrap;min-width:90px;text-align:right;font-family:var(--font-mono)}
 #tl-count{font-size:10px;color:#999;white-space:nowrap;font-family:var(--font-mono)}
+#tl-prev,#tl-next{font-size:14px;padding:0 6px;line-height:20px;background:#111;border:1px solid #333;color:#888;cursor:pointer;flex-shrink:0}
+#tl-prev:hover,#tl-next:hover{color:#FAC775;border-color:#555}
+#tl-prev:disabled,#tl-next:disabled{color:#333;cursor:default;border-color:#222}
+#tl-replay{font-size:10px;padding:1px 7px;background:#111;border:1px solid #333;color:#888;cursor:pointer;flex-shrink:0;font-family:var(--font-mono)}
+#tl-replay:hover{color:#6fffa9;border-color:#555}
+#tl-replay.playing{color:#E24B4A;border-color:#E24B4A}
 
 /* ── MAIN ── */
 #main{display:flex;flex:1;overflow:hidden}
@@ -287,6 +293,7 @@ body.map-only #analyse-btn{display:none!important}
   #route-indicator{display:none!important}
   #tl-label{display:none}
   #tl-count{display:none}
+  #tl-speed{display:none}
   #timeline-bar{padding:5px 8px;gap:5px}
   #right-panel{position:fixed;right:0;top:0;bottom:0;z-index:50;transform:translateX(100%);transition:transform 0.25s ease;box-shadow:-6px 0 20px rgba(0,0,0,0.8);width:300px}
   #right-panel.open{transform:translateX(0)}
@@ -472,7 +479,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.17</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.18</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh</button>
   <div class="sep"></div>
@@ -517,8 +524,16 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 <div id="timeline-bar">
   <span id="tl-label">📅 Timeline</span>
   <span id="tl-live" onclick="goLive()">● Live</span>
+  <button id="tl-prev" onclick="tlStep(-1)" title="Previous snapshot">‹</button>
   <input type="range" id="tl-slider" min="0" value="0" step="1" oninput="onSliderInput(this.value)">
+  <button id="tl-next" onclick="tlStep(1)" title="Next snapshot">›</button>
   <span id="tl-info">—</span>
+  <button id="tl-replay" onclick="tlToggleReplay()" title="Replay from oldest to live">▶</button>
+  <select id="tl-speed" title="Replay speed" onchange="tlSetSpeed(this.value)" style="font-size:9px;padding:1px 3px;background:#111;border:1px solid #333;color:#999;font-family:var(--font-mono)">
+    <option value="100">fast</option>
+    <option value="300" selected>normal</option>
+    <option value="700">slow</option>
+  </select>
   <span id="tl-count">— snapshots</span>
   <button id="analyse-btn" onclick="openAnalysis()" style="font-size:10px;padding:2px 8px;border-color:var(--v-blue);color:var(--v-blue);background:#050d18;box-shadow:2px 2px 0 #0a2040;display:none">📊 Analyse</button>
 </div>
@@ -883,10 +898,12 @@ async function loadHistory(){
       const slider=document.getElementById('tl-slider');
       slider.max=snapshots.length-1;
       slider.value=0;
+      slider.oninput=function(){ if(_tlReplayTimer) tlStopReplay(); onSliderInput(this.value); };
       document.getElementById('tl-count').textContent=`${snapshots.length} snapshots`;
       document.getElementById('analyse-btn').style.display='';
       document.getElementById('battle-btn').style.display='';
       updateTimelineLabel(0);
+      tlUpdateStepButtons();
       setTimeout(()=>{ loadBattleHistory(); }, 200);
     }
   }catch(e){
@@ -913,6 +930,7 @@ async function onSliderInput(val){
   currentSnapIdx=idx;
   isLive=(idx===0);
   updateTimelineLabel(idx);
+  tlUpdateStepButtons();
   const snap=snapshots[idx];
   if(!snap) return;
   await loadSnapshot(snap.file);
@@ -922,7 +940,51 @@ async function goLive(){
   document.getElementById('tl-slider').value=0;
   currentSnapIdx=0; isLive=true;
   updateTimelineLabel(0);
+  tlUpdateStepButtons();
   await loadLatest();
+}
+
+function tlUpdateStepButtons(){
+  const prev=document.getElementById('tl-prev');
+  const next=document.getElementById('tl-next');
+  if(prev) prev.disabled=(currentSnapIdx>=snapshots.length-1);
+  if(next) next.disabled=(currentSnapIdx<=0);
+}
+
+async function tlStep(dir){
+  if(_tlReplayTimer) tlStopReplay();
+  const newIdx=Math.max(0,Math.min(snapshots.length-1,currentSnapIdx-dir));
+  if(newIdx===currentSnapIdx) return;
+  document.getElementById('tl-slider').value=newIdx;
+  await onSliderInput(newIdx);
+}
+
+// ── Replay ──────────────────────────────────────────────────────────────────
+let _tlReplayTimer=null;
+let _tlReplaySpeed=300;
+
+function tlSetSpeed(val){ _tlReplaySpeed=parseInt(val); }
+
+function tlToggleReplay(){
+  if(_tlReplayTimer){ tlStopReplay(); return; }
+  // Start from oldest snapshot
+  const startIdx=snapshots.length-1;
+  document.getElementById('tl-slider').value=startIdx;
+  onSliderInput(startIdx);
+  const btn=document.getElementById('tl-replay');
+  btn.textContent='■'; btn.classList.add('playing');
+  _tlReplayTimer=setInterval(async()=>{
+    const next=currentSnapIdx-1;
+    if(next<0){ tlStopReplay(); await goLive(); return; }
+    document.getElementById('tl-slider').value=next;
+    await onSliderInput(next);
+  },_tlReplaySpeed);
+}
+
+function tlStopReplay(){
+  if(_tlReplayTimer){ clearInterval(_tlReplayTimer); _tlReplayTimer=null; }
+  const btn=document.getElementById('tl-replay');
+  if(btn){ btn.textContent='▶'; btn.classList.remove('playing'); }
 }
 
 async function loadLatest(){
