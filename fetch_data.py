@@ -141,8 +141,6 @@ for i in range(0, len(real_pids), BATCH):
 named = sum(1 for p in profiles.values() if p["name"])
 print(f"  Profiles: {len(profiles)} ({named} with name)")
 hq_set = {p["hqTile"] for p in profiles.values() if p.get("hqTile")}
-# Map tile_id -> owner pid so we can verify HQ ownership
-hq_tile_owner = {p["hqTile"]: pid for pid, p in profiles.items() if p.get("hqTile")}
 
 # ── STEP 3: TurfSystem ────────────────────────────────────────────────────────
 print("Step 3/4: Loading TurfSystem...")
@@ -215,10 +213,9 @@ for i in range(0, len(tile_ids), BATCH):
                 if k == "henchman":   g_h = v
                 elif k == "bouncer":  g_b = v
                 elif k == "enforcer": g_e = v
-        is_hq = tile_id in hq_set and hq_tile_owner.get(tile_id) == pid
-        raw_tiles.append({"x": x, "y": y, "pid": pid, "hq": is_hq,
+        raw_tiles.append({"x": x, "y": y, "pid": pid, "hq": tile_id in hq_set,
                           "g_h": g_h, "g_b": g_b, "g_e": g_e,
-                          "oid": tile_id if (g_h or g_b or g_e or is_hq) else None})
+                          "oid": tile_id if (g_h or g_b or g_e or tile_id in hq_set) else None})
         owner_count[pid] = owner_count.get(pid, 0) + 1
     if i % 2000 == 0 and i > 0: print(f"  {i}/{len(tile_ids)} tiles → {len(owner_count)} players")
     time.sleep(DELAY)
@@ -537,8 +534,9 @@ print("Computing player history...")
 
 snap_labels = [e["label"] for e in history_entries]  # newest-first from history_entries
 # Reverse to oldest-first for the chart
-snap_paths_asc  = list(reversed([e["file"]  for e in history_entries]))
-snap_labels_asc = list(reversed(snap_labels))
+snap_paths_asc      = list(reversed([e["file"]      for e in history_entries]))
+snap_labels_asc     = list(reversed(snap_labels))
+snap_timestamps_asc = list(reversed([e["timestamp"] for e in history_entries]))
 
 # Load all snapshots once, build pid→count per snapshot
 snap_counts = []  # list of {pid: count} dicts, oldest-first
@@ -561,9 +559,10 @@ for pid in current_pids:
         ph_players[pid] = series
 
 player_history_out = {
-    "updated":   now_utc.isoformat(),
-    "snapshots": snap_labels_asc,
-    "players":   ph_players,
+    "updated":    now_utc.isoformat(),
+    "snapshots":  snap_labels_asc,
+    "timestamps": snap_timestamps_asc,
+    "players":    ph_players,
 }
 
 with open("player_history.json", "w", encoding="utf-8") as f:
@@ -866,72 +865,5 @@ with open(ACTIVITY_FILE, "w", encoding="utf-8") as f:
     }, f, separators=(",", ":"), ensure_ascii=False)
 
 print(f"  player_activity.json updated ({len(activity_days)} players with activity data)")
-
-# ── HQ DESTROYED TRACKING ──────────────────────────────────────────────────────
-# Tracks HeadquarterDestroyedEvent — HQ attacked and destroyed but NOT captured
-# (defender kept the tile, e.g. because more garrison remained than the 10 selected)
-print("Fetching HQ destroyed events...")
-
-HQ_DESTROYED_FILE  = "hq_destroyed.json"
-HQ_DESTROYED_EVENT = "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::HeadquarterDestroyedEvent"
-MAX_HQ_DESTROYED   = 500
-
-try:
-    existing_hqd = json.loads(open(HQ_DESTROYED_FILE, encoding="utf-8").read())
-except Exception:
-    existing_hqd = []
-
-known_hqd_digests = {r["digest"] for r in existing_hqd if r.get("digest")}
-new_hqd = []
-cursor  = None
-pages   = 0
-found   = 0
-
-try:
-    while pages < 10:
-        result = rpc("suix_queryEvents", [{"MoveEventType": HQ_DESTROYED_EVENT}, cursor, 50, True])
-        events = result.get("data", [])
-        if not events and pages == 0:
-            print("  HeadquarterDestroyedEvent: no events found")
-            break
-        stop = False
-        for ev in events:
-            ts_ms = ev.get("timestampMs") or ev.get("timestamp_ms")
-            digest = ev.get("id", {}).get("txDigest") or ""
-            if digest in known_hqd_digests:
-                stop = True
-                break
-            parsed = ev.get("parsedJson") or {}
-            ts = datetime.fromtimestamp(int(ts_ms)/1000, tz=timezone.utc).isoformat() if ts_ms else now_utc.isoformat()
-            res = parsed.get("raided_resources_event") or {}
-            new_hqd.append({
-                "digest":        digest,
-                "attacker_pid":  parsed.get("attacker") or "",
-                "attacker_name": parsed.get("attacker_name") or "",
-                "defender_pid":  parsed.get("defender") or "",
-                "defender_name": parsed.get("defender_name") or "",
-                "cash":          int(res.get("cash", 0) or 0) / SCALE,
-                "weapons":       int(res.get("weapon", 0) or 0) / SCALE,
-                "xp":            int(res.get("xp", 0) or 0) / SCALE,
-                "timestamp":     ts,
-            })
-            known_hqd_digests.add(digest)
-            found += 1
-        pages += 1
-        if stop or not result.get("hasNextPage"):
-            break
-        cursor = result.get("nextCursor")
-        time.sleep(DELAY)
-    print(f"  HeadquarterDestroyedEvent: {pages} page(s), {found} new")
-except Exception as e:
-    print(f"  Warning: HQ destroyed fetch failed: {e}")
-
-all_hqd = existing_hqd + new_hqd
-all_hqd.sort(key=lambda r: r["timestamp"])
-all_hqd = all_hqd[-MAX_HQ_DESTROYED:]
-
-with open(HQ_DESTROYED_FILE, "w", encoding="utf-8") as f:
-    json.dump(all_hqd, f, separators=(",", ":"), ensure_ascii=False)
-print(f"  hq_destroyed.json updated ({len(all_hqd)} total)")
 
 print(f"\nDone!")
