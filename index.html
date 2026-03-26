@@ -2652,9 +2652,9 @@ function renderTopMovers(){
     // Recent HQ captures feed (last 3, newest first)
     ...recentHqFeed.map(c=>`🏴 <span class="tk-red">${esc(c.prev_name||'Unknown')}</span>'s HQ stormed by <span class="tk-gold">${esc(c.new_name||'Unknown')}</span> — ${hqAge(c.timestamp)}`),
     // HQ destroyed (attacked but not captured) last 24h
-    hqdRecent24.length>0?`💥 <span class="tk-gold">${hqdRecent24.length}</span> HQ${hqdRecent24.length===1?'':'s'} attacked and destroyed in the last 24h — but held their ground`:null,
+    hqdRecent24.length>0?`💥 <span class="tk-gold">${hqdRecent24.length}</span> HQ attack${hqdRecent24.length===1?'':'s'} repelled in the last 24h — defender${hqdRecent24.length===1?' held':'s held'} their ground`:null,
     // Recent HQ destroyed feed (last 3, newest first)
-    ...recentHqdFeed.map(d=>`💥 <span class="tk-red">${esc(d.defender_name||'Unknown')}</span>'s HQ destroyed by <span class="tk-gold">${esc(d.attacker_name||'Unknown')}</span> — still standing — ${hqAge(d.timestamp)}`),
+    ...recentHqdFeed.map(d=>`💥 <span class="tk-red">${esc(d.defender_name||'Unknown')}</span> repelled <span class="tk-gold">${esc(d.attacker_name||'Unknown')}</span>'s HQ raid — still standing — ${hqAge(d.timestamp)}`),
     // Gainers
     gainers.length?`📈 24h gainers: `+gainers.map(r=>`<span class="tk-green">▲ ${esc(r.name||'?')} +${r.net}</span>`).join(' · '):null,
     // Losers
