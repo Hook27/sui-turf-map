@@ -460,7 +460,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.26</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.27</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh</button>
   <div class="sep"></div>
@@ -3391,7 +3391,8 @@ async function showMiniProfile(e, pid){
     else                 actStr = Math.floor(diffH/24) + 'd ago';
   }
 
-  // Raids (if loaded)\n  const raids = (battleHistoryData?.raids)||[];
+  // Raids (if loaded)
+  const raids = (battleHistoryData?.raids)||[];
   const raidsAsAtk = raids.filter(r=>r.attacker_pid===pid).length;
   const raidsAsDef = raids.filter(r=>r.defender_pid===pid).length;
 
