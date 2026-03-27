@@ -460,7 +460,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.27</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.28</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh</button>
   <div class="sep"></div>
@@ -732,6 +732,13 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <input id="profile-search" type="text" placeholder="Search player name or paste profile ID (0x...)..." oninput="onProfileSearch(this.value)">
     <div id="profile-results"></div>
     <div id="profile-current"></div>
+    <div style="border-top:1px solid #222;margin:12px 0 10px"></div>
+    <div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Wallet address</div>
+    <div style="display:flex;gap:6px">
+      <input id="profile-wallet-input" type="text" placeholder="0x… wallet address" style="flex:1;background:#0a0a0a;color:#ccc;border:2px solid #333;border-radius:0;padding:6px 10px;font-size:11px;font-family:var(--font-mono)" oninput="this.style.borderColor='#333'">
+      <button onclick="saveProfileWallet()" style="font-size:10px;padding:4px 12px;flex-shrink:0">Save</button>
+    </div>
+    <div id="profile-wallet-status" style="font-size:10px;color:#666;margin-top:5px;min-height:14px"></div>
     <div class="modal-btns">
       <button onclick="closeProfileModal()">Close</button>
     </div>
@@ -4068,11 +4075,31 @@ document.getElementById('report-modal').addEventListener('click', e=>{
 });
 
 // ── PROFILE MODAL ─────────────────────────────────────────────────────────────
+const PROFILE_WALLET_KEY = 'vwm_wallet_address';
+
+function loadProfileWallet(){ return localStorage.getItem(PROFILE_WALLET_KEY)||''; }
+function saveProfileWallet(){
+  const val = document.getElementById('profile-wallet-input').value.trim();
+  const st  = document.getElementById('profile-wallet-status');
+  if(!val){ localStorage.removeItem(PROFILE_WALLET_KEY); st.textContent='Wallet cleared.'; st.style.color='#888'; return; }
+  if(!val.startsWith('0x')||val.length<20){ st.textContent='Invalid address.'; st.style.color='#ff6b6b'; return; }
+  localStorage.setItem(PROFILE_WALLET_KEY, val);
+  st.textContent='Saved: '+val.slice(0,8)+'…'+val.slice(-4);
+  st.style.color='#6fffa9';
+  document.getElementById('profile-wallet-input').style.borderColor='#1D9E75';
+}
+
 function openProfileModal(){
   renderProfileCurrent();
   document.getElementById('profile-search').value='';
   document.getElementById('profile-results').style.display='none';
   document.getElementById('profile-results').innerHTML='';
+  // Restore saved wallet
+  const saved = loadProfileWallet();
+  document.getElementById('profile-wallet-input').value = saved;
+  const st = document.getElementById('profile-wallet-status');
+  if(saved){ st.textContent='Saved: '+saved.slice(0,8)+'…'+saved.slice(-4); st.style.color='#888'; }
+  else { st.textContent=''; }
   document.getElementById('profile-modal').classList.add('open');
 }
 function closeProfileModal(){
