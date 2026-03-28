@@ -479,7 +479,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.29</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.30</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh</button>
   <div class="sep"></div>
@@ -4348,7 +4348,6 @@ async function baAnalyzeDigest(digest) {
             <div>Time: <span style="color:#aaa">${timeLabel}</span></div>
             <div>Window: <span id="ba-countdown" style="font-weight:bold">—</span></div>
           </div>
-          ${total>0?`<button class="ba-sim-btn" onclick="closeBattleAnalyzer();openGarrison(null,null,${surv.H},${surv.B},${surv.E})">⚔ Open in simulator</button>`:''}
         </div>
         <div class="ba-right">
           <div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #1a1a1a;padding-bottom:4px">Attack suggestions</div>
