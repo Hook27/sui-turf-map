@@ -466,7 +466,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v3.34</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v3.35</span>
   <div class="sep"></div>
   <button id="route-btn" class="tb-btn" onclick="toggleRouteMode()">🗺 Route</button>
   <span id="route-indicator">Click a tile or player to select A → B</span>
@@ -3528,6 +3528,16 @@ function _renderTileAdvice(el, tile){
     el.innerHTML=`<div style="padding:14px 18px">
       <div style="font-size:11px;color:#999;font-family:var(--font-mono);margin-bottom:8px">(${tile.x}, ${tile.y})${hqBadge}</div>
       <div style="color:#6fffa9;font-size:12px">No garrison — any army wins instantly.</div>
+    </div>`;
+    return;
+  }
+
+  if(tile.isHQ && defTotal > 10){
+    el.innerHTML=`<div style="padding:14px 18px">
+      <div style="font-size:11px;color:#999;font-family:var(--font-mono);margin-bottom:4px">(${tile.x}, ${tile.y})${hqBadge}</div>
+      <div style="font-size:12px;margin-bottom:10px">Defending: ${defLabel} <span style="color:#999">(${defTotal} total)</span></div>
+      <div style="color:#FAC775;font-size:11px;font-family:var(--font-mono);line-height:1.7">⚠ HQ has ${defTotal} defenders.<br>
+      <span style="color:#888;font-size:10px">The game randomly picks 10 to defend — capture is blocked. Attacking will destroy the HQ but you will not gain the tile.</span></div>
     </div>`;
     return;
   }
