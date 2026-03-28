@@ -61,7 +61,6 @@ button.active{background:#0a2a18;border-color:var(--v-green);box-shadow:2.5px 2.
 button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 
 .sep{width:1px;height:20px;background:#333;flex-shrink:0}
-#status{font-size:10px;color:#999;padding:3px 8px;background:#111;border:1px solid #2a2a2a;border-radius:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-mono)}
 #age{font-size:10px;color:#888;white-space:nowrap;font-family:var(--font-mono)}
 #route-indicator{display:none;font-size:10px;padding:3px 8px;background:#0a1a0a;border:2px solid var(--v-green);border-radius:0;color:var(--v-green);white-space:nowrap;font-family:var(--font-mono);box-shadow:2px 2px 0 #1a3a1a}
 
@@ -441,8 +440,6 @@ body.map-only #analyse-btn{display:none!important}
 .toolbar-dd-menu button:hover{background:#1a1a1a;box-shadow:none}
 .toolbar-dd-menu button:last-child{border-bottom:none}
 .toolbar-dd-menu button:disabled{opacity:0.35;cursor:default}
-.toolbar-dd-sep{height:1px;background:#222;margin:2px 0}
-
 /* ── ZOOM INDICATOR ── */
 #zoom-indicator{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);border:1px solid #333;padding:2px 6px;font-size:9px;font-family:var(--font-mono);color:#999;pointer-events:none;z-index:10}
 
@@ -461,25 +458,13 @@ body.map-only #analyse-btn{display:none!important}
 button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-gold);box-shadow:2.5px 2.5px 0 #3a2a00}
 
 
-/* ── ANALYSIS TABS ── */
-.an-tab{background:#0a0a0a;color:#999;cursor:pointer;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.3px;border-radius:0;border:2px solid #222}
-.an-tab.on{background:#111;color:#ccc;font-weight:700;border-color:#888;box-shadow:2px 2px 0 #000}
-.an-tab:hover{background:#141414;color:#aaa}
-.an-row{display:flex;align-items:center;gap:8px;padding:7px 18px;border-bottom:1px solid #111;font-size:11px;cursor:pointer;font-family:var(--font-mono)}
-.an-row:hover{background:#141414}
-.an-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ccc}
-.an-name.me{color:var(--v-gold)}
-.an-delta{font-weight:700;min-width:44px;text-align:right}
-.an-bar-wrap{width:70px;height:3px;background:#1a1a1a;border-radius:0;flex-shrink:0}
-.an-bar{height:3px;border-radius:0}
-.an-tiles{color:#999;font-size:10px;min-width:50px;text-align:right}
 </style>
 </head>
 <body>
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.30</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:9px;color:#999;margin-right:4px;flex-shrink:0;font-family:var(--font-mono)">v3.31</span>
   <button class="primary" onclick="loadLatest()">↺ Reload</button>
   <button onclick="openRefreshModal()" style="border-color:#5a4a1e;color:var(--v-gold);background:#1a1200;box-shadow:2.5px 2.5px 0 #3a2a00">⚡ Refresh</button>
   <div class="sep"></div>
@@ -494,7 +479,6 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
   <button onclick="toggleMoreMenu()" id="more-btn">⋯ More ▾</button>
   <div class="sep"></div>
   <span id="age"></span>
-  <span id="status">Loading...</span>
 </div>
 <div id="intel-dropdown">
   <div class="toolbar-dd-menu">
@@ -822,52 +806,6 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
   </div>
 </div>
 
-<!-- Analysis modal -->
-<div id="analysis-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
-  <div style="background:#111;border:2px solid #555;border-radius:0;width:100%;max-width:600px;overflow:hidden;margin:auto;box-shadow:6px 6px 0 #000">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:2px solid #222;background:#0a0a0a">
-      <div>
-        <div style="font-family:var(--font-bangers);font-size:16px;letter-spacing:1.5px;color:#fff;text-transform:uppercase">📊 Snapshot Analysis</div>
-        <div id="analysis-subtitle" style="font-size:10px;color:#999;margin-top:2px;font-family:var(--font-mono)">—</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="analysis-map-btn" onclick="toggleAnalysisOverlay()" style="font-size:10px;padding:3px 10px">🗺 Show on map</button>
-        <button onclick="closeAnalysis()" style="background:transparent;border:none;color:#999;font-size:18px;cursor:pointer;padding:0;line-height:1;box-shadow:none">✕</button>
-      </div>
-    </div>
-    <!-- Summary stats -->
-    <div style="display:flex;gap:0;border-bottom:2px solid #222">
-      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #222">
-        <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:var(--v-green)" id="an-gained-total">—</div>
-        <div style="font-size:10px;color:#999;font-family:var(--font-mono);text-transform:uppercase">turfs captured</div>
-      </div>
-      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #222">
-        <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:var(--v-red)" id="an-lost-total">—</div>
-        <div style="font-size:10px;color:#999;font-family:var(--font-mono);text-transform:uppercase">turfs lost</div>
-      </div>
-      <div style="flex:1;padding:10px;text-align:center;border-right:1px solid #222">
-        <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:var(--v-gold)" id="an-active">—</div>
-        <div style="font-size:10px;color:#999;font-family:var(--font-mono);text-transform:uppercase">active players</div>
-      </div>
-      <div style="flex:1;padding:10px;text-align:center">
-        <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:#888" id="an-unchanged">—</div>
-        <div style="font-size:10px;color:#999;font-family:var(--font-mono);text-transform:uppercase">turfs changed</div>
-      </div>
-    </div>
-    <!-- Filter tabs -->
-    <div style="display:flex;gap:0;border-bottom:2px solid #222;background:#0a0a0a">
-      <button class="an-tab on" onclick="setAnTab('all',this)" style="flex:1;border-radius:0;border:none;border-right:1px solid #222;padding:7px;font-size:10px">All movers</button>
-      <button class="an-tab" onclick="setAnTab('gainers',this)" style="flex:1;border-radius:0;border:none;border-right:1px solid #222;padding:7px;font-size:10px;color:var(--v-green)">▲ Gainers</button>
-      <button class="an-tab" onclick="setAnTab('losers',this)" style="flex:1;border-radius:0;border:none;padding:7px;font-size:10px;color:var(--v-red)">▼ Losers</button>
-    </div>
-    <!-- Player list -->
-    <div id="analysis-list" style="max-height:50vh;overflow-y:auto;padding:8px 0"></div>
-    <div style="padding:8px 18px;border-top:2px solid #222;font-size:10px;color:#888;font-family:var(--font-mono)">
-      Comparing: <span id="an-from-label" style="color:#666">—</span> → <span id="an-to-label" style="color:#666">—</span>
-    </div>
-  </div>
-</div>
-
 <!-- Refresh modal -->
 <div id="refresh-modal">
   <div id="refresh-box">
@@ -935,34 +873,23 @@ let snapshots=[];
 let battleHistoryData=null;
 let battleHistoryActive=false;
 
-function status(s){document.getElementById('status').textContent=s;}
 
-// ── TIMELINE ──────────────────────────────────────────────────────────────────
+
 async function loadHistory(){
   try{
     const r=await fetch('history.json?t='+Date.now());
-    if(!r.ok){
-      status('⚠ Could not load history.json (HTTP '+r.status+'). Timeline unavailable.');
-      return;
-    }
+    if(!r.ok){ console.warn('Could not load history.json (HTTP '+r.status+')'); return; }
     const h=await r.json();
     snapshots=h.snapshots||[];
     if(snapshots.length>1){
       document.getElementById('battle-btn').style.display='';
       setTimeout(()=>{ loadBattleHistory(); }, 200);
-      setTimeout(()=>{ loadBattleHistory(); }, 200);
     }
   }catch(e){
-    status('⚠ Failed to load history: '+e.message);
+    console.warn('Failed to load history: '+e.message);
   }
 }
 
-
-
-
-
-
-// ── Replay ──────────────────────────────────────────────────────────────────
 
 
 
@@ -976,7 +903,6 @@ async function loadSnapshot(file){
 
 // ── LOAD DATA ─────────────────────────────────────────────────────────────────
 async function loadData(url){
-  status('Loading...');
   const hadTiles=tiles.length>0;
   const savedZoom=zoom, savedPanX=panX, savedPanY=panY;
 
@@ -1027,9 +953,8 @@ async function loadData(url){
     _ATK_CACHE.clear();
     drawMap();drawMinimap();
 
-    status(`${players.length} players · ${tiles.length} turfs`);
   }catch(e){
-    status('⚠ '+e.message);
+    console.error('loadData error: '+e.message);
     document.getElementById('age').textContent='';
     tiles=[];tileMap.clear();players=[];filteredPlayers=[];
     renderPlayerList();drawMap();drawMinimap();
@@ -1138,13 +1063,11 @@ function selectRoutePlayer(pid){
 
 function computeAndShowRoute(){
   if(!routePidA||!routePidB) return;
-  status('Computing route...');
   setTimeout(()=>{
     routePath=findRoute(routePidA,routePidB);
     routePathMap=routePath?new Map(routePath.map(s=>[`${s.x},${s.y}`,s.type])):null;
     showRoutePanel();drawMap();
     if(routePath) zoomToRoute();
-    status(`${players.length} players · ${tiles.length} turfs`);
   },50);
 }
 
@@ -1546,32 +1469,6 @@ function drawMap(){
     }
   }
 
-  // Analysis overlay
-  if(analysisOverlay&&analysisData){
-    for(const ch of analysisData.changedTiles){
-      if(ch.x<wx0||ch.x>wx1||ch.y<wy0||ch.y>wy1) continue;
-      const sx=(ch.x-minX)*cs+panX,sy=(maxY-ch.y)*cs+panY;
-      const col=ch.type==='new'?'rgba(250,199,117,0.85)':
-                ch.type==='abandoned'?'rgba(120,120,120,0.6)':
-                (ch.toPid&&MY_IDS.has(ch.toPid))?'rgba(29,158,117,0.9)':
-                (ch.fromPid&&MY_IDS.has(ch.fromPid))?'rgba(226,75,74,0.9)':
-                ch.toPid?'rgba(29,158,117,0.65)':'rgba(226,75,74,0.65)';
-      ctx.fillStyle=col;ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
-      ctx.strokeStyle=col.replace(/[\d.]+\)$/,'1)');ctx.lineWidth=1;
-      ctx.strokeRect(sx+1,sy+1,cs-2,cs-2);
-    }
-    // Legend bottom-left
-    ctx.font='11px sans-serif';ctx.textBaseline='bottom';
-    const leg=[['#1D9E75','Captured'],['#E24B4A','Lost'],['#FAC775','New']];
-    let lx=8,ly=H-8;
-    for(const [col,lbl] of leg){
-      ctx.fillStyle=col;ctx.fillRect(lx,ly-12,12,12);
-      ctx.fillStyle='rgba(255,255,255,0.75)';ctx.textAlign='left';
-      ctx.fillText(lbl,lx+16,ly);
-      lx+=ctx.measureText(lbl).width+34;
-    }
-  }
-
   // Battle history overlay (24h)
   if(battleHistoryActive&&battleHistoryData){
     for(const ch of battleHistoryData.changedTiles){
@@ -1584,7 +1481,7 @@ function drawMap(){
     }
     ctx.font='11px sans-serif';ctx.textBaseline='bottom';
     const leg2=[['#6fffa9','Captured (24h)'],['#ff8483','Lost (24h)']];
-    let lx2=8,ly2=H-(analysisOverlay?28:8);
+    let lx2=8,ly2=H-8;
     for(const [col,lbl] of leg2){
       ctx.fillStyle=col;ctx.fillRect(lx2,ly2-12,12,12);
       ctx.fillStyle='rgba(255,255,255,0.75)';ctx.textAlign='left';
@@ -1956,7 +1853,6 @@ function _fp(){
   const marks=loadMarks();
   const inactDays=parseInt(document.getElementById('inactivity-select')?.value||'0');
   filteredPlayers=players.filter(p=>{
-    if(activeFilter==='named'&&!p.name) return false;
     if(activeFilter==='inactive'&&!p.inactive) return false;
     if(activeFilter==='friends'&&marks[p.pid]!=='friend') return false;
     if(activeFilter==='enemies'&&marks[p.pid]!=='enemy') return false;
@@ -2216,7 +2112,6 @@ async function exportGIF(){
   a.download=`vendetta_map_${fileTimestamp()}.gif`;
   a.click();
   btn.disabled=false;btn.textContent='🎬 GIF';
-  status(`${players.length} players · ${tiles.length} turfs`);
 }
 
 // ── Minimal inline GIF encoder ────────────────────────────────────────────────
@@ -2387,163 +2282,6 @@ function tileOwnerMap(d){
     if(p) m.set(`${t.x},${t.y}`,{pid:p.pid,name:p.name,color:p.color});
   }
   return m;
-}
-
-// ── SNAPSHOT ANALYSIS ────────────────────────────────────────────────────────
-let analysisData = null;   // {changes, snapA, snapB}
-let analysisFilter = 'all';
-let analysisOverlay = false;
-
-async function openAnalysis(){
-  if(snapshots.length < 2){
-    alert('Need at least 2 snapshots to compare.');
-    return;
-  }
-  const modal = document.getElementById('analysis-modal');
-  modal.style.display = 'flex';
-  document.getElementById('analysis-list').innerHTML =
-    '<div style="padding:2rem;text-align:center;color:#999;font-size:12px">Loading snapshots...</div>';
-
-  try{
-    // Always compare the two most recent snapshots
-    const snapA = snapshots[1]; // second newest = older
-    const snapB = snapshots[0]; // newest
-
-    document.getElementById('an-from-label').textContent = snapA.label || '—';
-    document.getElementById('an-to-label').textContent   = snapB.label || '—';
-    document.getElementById('analysis-subtitle').textContent =
-      `${snapA.label} → ${snapB.label}`;
-
-    const [dA, dB] = await Promise.all([
-      fetch(snapA.file+'?t='+Date.now()).then(r=>r.json()),
-      fetch(snapB.file+'?t='+Date.now()).then(r=>r.json()),
-    ]);
-
-    // Build tile ownership maps: "x,y" → pid
-    const mapA = tileOwnerMap(dA);
-    const mapB = tileOwnerMap(dB);
-
-    // Build pid → name/color lookup from both snapshots
-    const pidInfo = new Map();
-    for(const p of [...(dA.players||[]), ...(dB.players||[])]){
-      if(!pidInfo.has(p.pid)) pidInfo.set(p.pid, {name:p.name||'', color:p.color});
-    }
-
-    // Tile-level changes
-    const changedTiles = []; // {x, y, fromPid, toPid, type}
-    const allKeys = new Set([...mapA.keys(), ...mapB.keys()]);
-
-    for(const key of allKeys){
-      const a = mapA.get(key);
-      const b = mapB.get(key);
-      const fromPid = a?.pid || null;
-      const toPid   = b?.pid || null;
-      if(fromPid === toPid) continue;
-      const [x,y] = key.split(',').map(Number);
-      let type;
-      if(!fromPid)      type='new';       // empty → owned
-      else if(!toPid)   type='abandoned'; // owned → empty
-      else              type='captured';  // A → B
-      changedTiles.push({x,y,fromPid,toPid,type});
-    }
-
-    // Aggregate per player
-    const playerChanges = new Map(); // pid → {gained, lost, name, color}
-    for(const ch of changedTiles){
-      if(ch.toPid){
-        if(!playerChanges.has(ch.toPid)){
-          const info=pidInfo.get(ch.toPid)||{};
-          playerChanges.set(ch.toPid,{gained:0,lost:0,name:info.name||'',color:info.color||'#888'});
-        }
-        playerChanges.get(ch.toPid).gained++;
-      }
-      if(ch.fromPid){
-        if(!playerChanges.has(ch.fromPid)){
-          const info=pidInfo.get(ch.fromPid)||{};
-          playerChanges.set(ch.fromPid,{gained:0,lost:0,name:info.name||'',color:info.color||'#888'});
-        }
-        playerChanges.get(ch.fromPid).lost++;
-      }
-    }
-
-    // Summary stats
-    const totalGained = changedTiles.filter(c=>c.toPid).length;
-    const totalLost   = changedTiles.filter(c=>c.fromPid).length;
-    document.getElementById('an-gained-total').textContent = totalGained;
-    document.getElementById('an-lost-total').textContent   = totalLost;
-    document.getElementById('an-active').textContent       = playerChanges.size;
-    document.getElementById('an-unchanged').textContent    = changedTiles.length;
-
-    analysisData = {changedTiles, playerChanges, pidInfo};
-    renderAnalysisList();
-
-  }catch(e){
-    document.getElementById('analysis-list').innerHTML =
-      `<div style="padding:1rem;color:#E24B4A;font-size:12px">Error: ${e.message}</div>`;
-  }
-}
-
-function renderAnalysisList(){
-  if(!analysisData) return;
-  const {playerChanges} = analysisData;
-
-  let rows = [...playerChanges.entries()].map(([pid,c])=>({pid,...c,net:c.gained-c.lost}));
-
-  if(analysisFilter==='gainers') rows=rows.filter(r=>r.gained>0).sort((a,b)=>b.gained-a.gained);
-  else if(analysisFilter==='losers') rows=rows.filter(r=>r.lost>0).sort((a,b)=>b.lost-a.lost);
-  else rows=rows.filter(r=>r.gained>0||r.lost>0).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));
-
-  const maxVal = rows.length ? Math.max(...rows.map(r=>Math.max(r.gained,r.lost))) : 1;
-  const isMe = pid => MY_IDS.has(pid);
-
-  const marks=loadMarks();
-  document.getElementById('analysis-list').innerHTML = rows.length
-    ? rows.map(r=>{
-        const net = r.net >= 0 ? `+${r.net}` : `${r.net}`;
-        const netCol = r.net > 0 ? '#1D9E75' : r.net < 0 ? '#E24B4A' : '#888';
-        const barG = Math.round(r.gained/maxVal*70);
-        const barL = Math.round(r.lost/maxVal*70);
-        const mark=marks[r.pid];
-        const markBadge=mark==='friend'?'<span style="color:#1D9E75;font-size:10px">♥</span>':mark==='enemy'?'<span style="color:#E24B4A;font-size:10px">✕</span>':'';
-        return `<div class="an-row" onclick="jumpToPlayerFromAnalysis('${r.pid}')">
-          <div class="pdot" style="background:${markColor(r.pid,r.color)};width:8px;height:8px;border-radius:2px;flex-shrink:0"></div>
-          <div class="an-name${isMe(r.pid)?' me':''}">${markBadge} ${esc(r.name)||'[unknown]'}</div>
-          <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
-            ${r.gained?`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#1D9E75;width:16px">+${r.gained}</span><div class="an-bar-wrap"><div class="an-bar" style="width:${barG}px;background:#1D9E75"></div></div></div>`:''}
-            ${r.lost?`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:#E24B4A;width:16px">-${r.lost}</span><div class="an-bar-wrap"><div class="an-bar" style="width:${barL}px;background:#E24B4A"></div></div></div>`:''}
-          </div>
-          <div class="an-delta" style="color:${netCol}">${net}</div>
-          <div class="an-tiles">${(r.gained+r.lost)} turfs</div>
-        </div>`;
-      }).join('')
-    : '<div style="padding:1rem;text-align:center;color:#999;font-size:12px">No changes found.</div>';
-}
-
-function setAnTab(f, btn){
-  analysisFilter=f;
-  document.querySelectorAll('.an-tab').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  renderAnalysisList();
-}
-
-function jumpToPlayerFromAnalysis(pid){
-  closeAnalysis();
-  jumpToPlayer(pid);
-}
-
-function closeAnalysis(){
-  document.getElementById('analysis-modal').style.display='none';
-  if(analysisOverlay){ analysisOverlay=false; drawMap(); }
-  document.getElementById('analysis-map-btn').textContent='🗺 Show on map';
-}
-
-function toggleAnalysisOverlay(){
-  if(!analysisData) return;
-  analysisOverlay=!analysisOverlay;
-  document.getElementById('analysis-map-btn').textContent=
-    analysisOverlay?'🗺 Hide overlay':'🗺 Show on map';
-  closeAnalysis();
-  drawMap();
 }
 
 // ── BATTLE HISTORY (24h) ──────────────────────────────────────────────────────
@@ -3535,12 +3273,6 @@ async function loadPlayerHistory(){
   playerHistoryLoaded = true;
 }
 
-async function loadPlayerActivity(){
-  try{
-    const r = await fetch('player_activity.json?t='+Date.now());
-    if(r.ok) playerActivity = await r.json();
-  }catch(e){}
-}
 
 function renderGarrisonHistory(){
   const el = document.getElementById('gar-history-chart');
@@ -4463,7 +4195,6 @@ loadHistory();
 loadLatest();
 loadWeeklyReport();
 loadPlayerHistory();
-loadPlayerActivity();
 </script>
 
 </body>
