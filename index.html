@@ -469,7 +469,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
   <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v3.35</span>
   <div class="sep"></div>
   <button id="route-btn" class="tb-btn" onclick="toggleRouteMode()">🗺 Route</button>
-  <span id="route-indicator">Click a tile or player to select A → B</span>
+  <span id="route-indicator">Click a turf or player to select A → B</span>
   <button id="battle-btn" class="tb-btn" onclick="toggleBattleHistory()" style="display:none">⚔ 24h</button>
   <button id="top10-btn" class="tb-btn" onclick="toggleTop10()">★ Top 10</button>
   <button id="leaderboard-btn" class="tb-btn" onclick="openLeaderboard()">📈 Leaderboard</button>
@@ -1054,7 +1054,7 @@ function toggleRouteMode(){
 function updateRouteIndicator(){
   const ind=document.getElementById('route-indicator');
   if(!routeMode){ind.style.display='none';return;}
-  if(!routePidA) ind.textContent='Click tile or player → select A (start)';
+  if(!routePidA) ind.textContent='Click turf or player → select A (start)';
   else if(!routePidB) ind.textContent='Select B (destination) — A selected';
   else ind.textContent='Route shown below';
 }
@@ -2568,7 +2568,7 @@ function openGarrison(pid, e){
 function renderGarrisonNavList(){
   const el=document.getElementById('gar-nav-list');
   if(!garrisonAllTiles.length){
-    el.innerHTML='<div style="padding:1rem;color:#888;font-size:11px;font-family:var(--font-mono)">No tiles found.</div>';
+    el.innerHTML='<div style="padding:1rem;color:#888;font-size:11px;font-family:var(--font-mono)">No turfs found.</div>';
     return;
   }
   el.innerHTML=garrisonAllTiles.map(t=>{
@@ -3537,7 +3537,7 @@ function _renderTileAdvice(el, tile){
       <div style="font-size:11px;color:#999;font-family:var(--font-mono);margin-bottom:4px">(${tile.x}, ${tile.y})${hqBadge}</div>
       <div style="font-size:12px;margin-bottom:10px">Defending: ${defLabel} <span style="color:#999">(${defTotal} total)</span></div>
       <div style="color:#FAC775;font-size:11px;font-family:var(--font-mono);line-height:1.7">⚠ HQ has ${defTotal} defenders.<br>
-      <span style="color:#888;font-size:10px">The game randomly picks 10 defenders, attacking and winning will not destroy the HQ and you will not gain the tile.</span></div>
+      <span style="color:#888;font-size:10px">The game randomly picks 10 defenders, attacking and winning will not destroy the HQ and you will not gain the turf.</span></div>
     </div>`;
     return;
   }
@@ -3606,7 +3606,7 @@ function renderAttackAdvisor(){
     : tiles.filter(t=>t.pid===garrisonPid).sort((a,b)=>(b.gE+b.gB+b.gH)-(a.gE+a.gB+a.gH))[0];
 
   if(!tile){
-    el.innerHTML='<div style="padding:14px 18px;color:#888;font-size:11px;font-family:var(--font-mono)">No tile selected.</div>';
+    el.innerHTML='<div style="padding:14px 18px;color:#888;font-size:11px;font-family:var(--font-mono)">No turf selected.</div>';
     return;
   }
 
@@ -3622,7 +3622,7 @@ function renderAttackAdvisor(){
       return `<button onclick="_lastClickedTile=tiles[tileMap.get('${t.x},${t.y}')];renderAttackAdvisor()" style="font-size:9px;padding:3px 8px;margin:2px;font-family:var(--font-mono);background:#111;border:1px solid #222;color:#888;cursor:pointer;border-radius:2px">(${t.x},${t.y}) ${tot}u</button>`;
     }).join('');
     el.innerHTML+=`<div style="padding:0 18px 14px;border-top:1px solid #111;margin-top:4px">
-      <div style="font-size:9px;color:#777;font-family:var(--font-mono);margin:8px 0 4px">OTHER GARRISONED TILES:</div>
+      <div style="font-size:9px;color:#777;font-family:var(--font-mono);margin:8px 0 4px">OTHER GARRISONED TURFS:</div>
       ${btnHtml}
     </div>`;
   }
@@ -3755,7 +3755,7 @@ document.getElementById('softtarget-modal').addEventListener('click',e=>{
 function renderSoftTargets(){
   const el = document.getElementById('softtarget-list');
   const myTiles = tiles.filter(t => t.pid === selectedPid);
-  if(!myTiles.length){ el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No tiles found for selected player.</div>'; return; }
+  if(!myTiles.length){ el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No turfs found for selected player.</div>'; return; }
 
   // True inactivity = both lcd (turf changes) AND activity events (feed/claim) are old.
   // If activity data available: use min(lcd, activity_days) as the real inactivity metric.
