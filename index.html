@@ -348,11 +348,12 @@ body.map-only #analyse-btn{display:none!important}
 #garrison-tab-raids.active{display:block}
 #garrison-tab-attack{display:none}
 #garrison-tab-attack.active{display:block}
+#garrison-tab-navigate.active,#garrison-tab-recall.active,#garrison-tab-history.active,#garrison-tab-raids.active,#garrison-tab-attack.active{height:60vh;overflow-y:auto}
 /* Raids tab */
-#gar-raids-list{max-height:60vh;overflow-y:auto}
+#gar-raids-list{}
 #gar-raids-list::-webkit-scrollbar{width:3px}
 #gar-raids-list::-webkit-scrollbar-thumb{background:#333}
-#gar-attack-content{max-height:60vh;overflow-y:auto}
+#gar-attack-content{}
 #gar-attack-content::-webkit-scrollbar{width:3px}
 #gar-attack-content::-webkit-scrollbar-thumb{background:#333}
 .gar-raid-row{padding:7px 18px;border-bottom:1px solid #0f0f0f;font-size:11px;font-family:var(--font-mono);line-height:1.6}
@@ -366,7 +367,7 @@ body.map-only #analyse-btn{display:none!important}
 /* Ghost mode */
 #ghost-btn.ghost-active{background:#0a1a0a;border-color:var(--v-green);color:var(--v-green);box-shadow:2px 2px 0 #1a3a1a}
 /* Navigate tab */
-#gar-nav-list{max-height:60vh;overflow-y:auto}
+#gar-nav-list{overflow-y:auto}
 #gar-nav-list::-webkit-scrollbar{width:3px}
 #gar-nav-list::-webkit-scrollbar-thumb{background:#333}
 .gar-nav-row{display:grid;grid-template-columns:1fr 50px 50px 70px 60px;gap:0;padding:6px 18px;border-bottom:1px solid #0f0f0f;cursor:pointer;font-family:var(--font-mono);font-size:11px;align-items:center}
@@ -378,7 +379,7 @@ body.map-only #analyse-btn{display:none!important}
 .gar-nav-h{color:#aaa;text-align:right}
 .gar-nav-tot{color:#666;text-align:right;font-size:10px}
 /* Recall tab */
-#garrison-list{max-height:60vh;overflow-y:auto}
+#garrison-list{overflow-y:auto}
 #garrison-list::-webkit-scrollbar{width:3px}
 #garrison-list::-webkit-scrollbar-thumb{background:#333}
 .gar-row{display:grid;grid-template-columns:20px 120px 60px 60px 80px auto;align-items:center;gap:0;padding:5px 18px;border-bottom:1px solid #111;font-size:11px;font-family:var(--font-mono);cursor:pointer}
@@ -465,7 +466,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v3.31</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v3.34</span>
   <div class="sep"></div>
   <button id="route-btn" class="tb-btn" onclick="toggleRouteMode()">🗺 Route</button>
   <span id="route-indicator">Click a tile or player to select A → B</span>
@@ -3371,6 +3372,28 @@ function renderGarrisonHistory(){
     <!-- Last point dot -->
     <circle cx="${(PAD.l+(n-1)*xStep).toFixed(1)}" cy="${(PAD.t+cH-(lastVal-minV)/range*cH).toFixed(1)}" r="3" fill="#FAC775"/>
   </svg>`;
+
+  // Combat stats
+  const allRaids = battleHistoryData?.raids || [];
+  const allHqCap = battleHistoryData?.hqCaptures || [];
+  const hasData  = battleHistoryData?.raids != null;
+  const raidsAtk   = allRaids.filter(r=>r.attacker_pid===garrisonPid).length;
+  const raidsDef   = allRaids.filter(r=>r.defender_pid===garrisonPid).length;
+  const capturesAtk= allRaids.filter(r=>r.attacker_pid===garrisonPid&&r.is_capture).length;
+  const hqsCaptured= allHqCap.filter(c=>c.new_pid===garrisonPid).length;
+  const sb=(val,lbl)=>`<div style="background:#0d0d0d;border:1px solid #1a1a1a;padding:8px 10px;text-align:center">
+    <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:#FAC775">${val}</div>
+    <div style="font-size:8px;color:#666;text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-top:2px">${lbl}</div>
+  </div>`;
+  el.innerHTML+=`<div style="padding:0 0 8px">
+    <div style="font-size:9px;color:#555;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;border-top:1px solid #1a1a1a;padding-top:12px">Combat stats${!hasData?' <span style="color:#444">(no raid data yet)</span>':''}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      ${sb(raidsAtk,'Raids as attacker')}
+      ${sb(raidsDef,'Raids as defender')}
+      ${sb(capturesAtk,'Turf captures')}
+      ${sb(hqsCaptured,'HQ captures')}
+    </div>
+  </div>`;
 }
 
 function renderGarrisonRaids(){
