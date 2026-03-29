@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendetta World Map · User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Martian+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g-bg:        #0f0f13;
+  --g-surface:   #17171e;
+  --g-card:      #1c1c25;
+  --g-border:    #2a2a36;
+  --g-text:      #c8c8d8;
+  --g-muted:     #666680;
+  --g-gold:      #FAC775;
+  --g-gold-dim:  #a07830;
+  --g-red:       #ff8483;
+  --g-green:     #6fffa9;
+  --g-blue:      #3291e9;
+  --g-hm:        #aaaaaa;
+  --g-bc:        #6fffa9;
+  --g-ef:        #ff8483;
+  --font-bang:   'Bangers', system-ui, sans-serif;
+  --font-mono:   'Martian Mono', monospace;
+  --sidebar-w:   240px;
+  --top-h:       56px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-mono);
+  background: var(--g-bg);
+  color: var(--g-text);
+  font-size: 13px;
+  line-height: 1.75;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── TOP BAR ── */
+#topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--top-h);
+  background: #000;
+  border-bottom: 2px solid var(--g-gold-dim);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  z-index: 100;
+}
+#topbar-title {
+  font-family: var(--font-bang);
+  font-size: 22px;
+  letter-spacing: 2.5px;
+  color: #fff;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+#topbar-sub {
+  font-size: 10px;
+  color: var(--g-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-left: 1px solid #333;
+  padding-left: 16px;
+}
+#topbar-back {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--g-gold);
+  text-decoration: none;
+  border: 2px solid var(--g-gold-dim);
+  padding: 4px 12px;
+  box-shadow: 2px 2px 0 #3a2a00;
+  transition: background .1s;
+  white-space: nowrap;
+}
+#topbar-back:hover { background: #1a1200; }
+
+/* ── LAYOUT ── */
+#layout {
+  display: flex;
+  padding-top: var(--top-h);
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+#sidenav {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  position: sticky;
+  top: var(--top-h);
+  height: calc(100vh - var(--top-h));
+  overflow-y: auto;
+  background: var(--g-surface);
+  border-right: 2px solid var(--g-border);
+  padding: 24px 0 40px;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+#sidenav::-webkit-scrollbar { width: 3px; }
+#sidenav::-webkit-scrollbar-thumb { background: #333; }
+
+.nav-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--g-muted);
+  padding: 16px 20px 6px;
+  font-weight: 600;
+}
+.nav-label:first-child { padding-top: 4px; }
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 20px;
+  font-size: 11px;
+  color: #888;
+  text-decoration: none;
+  letter-spacing: .2px;
+  transition: color .1s, background .1s;
+  border-left: 3px solid transparent;
+  line-height: 1.3;
+}
+.nav-link:hover { color: #ccc; background: rgba(255,255,255,.03); }
+.nav-link.active {
+  color: var(--g-gold);
+  border-left-color: var(--g-gold);
+  background: rgba(250,199,117,.06);
+}
+.nav-num {
+  font-size: 9px;
+  color: var(--g-muted);
+  min-width: 16px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── CONTENT ── */
+#content {
+  flex: 1;
+  min-width: 0;
+  max-width: 860px;
+  padding: 48px 56px 80px;
+}
+
+/* ── SECTIONS ── */
+.section {
+  margin-bottom: 72px;
+  padding-top: 8px;
+}
+.section:first-child { padding-top: 0; }
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--g-border);
+}
+.section-num {
+  font-family: var(--font-bang);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--g-muted);
+}
+.section-title {
+  font-family: var(--font-bang);
+  font-size: 26px;
+  letter-spacing: 2px;
+  color: #fff;
+  text-transform: uppercase;
+}
+.section-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+p { margin-bottom: 14px; color: var(--g-text); }
+p:last-child { margin-bottom: 0; }
+
+a { color: var(--g-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── TABLES ── */
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 12px;
+}
+.guide-table th {
+  background: #0a0a0f;
+  color: var(--g-muted);
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  text-align: left;
+  border-bottom: 2px solid var(--g-border);
+  font-weight: 600;
+}
+.guide-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--g-border);
+  vertical-align: top;
+}
+.guide-table tr:last-child td { border-bottom: none; }
+.guide-table tr:hover td { background: rgba(255,255,255,.02); }
+.guide-table td:first-child { color: #ddd; font-weight: 600; white-space: nowrap; }
+.guide-table td:last-child { color: var(--g-text); }
+
+/* ── KEY LABELS (inline button look) ── */
+.key {
+  display: inline-block;
+  background: #0a0a0f;
+  border: 1.5px solid #333;
+  border-bottom-width: 3px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: #ccc;
+  white-space: nowrap;
+  letter-spacing: .2px;
+}
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  background: var(--g-card);
+  border-left: 3px solid var(--g-gold);
+  padding: 12px 16px;
+  margin: 18px 0;
+  font-size: 12px;
+}
+.callout.info  { border-left-color: var(--g-blue); }
+.callout.warn  { border-left-color: var(--g-red); }
+.callout.green { border-left-color: var(--g-green); }
+.callout strong { color: #fff; }
+
+/* ── TABS (garrison) ── */
+.tab-grid {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+.tab-card {
+  background: var(--g-card);
+  border: 1px solid var(--g-border);
+  padding: 14px 18px;
+}
+.tab-card-head {
+  font-family: var(--font-bang);
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--g-gold);
+  margin-bottom: 6px;
+}
+.tab-card p { margin-bottom: 0; font-size: 12px; }
+
+/* ── GARRISON COLOR CHIPS ── */
+.gcolor {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gcolor .chip {
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(255,255,255,.15);
+  flex-shrink: 0;
+}
+.hm { color: var(--g-hm); }
+.bc { color: var(--g-bc); }
+.ef { color: var(--g-ef); }
+
+/* ── UL / OL ── */
+ul, ol { margin: 12px 0 14px 20px; }
+li { margin-bottom: 6px; font-size: 12px; color: var(--g-text); }
+li strong { color: #ddd; }
+
+/* ── ROUTE COLORS ── */
+.route-own     { color: #c4b5fd; font-weight: 700; }
+.route-free    { color: var(--g-green); font-weight: 700; }
+.route-conquer { color: var(--g-red); font-weight: 700; }
+
+/* ── DIVIDER ── */
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--g-border);
+  margin: 40px 0;
+}
+
+/* ── HERO ── */
+#hero {
+  background: linear-gradient(135deg, #0a0a0f 0%, #111118 50%, #0a0a0f 100%);
+  border-bottom: 2px solid var(--g-border);
+  padding: 56px 56px 40px;
+  position: relative;
+  overflow: hidden;
+}
+#hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(250,199,117,.03) 0, rgba(250,199,117,.03) 1px, transparent 1px, transparent 32px),
+    repeating-linear-gradient(90deg, rgba(250,199,117,.03) 0, rgba(250,199,117,.03) 1px, transparent 1px, transparent 32px);
+  pointer-events: none;
+}
+#hero-title {
+  font-family: var(--font-bang);
+  font-size: 48px;
+  letter-spacing: 4px;
+  color: #fff;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+#hero-title span { color: var(--g-gold); }
+#hero-sub {
+  font-size: 11px;
+  color: var(--g-muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+#hero-version {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--g-muted);
+  border: 1px solid var(--g-border);
+  padding: 3px 10px;
+  letter-spacing: .5px;
+}
+
+/* ── MOBILE ── */
+#menu-toggle { display: none; }
+
+@media (max-width: 820px) {
+  #sidenav {
+    position: fixed;
+    left: -100%;
+    top: var(--top-h);
+    height: calc(100vh - var(--top-h));
+    z-index: 90;
+    transition: left .25s;
+    width: 260px;
+  }
+  #sidenav.open { left: 0; }
+  #menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1.5px solid #333;
+    color: #aaa;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: none;
+  }
+  #content { padding: 32px 24px 60px; }
+  #hero { padding: 40px 24px 32px; }
+  #hero-title { font-size: 34px; }
+  #topbar-sub { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <button id="menu-toggle" onclick="document.getElementById('sidenav').classList.toggle('open')" aria-label="Toggle menu">☰</button>
+  <div id="topbar-title">VWM <span style="color:var(--g-gold)">·</span> Guide</div>
+  <div id="topbar-sub">User Guide · v3.40</div>
+  <a href="index.html" id="topbar-back">← Back to Map</a>
+</div>
+
+<div id="layout">
+
+<!-- SIDEBAR -->
+<nav id="sidenav" aria-label="Guide navigation">
+  <div class="nav-label">Overview</div>
+  <a class="nav-link active" href="#intro"><span class="nav-num">1</span> Introduction</a>
+  <a class="nav-link" href="#start"><span class="nav-num">2</span> Getting Started</a>
+
+  <div class="nav-label">The Map</div>
+  <a class="nav-link" href="#navigate"><span class="nav-num">3</span> Navigating</a>
+  <a class="nav-link" href="#reading"><span class="nav-num">4</span> Reading the Map</a>
+
+  <div class="nav-label">Players</div>
+  <a class="nav-link" href="#panel"><span class="nav-num">5</span> Player Panel</a>
+  <a class="nav-link" href="#garrison"><span class="nav-num">6</span> Garrison Modal</a>
+
+  <div class="nav-label">Tools</div>
+  <a class="nav-link" href="#intel"><span class="nav-num">7</span> Intel Menu 🔍</a>
+  <a class="nav-link" href="#route"><span class="nav-num">8</span> Route Mode 🗺</a>
+  <a class="nav-link" href="#battles"><span class="nav-num">9</span> 24h Changes ⚔</a>
+  <a class="nav-link" href="#leaderboard"><span class="nav-num">10</span> Leaderboard 📈</a>
+  <a class="nav-link" href="#miniprofile"><span class="nav-num">11</span> Mini-Profile Card</a>
+  <a class="nav-link" href="#analyzer"><span class="nav-num">12</span> Battle Analyzer</a>
+  <a class="nav-link" href="#top10"><span class="nav-num">13</span> Top 10 Mode ★</a>
+
+  <div class="nav-label">Interface</div>
+  <a class="nav-link" href="#ticker"><span class="nav-num">14</span> Ticker Bar 📡</a>
+  <a class="nav-link" href="#more"><span class="nav-num">15</span> More Menu ⋯</a>
+  <a class="nav-link" href="#data"><span class="nav-num">16</span> Data &amp; Updates</a>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div id="content">
+
+  <!-- HERO -->
+  <div id="hero">
+    <div id="hero-title">Vendetta <span>World Map</span></div>
+    <div id="hero-sub">User Guide</div>
+    <div id="hero-version">v3.40</div>
+  </div>
+
+  <!-- 1 · INTRODUCTION -->
+  <section class="section" id="intro">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Introduction</h2>
+    </div>
+    <p>
+      <strong style="color:#fff">Vendetta World Map</strong> is an unofficial companion tool for <a href="https://vendettagame.xyz/" target="_blank">Vendetta</a>, a fully on-chain multiplayer strategy game where players build criminal empires through territory control, crew management, and turf battles.
+    </p>
+    <p>
+      The map gives you a real-time overview of the entire game world: who owns what, where garrisons are deployed, how the balance of power is shifting, and where opportunities lie. It is a community resource — free to use by any Vendetta player.
+    </p>
+  </section>
+
+  <!-- 2 · GETTING STARTED -->
+  <section class="section" id="start">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Getting Started</h2>
+    </div>
+    <p>
+      Open the map at <strong style="color:#fff">vwm.cryptofolio.nl</strong>. Data is refreshed automatically every 6 hours; the age of the current data is shown in the top toolbar in 15-minute blocks (e.g. <em>30m ago</em>, <em>45m ago</em>).
+    </p>
+    <div class="callout">
+      <strong>Set up your profile first.</strong> Click <span class="key">⋯ More</span> → <span class="key">⚙ My Profile</span> and search for your player name, or paste your profile ID directly. This highlights your own territory on the map and unlocks player-specific features like Ghost Turfs and Last Battle.
+    </div>
+    <p>
+      To manually reload the current data, open <span class="key">⋯ More</span> → <span class="key">↺ Reload</span>, or refresh with the browser refresh button.
+    </p>
+  </section>
+
+  <!-- 3 · NAVIGATING -->
+  <section class="section" id="navigate">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Navigating the Map</h2>
+    </div>
+    <table class="guide-table">
+      <thead>
+        <tr><th>Action</th><th>How</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Zoom in / out</td><td>Scroll wheel, or <span class="key">+</span> / <span class="key">−</span> buttons (top right of map)</td></tr>
+        <tr><td>Reset zoom</td><td><span class="key">⊡</span> button — zooms out to overview level (×0.2)</td></tr>
+        <tr><td>Pan</td><td>Click and drag</td></tr>
+        <tr><td>Jump to a location</td><td>Click any spot on the <strong>minimap</strong> (bottom right)</td></tr>
+        <tr><td>Hide the player panel</td><td><span class="key">☰</span> button (bottom left of map) — <em>mobile only</em></td></tr>
+        <tr><td>Full-screen map</td><td><span class="key">⛶</span> button (bottom left of map) — <em>mobile only</em>. Hides the toolbar, ticker bar, and sidebar, leaving only the full-screen canvas with floating zoom and toggle buttons. Toggle off with the same button, which changes to <span class="key">✕</span>.</td></tr>
+        <tr><td>Neighbor popup</td><td>Right-click (desktop) or long-press (mobile) on any tile. Opens a popup listing all bordering players with their border tile counts, friend/enemy mark buttons, and a route button to calculate a path to that neighbor.</td></tr>
+      </tbody>
+    </table>
+    <p>A coordinate ruler runs along the top and left edges of the map. The current zoom level is shown in the top-left corner of the map area.</p>
+  </section>
+
+  <!-- 4 · READING THE MAP -->
+  <section class="section" id="reading">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Reading the Map</h2>
+    </div>
+    <p>Each colored tile represents one turf owned by a player. Every player has a unique color, consistent across sessions.</p>
+    <table class="guide-table">
+      <thead>
+        <tr><th>Visual</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Gold border</td><td>Headquarter (HQ) tile</td></tr>
+        <tr><td>Dark grey tile</td><td>Inactive player — has officially quit the game; turfs can be captured but not raided</td></tr>
+      </tbody>
+    </table>
+    <p><strong style="color:#fff">Garrison indicators</strong> — when zoomed in sufficiently, each garrisoned tile shows the total number of defenders. Zoom in further to see the full composition broken down by type:</p>
+    <ul style="list-style:none;margin-left:0;margin-top:8px">
+      <li style="margin-bottom:8px">
+        <span class="gcolor hm"><span class="chip" style="background:#aaaaaa"></span> H — Henchman</span>
+      </li>
+      <li style="margin-bottom:8px">
+        <span class="gcolor bc"><span class="chip" style="background:#6fffa9"></span> B — Bouncer</span>
+      </li>
+      <li>
+        <span class="gcolor ef"><span class="chip" style="background:#ff8483"></span> E — Enforcer</span>
+      </li>
+    </ul>
+    <p style="margin-top:16px">Hover over any tile to see the owner name, coordinates, HQ status, and garrison count in a tooltip.</p>
+    <p><strong style="color:#fff">Player name labels</strong> — at zoom levels between 2× and 10×, player names appear directly on the map at the center of each territory (for players holding at least 8 tiles). This makes it easy to identify who controls which area without hovering individual tiles.</p>
+  </section>
+
+  <!-- 5 · PLAYER PANEL -->
+  <section class="section" id="panel">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Player Panel</h2>
+    </div>
+    <p>The player panel on the right lists all active players, ranked by turf count.</p>
+    <p><strong style="color:#fff">Search</strong> — type a player name to filter the list instantly.</p>
+    <p><strong style="color:#fff">Filters:</strong></p>
+    <ul>
+      <li><strong>All</strong> — full list</li>
+      <li><strong>Inactive</strong> — players who have officially quit the game</li>
+      <li><strong>♥ Friends</strong> — players you have marked as friends</li>
+      <li><strong>✕ Enemies</strong> — players you have marked as enemies</li>
+    </ul>
+    <p><strong style="color:#fff">Inactivity slider</strong> — use <em>Hide inactive &gt;</em> to automatically hide players who have been inactive for more than a chosen number of days (3 / 7 / 14 / 21 / 35 / 70).</p>
+    <p><strong style="color:#fff">Compact view</strong> — click <span class="key">⊟</span> to collapse the list to names only, without turf bars and action buttons.</p>
+    <p><strong style="color:#fff">Marking players</strong> — each player row has ♥ and ✕ buttons. Marking a player as a friend colors their turfs <span style="color:var(--g-green);font-weight:600">green</span> on the map; marking as enemy colors them <span style="color:var(--g-red);font-weight:600">red</span>. Marks are stored locally in your browser.</p>
+    <p>Click any player row to jump to their territory on the map.</p>
+  </section>
+
+  <!-- 6 · GARRISON MODAL -->
+  <section class="section" id="garrison">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Garrison Modal</h2>
+    </div>
+    <p>Click the <span class="key">🛡</span> button on a player row to open the Garrison modal. It shows all turfs where that player has deployed gangsters.</p>
+    <p>The modal has five tabs:</p>
+    <div class="tab-grid">
+      <div class="tab-card">
+        <div class="tab-card-head">🗺 Navigate</div>
+        <p>Lists every garrisoned turf with <span class="ef">Enforcer</span> / <span class="bc">Bouncer</span> / <span class="hm">Henchman</span> counts. Click a row to jump to that turf on the map.</p>
+      </div>
+      <div class="tab-card">
+        <div class="tab-card-head">⬆ Recall</div>
+        <p>Select turfs with the checkboxes, then recall all gangsters from those turfs back to HQ in a single wallet transaction. <em style="color:var(--g-muted)">Currently unavailable — check back for updates.</em></p>
+      </div>
+      <div class="tab-card">
+        <div class="tab-card-head">📈 History</div>
+        <p>Shows a chart of the player's turf count over the past 30 days, so you can see whether they are growing, shrinking, or stable.</p>
+      </div>
+      <div class="tab-card">
+        <div class="tab-card-head">🗡 Raids</div>
+        <p>Lists recent raid activity for this player: incoming and outgoing raids with timestamps, outcomes, and XP gained.</p>
+      </div>
+      <div class="tab-card">
+        <div class="tab-card-head">⚔ Attack</div>
+        <p>Provides an attack recommendation based on the current garrison composition. Shows the optimal attacker lineup and estimated win probability against this player's defenders.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · INTEL -->
+  <section class="section" id="intel">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2 class="section-title">Intel Menu 🔍</h2>
+    </div>
+    <p>The <span class="key">🔍 Intel</span> button in the toolbar is enabled once you have selected a player — by clicking their row in the player panel or clicking their territory on the map. It contains two tools:</p>
+
+    <div class="callout green">
+      <strong>👻 Ghost Turfs</strong><br>
+      Highlights all empty tiles that border the selected player's territory. These are the tiles that player could expand into — or that you could grab before they do. Distance is calculated using Chebyshev distance, meaning diagonals count the same as straight moves. Toggle off by clicking <span class="key">Intel</span> → <span class="key">Ghost Turfs</span> again.
+    </div>
+
+    <div class="callout info">
+      <strong>🎯 Soft Targets</strong><br>
+      Opens a list of inactive players who still hold significant territory, sorted by distance from the selected player. Useful for identifying expansion opportunities. Each row shows turf count, days inactive, distance, and a Route button.
+    </div>
+  </section>
+
+  <!-- 8 · ROUTE MODE -->
+  <section class="section" id="route">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2 class="section-title">Route Mode 🗺</h2>
+    </div>
+    <p>Click <span class="key">🗺 Route</span> in the toolbar to enter route mode. Then click two players or two turfs on the map — the tool calculates the shortest path between them.</p>
+    <p>The route is color-coded:</p>
+    <ul style="list-style:none;margin-left:0">
+      <li style="margin-bottom:8px"><span class="route-own">■ Purple</span> — tiles already owned by you (free to travel)</li>
+      <li style="margin-bottom:8px"><span class="route-free">■ Green</span> — empty tiles (you can expand into these)</li>
+      <li><span class="route-conquer">■ Red</span> — tiles owned by another player (must be conquered)</li>
+    </ul>
+    <p style="margin-top:12px">The Route panel (bottom left) shows total steps and the breakdown across all three tile types. Click <span class="key">✕ Clear route</span> to exit.</p>
+  </section>
+
+  <!-- 9 · 24H CHANGES -->
+  <section class="section" id="battles">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2 class="section-title">24h Changes ⚔</h2>
+    </div>
+    <p>The <span class="key">⚔ 24h</span> button (visible after data loads) overlays the map with turf changes from the past 24 hours. Tiles that changed ownership in that period are highlighted in <span style="color:var(--g-green);font-weight:600">green</span>, indicating they were recently captured.</p>
+    <p>If you have your profile set up, the overlay also distinguishes your own activity: tiles you captured appear in <span style="color:var(--g-green);font-weight:600">bright green</span>, while tiles that were taken from you appear in <span style="color:var(--g-red);font-weight:600">red</span>.</p>
+    <p>The ticker bar at the top also shows a live summary of the top gainers and losers for the day.</p>
+  </section>
+
+  <!-- 10 · LEADERBOARD -->
+  <section class="section" id="leaderboard">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <h2 class="section-title">Leaderboard 📈</h2>
+    </div>
+    <p>Click <span class="key">📈 Leaderboard</span> to open the rank overview. It shows all players sorted by turf count, with rank changes compared to <strong style="color:#fff">24 hours</strong> or <strong style="color:#fff">7 days</strong> ago (toggle with the period buttons).</p>
+    <p>Arrows indicate movement: <span style="color:var(--g-green)">▲</span> gained ranks, <span style="color:var(--g-red)">▼</span> lost ranks. Click any player row to open their <strong style="color:#fff">mini-profile card</strong> — see section 11 for details.</p>
+  </section>
+
+  <!-- 11 · MINI-PROFILE -->
+  <section class="section" id="miniprofile">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <h2 class="section-title">Mini-Profile Card</h2>
+    </div>
+    <p>The mini-profile card is a compact popup that appears when you click a player row in the Leaderboard. It gives you a quick tactical overview of that player without leaving the map.</p>
+    <p>The card shows:</p>
+    <ul>
+      <li><strong>Rank and turf count</strong> — with the 24h change</li>
+      <li><strong>Garrison totals</strong> — <span class="hm">Henchman</span>, <span class="bc">Bouncer</span>, and <span class="ef">Enforcer</span> counts across all deployed turfs</li>
+      <li><strong>Last activity</strong> — how recently this player was active</li>
+      <li><strong>Raid stats</strong> — number of attacks launched and raids received</li>
+      <li><strong>Friend / enemy mark</strong> — shows the current mark if set (♥ Friend or ✕ Enemy); marks can be toggled from the player panel or the neighbor popup</li>
+    </ul>
+    <p>Two action buttons are available at the bottom of the card:</p>
+    <ul>
+      <li><span class="key">🗺 Go to</span> — jumps the map to this player's territory</li>
+      <li><span class="key">🛡 Garrison</span> — opens the full Garrison modal for this player</li>
+    </ul>
+    <p>Close the card with the <span class="key">✕</span> button or by clicking outside it.</p>
+  </section>
+
+  <!-- 12 · BATTLE ANALYZER -->
+  <section class="section" id="analyzer">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <h2 class="section-title">Battle Analyzer ⚔</h2>
+    </div>
+    <p>Click <span class="key">⚔ Battle</span> to open the Battle Analyzer. It decodes a Vendetta battle transaction and shows you exactly what happened: which gangsters fought, what damage was dealt per round, and who won.</p>
+    <p><strong style="color:#fff">Two ways to analyze:</strong></p>
+    <ul>
+      <li>Paste a <strong>SuiVision transaction URL</strong> directly into the input field and click <em>Analyze</em>.</li>
+      <li>Click <span class="key">⚔ Last battle</span> to automatically load your most recent battle — requires a wallet address saved in <span class="key">⚙ My Profile</span>.</li>
+    </ul>
+  </section>
+
+  <!-- 13 · TOP 10 -->
+  <section class="section" id="top10">
+    <div class="section-header">
+      <span class="section-num">13</span>
+      <h2 class="section-title">Top 10 Mode ★</h2>
+    </div>
+    <p>Click <span class="key">★ Top 10</span> to dim all players on the map except the top 10 by turf count, plus your own territory. Useful for getting a quick read on who dominates the map without the visual noise of smaller players. Click again to deactivate.</p>
+  </section>
+
+  <!-- 14 · TICKER -->
+  <section class="section" id="ticker">
+    <div class="section-header">
+      <span class="section-num">14</span>
+      <h2 class="section-title">Ticker Bar 📡</h2>
+    </div>
+    <p>The <strong style="color:var(--g-gold)">📡 LIVE</strong> ticker at the top of the screen scrolls live game statistics: total turfs claimed, battle intensity in the past 24h, the leading player, top gainers and losers, garrison leaders, recent HQ captures, and your own rank.</p>
+    <p>Hover over the ticker to pause it. Click <span class="key">✕</span> to close it entirely.</p>
+  </section>
+
+  <!-- 15 · MORE MENU -->
+  <section class="section" id="more">
+    <div class="section-header">
+      <span class="section-num">15</span>
+      <h2 class="section-title">More Menu ⋯</h2>
+    </div>
+    <p>The <span class="key">⋯ More</span> dropdown contains:</p>
+    <table class="guide-table">
+      <thead>
+        <tr><th>Option</th><th>What it does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>↺ Reload</td><td>Reload the latest data</td></tr>
+        <tr><td>⚡ Refresh data</td><td>Trigger a fresh data pull from the blockchain <em>(requires a GitHub token)</em></td></tr>
+        <tr><td>📰 Weekly Report</td><td>Opens <em>The Vendetta Gazette</em>, a Roaring Twenties–style newspaper summarizing the week: top movers, biggest battles, HQ captures, and crime activity. Click <span class="key">⬇ PDF</span> to save it.</td></tr>
+        <tr><td>⬇ Export PNG</td><td>Saves a high-resolution screenshot of the current map view</td></tr>
+        <tr><td>🎬 Export GIF</td><td>Creates an animated GIF showing territory changes across saved snapshots</td></tr>
+        <tr><td>⬇ Export CSV</td><td>Downloads a spreadsheet with all player data (rank, name, turf count, profile ID)</td></tr>
+        <tr><td>⚙ My Profile</td><td>Configure your player identity — see Getting Started</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 16 · DATA -->
+  <section class="section" id="data">
+    <div class="section-header">
+      <span class="section-num">16</span>
+      <h2 class="section-title">Data &amp; Updates</h2>
+    </div>
+    <p>Map data is refreshed automatically every 6 hours. The age of the current data is always visible in the toolbar, shown in 15-minute blocks.</p>
+    <p>To check for a fresh update manually, use <span class="key">⋯ More</span> → <span class="key">↺ Reload</span>, or use <span class="key">⚡ Refresh data</span> to trigger a new data pull immediately.</p>
+  </section>
+
+</div><!-- /content -->
+</div><!-- /layout -->
+
+<script>
+// Active nav link on scroll
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.nav-link');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+// Close mobile nav on link click
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    document.getElementById('sidenav').classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>
