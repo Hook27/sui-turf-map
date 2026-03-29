@@ -519,7 +519,7 @@ li strong { color: #ddd; }
         <span class="gcolor ef"><span class="chip" style="background:#ff8483"></span> E — Enforcer</span>
       </li>
     </ul>
-    <p style="margin-top:16px">Hover over any tile to see the owner name, coordinates, HQ status, and garrison count in a tooltip.</p>
+    <p style="margin-top:16px">Hover over any turf to see the owner name, coordinates, HQ status, and garrison count in a tooltip.</p>
     <p><strong style="color:#fff">Player name labels</strong> — at zoom levels between 2× and 10×, player names appear directly on the map at the center of each territory (for players holding at least 8 turfs). This makes it easy to identify who controls which area without hovering individual turfs.</p>
   </section>
 
@@ -586,7 +586,7 @@ li strong { color: #ddd; }
 
     <div class="callout green">
       <strong>👻 Ghost Turfs</strong><br>
-      Highlights all empty tiles that border the selected player's territory. These are the tiles that player could expand into — or that you could grab before they do. Distance is calculated using Chebyshev distance, meaning diagonals count the same as straight moves. Toggle off by clicking <span class="key">Intel</span> → <span class="key">Ghost Turfs</span> again.
+      Highlights all empty turfs that border the selected player's territory. These are the turfs that player could expand into — or that you could grab before they do. Distance is calculated using Chebyshev distance, meaning diagonals count the same as straight moves. Toggle off by clicking <span class="key">Intel</span> → <span class="key">Ghost Turfs</span> again.
     </div>
 
     <div class="callout info">
@@ -604,11 +604,11 @@ li strong { color: #ddd; }
     <p>Click <span class="key">🗺 Route</span> in the toolbar to enter route mode. Then click two players or two turfs on the map — the tool calculates the shortest path between them.</p>
     <p>The route is color-coded:</p>
     <ul style="list-style:none;margin-left:0">
-      <li style="margin-bottom:8px"><span class="route-own">■ Purple</span> — tiles already owned by you (free to travel)</li>
-      <li style="margin-bottom:8px"><span class="route-free">■ Green</span> — empty tiles (you can expand into these)</li>
-      <li><span class="route-conquer">■ Red</span> — tiles owned by another player (must be conquered)</li>
+      <li style="margin-bottom:8px"><span class="route-own">■ Purple</span> — turfs already owned by you (free to travel)</li>
+      <li style="margin-bottom:8px"><span class="route-free">■ Green</span> — empty turfs (you can expand into these)</li>
+      <li><span class="route-conquer">■ Red</span> — turfs owned by another player (must be conquered)</li>
     </ul>
-    <p style="margin-top:12px">The Route panel (bottom left) shows total steps and the breakdown across all three tile types. Click <span class="key">✕ Clear route</span> to exit.</p>
+    <p style="margin-top:12px">The Route panel (bottom left) shows total steps and the breakdown across all three turf types. Click <span class="key">✕ Clear route</span> to exit.</p>
   </section>
 
   <!-- 9 · 24H CHANGES -->
@@ -617,7 +617,7 @@ li strong { color: #ddd; }
       <span class="section-num">09</span>
       <h2 class="section-title">24h Changes ⚔</h2>
     </div>
-    <p>The <span class="key">⚔ 24h</span> button (visible after data loads) overlays the map with turf changes from the past 24 hours. Tiles that changed ownership in that period are highlighted in <span style="color:var(--g-green);font-weight:600">green</span>, indicating they were recently captured.</p>
+    <p>The <span class="key">⚔ 24h</span> button (visible after data loads) overlays the map with turf changes from the past 24 hours. Turfs that changed ownership in that period are highlighted in <span style="color:var(--g-green);font-weight:600">green</span>, indicating they were recently captured.</p>
 
     <p>The ticker bar at the top also shows a live summary of the top gainers and losers for the day.</p>
   </section>
