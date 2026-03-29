@@ -485,7 +485,7 @@ li strong { color: #ddd; }
         <tr><td>Jump to a location</td><td>Click any spot on the <strong>minimap</strong> (bottom right)</td></tr>
         <tr><td>Hide the player panel</td><td><span class="key">☰</span> button (bottom left of map) — <em>mobile only</em></td></tr>
         <tr><td>Full-screen map</td><td><span class="key">⛶</span> button (bottom left of map) — <em>mobile only</em>. Hides the toolbar, ticker bar, and sidebar, leaving only the full-screen canvas with floating zoom and toggle buttons. Toggle off with the same button, which changes to <span class="key">✕</span>.</td></tr>
-        <tr><td>Neighbor popup</td><td>Right-click (desktop) or long-press (mobile) on any tile. Opens a popup listing all bordering players with their border tile counts, friend/enemy mark buttons, and a route button to calculate a path to that neighbor.</td></tr>
+        <tr><td>Neighbor popup</td><td>Right-click (desktop) or long-press (mobile) on any turf. Opens a popup listing all bordering players with their border turf counts, friend/enemy mark buttons, and a route button to calculate a path to that neighbor.</td></tr>
       </tbody>
     </table>
     <p>A coordinate ruler runs along the top and left edges of the map. The current zoom level is shown in the top-left corner of the map area.</p>
@@ -497,17 +497,17 @@ li strong { color: #ddd; }
       <span class="section-num">04</span>
       <h2 class="section-title">Reading the Map</h2>
     </div>
-    <p>Each colored tile represents one turf owned by a player. Every player has a unique color, consistent across sessions.</p>
+    <p>Each colored turf on the map is owned by a player. Every player has a unique color, consistent across sessions.</p>
     <table class="guide-table">
       <thead>
         <tr><th>Visual</th><th>Meaning</th></tr>
       </thead>
       <tbody>
-        <tr><td>Gold border</td><td>Headquarter (HQ) tile</td></tr>
-        <tr><td>Dark grey tile</td><td>Inactive player — has officially quit the game; turfs can be captured but not raided</td></tr>
+        <tr><td>Gold border</td><td>Headquarter (HQ) turf</td></tr>
+        <tr><td>Dark grey turf</td><td>Inactive player — has officially quit the game; turfs can be captured but not raided</td></tr>
       </tbody>
     </table>
-    <p><strong style="color:#fff">Garrison indicators</strong> — when zoomed in sufficiently, each garrisoned tile shows the total number of defenders. Zoom in further to see the full composition broken down by type:</p>
+    <p><strong style="color:#fff">Garrison indicators</strong> — when zoomed in sufficiently, each garrisoned turf shows the total number of defenders. Zoom in further to see the full composition broken down by type:</p>
     <ul style="list-style:none;margin-left:0;margin-top:8px">
       <li style="margin-bottom:8px">
         <span class="gcolor hm"><span class="chip" style="background:#aaaaaa"></span> H — Henchman</span>
@@ -520,7 +520,7 @@ li strong { color: #ddd; }
       </li>
     </ul>
     <p style="margin-top:16px">Hover over any tile to see the owner name, coordinates, HQ status, and garrison count in a tooltip.</p>
-    <p><strong style="color:#fff">Player name labels</strong> — at zoom levels between 2× and 10×, player names appear directly on the map at the center of each territory (for players holding at least 8 tiles). This makes it easy to identify who controls which area without hovering individual tiles.</p>
+    <p><strong style="color:#fff">Player name labels</strong> — at zoom levels between 2× and 10×, player names appear directly on the map at the center of each territory (for players holding at least 8 turfs). This makes it easy to identify who controls which area without hovering individual turfs.</p>
   </section>
 
   <!-- 5 · PLAYER PANEL -->
@@ -618,7 +618,7 @@ li strong { color: #ddd; }
       <h2 class="section-title">24h Changes ⚔</h2>
     </div>
     <p>The <span class="key">⚔ 24h</span> button (visible after data loads) overlays the map with turf changes from the past 24 hours. Tiles that changed ownership in that period are highlighted in <span style="color:var(--g-green);font-weight:600">green</span>, indicating they were recently captured.</p>
-    <p>If you have your profile set up, the overlay also distinguishes your own activity: tiles you captured appear in <span style="color:var(--g-green);font-weight:600">bright green</span>, while tiles that were taken from you appear in <span style="color:var(--g-red);font-weight:600">red</span>.</p>
+
     <p>The ticker bar at the top also shows a live summary of the top gainers and losers for the day.</p>
   </section>
 
