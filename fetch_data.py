@@ -552,31 +552,47 @@ snap_paths_asc      = list(reversed([e["file"]      for e in history_entries]))
 snap_labels_asc     = list(reversed(snap_labels))
 snap_timestamps_asc = list(reversed([e["timestamp"] for e in history_entries]))
 
-# Load all snapshots once, build pid→count per snapshot
-snap_counts = []  # list of {pid: count} dicts, oldest-first
+# Load all snapshots once, build pid→count and pid→garrison per snapshot
+snap_counts   = []  # list of {pid: count} dicts, oldest-first
+snap_garrison = []  # list of {pid: total_garrison} dicts, oldest-first
 for path in snap_paths_asc:
     try:
         d = json.loads(open(path, encoding="utf-8").read())
         snap_counts.append({p["pid"]: p["tiles"] for p in d.get("players", [])})
+        # Sum garrison per player from tiles
+        gar = {}
+        for t in d.get("tiles", []):
+            players_snap = d.get("players", [])
+            if t.get("p") is None or t["p"] >= len(players_snap): continue
+            pid = players_snap[t["p"]]["pid"]
+            total = (t.get("g_h") or 0) + (t.get("g_b") or 0) + (t.get("g_e") or 0)
+            gar[pid] = gar.get(pid, 0) + total
+        snap_garrison.append(gar)
     except Exception:
         snap_counts.append({})
+        snap_garrison.append({})
 
 # Only track pids in the current snapshot (player_list already built)
 current_pids = {p["pid"] for p in player_list}
 
 ph_players = {}
+ph_garrison = {}
 for pid in current_pids:
     series = [sc.get(pid, None) for sc in snap_counts]
-    # Only include if there's at least 2 non-null values
     non_null = [v for v in series if v is not None]
     if len(non_null) >= 2:
         ph_players[pid] = series
+    gar_series = [sg.get(pid, None) for sg in snap_garrison]
+    gar_non_null = [v for v in gar_series if v is not None]
+    if len(gar_non_null) >= 2:
+        ph_garrison[pid] = gar_series
 
 player_history_out = {
     "updated":    now_utc.isoformat(),
     "snapshots":  snap_labels_asc,
     "timestamps": snap_timestamps_asc,
     "players":    ph_players,
+    "garrison":   ph_garrison,
 }
 
 with open("player_history.json", "w", encoding="utf-8") as f:

@@ -485,7 +485,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v3.40</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v3.41</span>
   <div class="sep"></div>
   <button id="route-btn" class="tb-btn" onclick="toggleRouteMode()">🗺 <span class="tb-label">Route</span></button>
   <span id="route-indicator">Click a turf or player to select A → B</span>
@@ -631,10 +631,10 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     </div>
     <div id="garrison-tabs">
       <button class="gar-tab active" id="tab-btn-navigate" onclick="switchGarrisonTab('navigate')">🗺 Navigate</button>
-      <button class="gar-tab" id="tab-btn-recall" onclick="switchGarrisonTab('recall')">⬆ Recall</button>
       <button class="gar-tab" id="tab-btn-history" onclick="switchGarrisonTab('history')">📈 History</button>
       <button class="gar-tab" id="tab-btn-raids" onclick="switchGarrisonTab('raids')">🗡 Raids</button>
       <button class="gar-tab" id="tab-btn-attack" onclick="switchGarrisonTab('attack')">⚔ Attack</button>
+      <button class="gar-tab" id="tab-btn-recall" onclick="switchGarrisonTab('recall')">⬆ Recall</button>
     </div>
 
     <!-- Tab 1: Navigate -->
@@ -649,7 +649,22 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
       <div id="gar-nav-list"></div>
     </div>
 
-    <!-- Tab 2: Recall -->
+    <!-- Tab 2: History -->
+    <div id="garrison-tab-history">
+      <div id="gar-history-chart"><div id="gar-history-empty">Loading history...</div></div>
+    </div>
+
+    <!-- Tab 3: Raids -->
+    <div id="garrison-tab-raids">
+      <div id="gar-raids-list"></div>
+    </div>
+
+    <!-- Tab 4: Attack -->
+    <div id="garrison-tab-attack">
+      <div id="gar-attack-content" style="padding:14px 18px;"></div>
+    </div>
+
+    <!-- Tab 5: Recall -->
     <div id="garrison-tab-recall">
       <div style="display:grid;grid-template-columns:20px 120px 60px 60px 80px auto;padding:6px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
         <span></span>
@@ -667,20 +682,6 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
         <span id="garrison-recall-info">0 turfs selected</span>
         <button id="garrison-recall-btn" onclick="openWalletModal()">⬆ Recall to HQ</button>
       </div>
-    </div>
-    <!-- Tab 3: History -->
-    <div id="garrison-tab-history">
-      <div id="gar-history-chart"><div id="gar-history-empty">Loading history...</div></div>
-    </div>
-
-    <!-- Tab 4: Raids -->
-    <div id="garrison-tab-raids">
-      <div id="gar-raids-list"></div>
-    </div>
-
-    <!-- Tab 5: Attack Advisor -->
-    <div id="garrison-tab-attack">
-      <div id="gar-attack-content" style="padding:14px 18px;"></div>
     </div>
   </div>
 </div>
@@ -3438,44 +3439,51 @@ function renderGarrisonHistory(){
     <span style="color:${diffCol}">${diffStr} turfs vs ${labels[0]||'start'}</span>
   </div>
   <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;height:auto;display:block">
-    <!-- Grid lines -->
     ${yTicks.map(v=>{const y=PAD.t+cH-(v-minV)/range*cH;return `<line x1="${PAD.l}" y1="${y.toFixed(1)}" x2="${W-PAD.r}" y2="${y.toFixed(1)}" stroke="#1a1a1a" stroke-dasharray="3,3"/>`;}).join('')}
-    <!-- Axes -->
     <line x1="${PAD.l}" y1="${PAD.t}" x2="${PAD.l}" y2="${PAD.t+cH}" stroke="#333"/>
     <line x1="${PAD.l}" y1="${PAD.t+cH}" x2="${W-PAD.r}" y2="${PAD.t+cH}" stroke="#333"/>
-    <!-- Y ticks + labels -->
     ${yTicksSvg}
-    <!-- X labels -->
     ${xLabelsSvg}
-    <!-- Area fill -->
     <polygon points="${areaPoints}" fill="#FAC775" opacity="0.07"/>
-    <!-- Line -->
     <polyline points="${pts}" fill="none" stroke="#FAC775" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <!-- Last point dot -->
     <circle cx="${(PAD.l+(n-1)*xStep).toFixed(1)}" cy="${(PAD.t+cH-(lastVal-minV)/range*cH).toFixed(1)}" r="3" fill="#FAC775"/>
   </svg>`;
 
-  // Combat stats
-  const allRaids = battleHistoryData?.raids || [];
-  const allHqCap = battleHistoryData?.hqCaptures || [];
-  const hasData  = battleHistoryData?.raids != null;
-  const raidsAtk   = allRaids.filter(r=>r.attacker_pid===garrisonPid).length;
-  const raidsDef   = allRaids.filter(r=>r.defender_pid===garrisonPid).length;
-  const capturesAtk= allRaids.filter(r=>r.attacker_pid===garrisonPid&&r.is_capture).length;
-  const hqsCaptured= allHqCap.filter(c=>c.new_pid===garrisonPid).length;
-  const sb=(val,lbl)=>`<div style="background:#0d0d0d;border:1px solid #1a1a1a;padding:8px 10px;text-align:center">
-    <div style="font-family:var(--font-bangers);font-size:22px;letter-spacing:1px;color:#FAC775">${val}</div>
-    <div style="font-size:8px;color:#666;text-transform:uppercase;letter-spacing:.5px;font-family:var(--font-mono);margin-top:2px">${lbl}</div>
-  </div>`;
-  el.innerHTML+=`<div style="padding:0 0 8px">
-    <div style="font-size:9px;color:#555;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;border-top:1px solid #1a1a1a;padding-top:12px">Combat stats${!hasData?' <span style="color:#444">(no raid data yet)</span>':''}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      ${sb(raidsAtk,'Raids as attacker')}
-      ${sb(raidsDef,'Raids as defender')}
-      ${sb(capturesAtk,'Turf captures')}
-      ${sb(hqsCaptured,'HQ captures')}
+  // Garrison trend — build from snapshot history using tile data per snapshot
+  // Use player_history garrison data if available, else skip
+  const garCounts = playerHistory?.garrison?.[garrisonPid]?.filter(v=>v!=null) || [];
+  const garLabels = playerHistory?.snapshots || [];
+  if(garCounts.length >= 2){
+    const gn=garCounts.length;
+    const gmaxV=Math.max(...garCounts), gminV=Math.min(...garCounts);
+    const grange=gmaxV-gminV||1;
+    const gxStep=cW/(gn-1);
+    const gpts=garCounts.map((v,i)=>`${(PAD.l+i*gxStep).toFixed(1)},${(PAD.t+cH-(v-gminV)/grange*cH).toFixed(1)}`).join(' ');
+    const gyTicks=[gminV,Math.round((gminV+gmaxV)/2),gmaxV];
+    const gyTicksSvg=gyTicks.map(v=>{const y=PAD.t+cH-(v-gminV)/grange*cH;return `<line x1="${PAD.l-4}" y1="${y.toFixed(1)}" x2="${PAD.l}" y2="${y.toFixed(1)}" stroke="#333"/><text x="${PAD.l-8}" y="${(y+4).toFixed(1)}" text-anchor="end" fill="#555" font-size="9" font-family="monospace">${v}</text>`;}).join('');
+    const gxIdxs=[0,...[1,2,3].map(i=>Math.round(i*(gn-1)/4)),gn-1].filter((v,i,a)=>a.indexOf(v)===i);
+    const gxLabelsSvg=gxIdxs.map(i=>{const x=PAD.l+i*gxStep;const lbl=(garLabels[i]||'').replace(/UTC$/,'').trim();return `<text x="${x.toFixed(1)}" y="${H-4}" text-anchor="middle" fill="#444" font-size="8" font-family="monospace">${esc(lbl)}</text>`;}).join('');
+    const gareaPoints=`${PAD.l},${PAD.t+cH} ${gpts} ${(PAD.l+(gn-1)*gxStep).toFixed(1)},${PAD.t+cH}`;
+    const glastVal=garCounts[gn-1], gfirstVal=garCounts[0];
+    const gdiff=glastVal-gfirstVal;
+    const gdiffStr=(gdiff>=0?'+':'')+gdiff;
+    const gdiffCol=gdiff>0?'#6fffa9':gdiff<0?'#ff8483':'#888';
+    el.innerHTML+=`
+    <div style="font-size:10px;font-family:var(--font-mono);color:#666;margin-top:14px;margin-bottom:6px;border-top:1px solid #1a1a1a;padding-top:12px;display:flex;justify-content:space-between">
+      <span>Garrison — last ${gn} snapshots</span>
+      <span style="color:${gdiffCol}">${gdiffStr} units vs ${garLabels[0]||'start'}</span>
     </div>
-  </div>`;
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;height:auto;display:block">
+      ${gyTicks.map(v=>{const y=PAD.t+cH-(v-gminV)/grange*cH;return `<line x1="${PAD.l}" y1="${y.toFixed(1)}" x2="${W-PAD.r}" y2="${y.toFixed(1)}" stroke="#1a1a1a" stroke-dasharray="3,3"/>`;}).join('')}
+      <line x1="${PAD.l}" y1="${PAD.t}" x2="${PAD.l}" y2="${PAD.t+cH}" stroke="#333"/>
+      <line x1="${PAD.l}" y1="${PAD.t+cH}" x2="${W-PAD.r}" y2="${PAD.t+cH}" stroke="#333"/>
+      ${gyTicksSvg}
+      ${gxLabelsSvg}
+      <polygon points="${gareaPoints}" fill="#89c6ff" opacity="0.07"/>
+      <polyline points="${gpts}" fill="none" stroke="#89c6ff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${(PAD.l+(gn-1)*gxStep).toFixed(1)}" cy="${(PAD.t+cH-(glastVal-gminV)/grange*cH).toFixed(1)}" r="3" fill="#89c6ff"/>
+    </svg>`;
+  }
 }
 
 function renderGarrisonRaids(){
