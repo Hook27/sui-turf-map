@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 TURF_SYSTEM      = "0x372e8fd0e12d2051860553b9e61065729dcddec11970b295bbcf19d7261cc502"
 PLAYERS_REGISTRY = "0x84a4a83842e92d8091563ae7a033797ad5182baca84de9f89573cb5b3722b494"
 NULL_ID          = "0x" + "0" * 64
-MAX_SNAPSHOTS    = 90   # keep last 90 snapshots (~30 days at 3x/day)
+MAX_SNAPSHOTS    = 120  # keep last 120 snapshots (~30 days at 4x/day)
 SNAPSHOTS_DIR    = "snapshots"
 
 RPC_ENDPOINTS = [
