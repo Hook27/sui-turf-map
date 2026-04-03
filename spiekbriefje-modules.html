@@ -3,624 +3,543 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VWM · Spiekbriefje — Wijzigingen via Claude</title>
+<title>VWM · Module Pakketje Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Martian+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Martian+Mono:wght@400;600;700&display=swap');
+:root {
+  --gold:#FAC775; --green:#6fffa9; --red:#ff8483; --blue:#3291e9;
+  --bg:#0a0a0a; --panel:#111; --panel2:#0d0d0d; --border:#222;
+  --text:#ccc; --dim:#666; --mono:'Martian Mono',monospace; --bang:'Bangers',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--mono);background:var(--bg);color:var(--text);min-height:100vh;font-size:12px}
 
-  :root {
-    --gold:   #FAC775;
-    --green:  #6fffa9;
-    --red:    #ff8483;
-    --blue:   #3291e9;
-    --bg:     #0a0a0a;
-    --panel:  #111;
-    --border: #2a2a2a;
-    --text:   #ccc;
-    --dim:    #777;
-    --mono:   'Martian Mono', monospace;
-    --bang:   'Bangers', sans-serif;
-  }
+/* ── Header ── */
+#hdr{background:#000;border-bottom:2px solid #222;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#hdr h1{font-family:var(--bang);font-size:24px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;font-weight:400}
+#hdr-sub{font-size:10px;color:var(--dim);flex:1}
+#ver-badge{font-size:10px;background:#1a1a00;border:1px solid #3a3000;color:var(--gold);padding:2px 10px;white-space:nowrap}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Layout ── */
+#app{display:grid;grid-template-columns:1fr 340px;gap:0;height:calc(100vh - 56px)}
+#left{overflow-y:auto;padding:20px;border-right:2px solid var(--border)}
+#right{display:flex;flex-direction:column;overflow:hidden}
 
-  body {
-    font-family: var(--mono);
-    background: var(--bg);
-    color: var(--text);
-    padding: 32px 24px;
-    max-width: 900px;
-    margin: 0 auto;
-    font-size: 12px;
-    line-height: 1.7;
-  }
+/* ── Section titles ── */
+.section-title{font-family:var(--bang);font-size:16px;font-weight:400;color:#fff;letter-spacing:1.5px;text-transform:uppercase;border-left:3px solid var(--gold);padding-left:8px;margin-bottom:12px}
+.section-sub{font-size:10px;color:var(--dim);margin-bottom:14px;line-height:1.6}
 
-  /* ── Header ── */
-  .doc-title {
-    font-family: var(--bang);
-    font-size: 36px;
-    color: var(--gold);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 2px;
-  }
-  .doc-sub {
-    font-size: 11px;
-    color: var(--dim);
-    border-bottom: 2px solid var(--border);
-    padding-bottom: 14px;
-    margin-bottom: 28px;
-  }
+/* ── Module grid ── */
+#module-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:20px}
 
-  /* ── Secties ── */
-  h2 {
-    font-family: var(--bang);
-    font-size: 20px;
-    font-weight: 400;
-    color: #fff;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border-left: 4px solid var(--gold);
-    padding-left: 10px;
-    margin: 28px 0 14px;
-  }
-  h3 {
-    font-size: 11px;
-    color: var(--gold);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 16px 0 6px;
-    font-weight: 700;
-  }
+.mod-card{background:var(--panel);border:2px solid var(--border);padding:10px 12px;cursor:pointer;transition:border-color .1s,background .1s;position:relative;user-select:none}
+.mod-card:hover{border-color:#444;background:#161616}
+.mod-card.selected{border-color:var(--gold);background:#1a1200;box-shadow:3px 3px 0 #3a2800}
+.mod-card.selected .mod-card-name{color:var(--gold)}
+.mod-card.css-html{border-style:dashed}
+.mod-card.css-html.selected{border-color:var(--blue);background:#050d18;box-shadow:3px 3px 0 #0a2040;border-style:solid}
+.mod-card.css-html.selected .mod-card-name{color:var(--blue)}
+.mod-card-name{font-family:var(--bang);font-size:17px;font-weight:400;letter-spacing:1px;color:#888;text-transform:uppercase;line-height:1}
+.mod-card-file{font-size:9px;color:var(--dim);margin:2px 0 6px}
+.mod-card-desc{font-size:10px;color:#777;line-height:1.5}
+.mod-card-kw{font-size:9px;color:#484848;margin-top:5px;line-height:1.4}
+.mod-card-size{position:absolute;top:8px;right:10px;font-size:9px;color:#333}
+.mod-card.selected .mod-card-size{color:var(--gold)}
+.check{position:absolute;bottom:8px;right:10px;width:16px;height:16px;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:all .1s}
+.mod-card.selected .check{border-color:var(--gold);color:var(--gold);background:#1a1200}
 
-  p { margin-bottom: 8px; }
+/* ── Dependency warning ── */
+#dep-warning{display:none;background:#1a0f00;border:1px solid #4a2800;border-left:3px solid var(--gold);padding:10px 14px;margin-bottom:14px;font-size:11px;color:#aaa;line-height:1.7}
 
-  /* ── Stap-blokken ── */
-  .stap {
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--blue);
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    box-shadow: 3px 3px 0 #000;
-  }
-  .stap-nr {
-    font-family: var(--bang);
-    font-size: 28px;
-    color: var(--blue);
-    line-height: 1;
-    flex-shrink: 0;
-    width: 28px;
-    text-align: center;
-  }
-  .stap-body { flex: 1; }
-  .stap-title { font-weight: 700; color: #fff; margin-bottom: 4px; }
+/* ── Right panel ── */
+#right-top{flex:1;padding:20px;overflow-y:auto;border-bottom:2px solid var(--border)}
+#right-bottom{padding:16px 20px;background:#000;flex-shrink:0}
 
-  /* ── Waarschuwing / tip ── */
-  .tip {
-    background: #0a1a0a;
-    border: 1px solid #1a4a1a;
-    border-left: 4px solid var(--green);
-    padding: 10px 14px;
-    margin: 8px 0;
-    color: #aaa;
-  }
-  .tip strong { color: var(--green); }
+/* ── Selection summary ── */
+#selection-summary{background:var(--panel2);border:1px solid var(--border);padding:10px 12px;margin-bottom:14px;font-size:10px;min-height:40px}
+#sel-empty{color:var(--dim);font-style:italic}
 
-  .warn {
-    background: #1a0a00;
-    border: 1px solid #3a1a00;
-    border-left: 4px solid var(--gold);
-    padding: 10px 14px;
-    margin: 8px 0;
-    color: #aaa;
-  }
-  .warn strong { color: var(--gold); }
+/* ── Request textarea ── */
+.req-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
+#request-area{width:100%;background:#050505;color:var(--text);border:2px solid var(--border);padding:10px 12px;font-family:var(--mono);font-size:11px;line-height:1.7;resize:none;height:140px;outline:none}
+#request-area:focus{border-color:#444}
+#request-area::placeholder{color:#333}
 
-  /* ── Prompt-template ── */
-  .prompt-box {
-    background: #050510;
-    border: 1px solid #1a1a3a;
-    border-left: 4px solid var(--blue);
-    padding: 14px 16px;
-    margin: 10px 0;
-    white-space: pre-wrap;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: #aaa;
-    box-shadow: 3px 3px 0 #000;
-    line-height: 1.8;
-  }
-  .prompt-box .ph { color: var(--gold); font-style: italic; } /* placeholder */
-  .prompt-box .kw { color: var(--blue); }                     /* keyword */
+/* ── Token estimate ── */
+#token-est{font-size:10px;color:var(--dim);margin-top:6px;text-align:right;min-height:16px}
 
-  /* ── Module-tabel ── */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 10px 0;
-    font-size: 11px;
-  }
-  thead tr {
-    background: #111;
-    border-bottom: 2px solid #333;
-  }
-  th {
-    text-align: left;
-    padding: 6px 10px;
-    color: var(--dim);
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    font-size: 9px;
-    font-weight: 700;
-  }
-  td {
-    padding: 6px 10px;
-    border-bottom: 1px solid #1a1a1a;
-    vertical-align: top;
-  }
-  tr:hover td { background: #141414; }
-  .mod-name {
-    color: var(--gold);
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .mod-file {
-    color: var(--blue);
-    font-size: 10px;
-    white-space: nowrap;
-  }
-  .mod-lines { color: var(--dim); font-size: 10px; white-space: nowrap; }
-  .mod-desc { color: #aaa; }
-  .mod-kw { color: var(--green); font-size: 10px; }
+/* ── Generate button ── */
+#gen-btn{width:100%;margin-top:12px;padding:10px;font-family:var(--bang);font-size:18px;font-weight:400;letter-spacing:1px;background:var(--gold);color:#000;border:none;cursor:pointer;text-transform:uppercase;box-shadow:3px 3px 0 #3a2800;transition:all .08s}
+#gen-btn:hover{background:#ffd080;box-shadow:4px 4px 0 #3a2800}
+#gen-btn:active{transform:translate(2px,2px);box-shadow:none}
+#gen-btn:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
+#gen-status{font-size:10px;color:var(--dim);margin-top:6px;min-height:14px;text-align:center}
 
-  /* ── Badge ── */
-  .badge {
-    display: inline-block;
-    font-size: 9px;
-    padding: 1px 6px;
-    border-radius: 0;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    vertical-align: middle;
-    margin-left: 4px;
-  }
-  .badge-gold  { background: #2a1a00; color: var(--gold); border: 1px solid #4a3000; }
-  .badge-blue  { background: #050d18; color: var(--blue); border: 1px solid #0a2040; }
-  .badge-green { background: #0a1a0a; color: var(--green); border: 1px solid #1a3a1a; }
-  .badge-red   { background: #1a0505; color: var(--red);  border: 1px solid #3a0a0a; }
+/* ── Output modal ── */
+#output-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+#output-modal.open{display:flex}
+#output-box{background:var(--panel);border:2px solid #444;width:100%;max-width:820px;margin:auto;box-shadow:8px 8px 0 #000;overflow:hidden}
+#output-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:2px solid var(--border);background:#000;flex-wrap:wrap;gap:8px}
+#output-head-title{font-family:var(--bang);font-size:16px;color:var(--gold);letter-spacing:1px}
+#output-head-meta{font-size:10px;color:var(--dim)}
+#output-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.out-btn{padding:4px 14px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;cursor:pointer;border:2px solid;box-shadow:2px 2px 0 #000;transition:all .08s;border-radius:0}
+.out-btn:active{transform:translate(1px,1px);box-shadow:none}
+#copy-btn{background:var(--green);color:#000;border-color:var(--green)}
+#copy-btn:hover{background:#8fffbe}
+#copy-btn.copied{background:#0a2a0a;color:var(--green)}
+#dl-btn{background:var(--blue);color:#fff;border-color:var(--blue)}
+#dl-btn:hover{background:#4aa5ff}
+#close-btn{background:transparent;border-color:#555;color:#999}
+#close-btn:hover{border-color:#aaa;color:#fff}
+#output-text{padding:18px 20px;max-height:62vh;overflow-y:auto;font-family:var(--mono);font-size:10px;line-height:1.7;color:#aaa;background:#050510;white-space:pre-wrap;word-break:break-word}
+#output-text::-webkit-scrollbar{width:4px}
+#output-text::-webkit-scrollbar-thumb{background:#333}
+#output-footer{padding:10px 18px;border-top:1px solid var(--border);background:#000;font-size:10px;color:var(--dim);display:flex;justify-content:space-between}
 
-  /* ── Snel-zoek kolommen ── */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin: 10px 0;
-  }
-  .card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    padding: 12px 14px;
-    box-shadow: 2px 2px 0 #000;
-  }
-  .card h4 {
-    font-size: 10px;
-    color: var(--dim);
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    margin-bottom: 8px;
-  }
-  .card li {
-    list-style: none;
-    padding: 2px 0;
-    border-bottom: 1px solid #161616;
-    font-size: 11px;
-    color: #aaa;
-  }
-  .card li:last-child { border: none; }
-  .card li span { color: var(--gold); font-weight: 700; margin-right: 6px; }
+/* ── Quick guide ── */
+.qg-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #161616;gap:8px;font-size:10px}
+.qg-label{color:#888}
+.qg-link{color:var(--gold);text-decoration:none;flex-shrink:0;cursor:pointer}
+.qg-link:hover{color:#fff}
 
-  /* ── Divider ── */
-  .divider {
-    border: none;
-    border-top: 1px solid #222;
-    margin: 24px 0;
-  }
+/* ── Misc ── */
+.sep{height:1px;background:var(--border);margin:16px 0}
+.hint{font-size:10px;color:var(--dim);line-height:1.6;margin-top:8px}
 
-  /* ── Footer ── */
-  .footer {
-    margin-top: 40px;
-    padding-top: 14px;
-    border-top: 2px solid #1a1a1a;
-    color: #444;
-    font-size: 10px;
-  }
-
-  /* ── Print ── */
-  @media print {
-    body { background: #fff; color: #111; padding: 20px; }
-    .stap { border-color: #aaa; box-shadow: none; }
-    .prompt-box { background: #f5f5f5; color: #222; border-color: #999; box-shadow: none; }
-    h2 { color: #000; border-color: #000; }
-    .doc-title { color: #000; }
-  }
+@media(max-width:720px){
+  #app{grid-template-columns:1fr;height:auto}
+  #left{border-right:none;border-bottom:2px solid var(--border)}
+  #right{height:auto}
+  #right-top{overflow-y:visible}
+  #module-grid{grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
 <body>
 
-<div class="doc-title">VWM Spiekbriefje</div>
-<div class="doc-sub">Hoe je via Claude wijzigingen doorvoert — na de module-splitsing · v3.43+</div>
+<div id="hdr">
+  <h1>VWM Pakketje Maker</h1>
+  <div id="hdr-sub">Selecteer modules → typ verzoek → genereer kant-en-klare Claude-prompt</div>
+  <div id="ver-badge">v3.43</div>
+</div>
 
+<div id="app">
 
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<h2>De situatie na splitsing</h2>
+  <!-- ── Left: module selector ── -->
+  <div id="left">
+    <div class="section-title">Wat wil je wijzigen?</div>
+    <div class="section-sub">Klik op één of meer modules. De trefwoorden helpen je kiezen. Of gebruik de snelzoekgids onderaan.</div>
+    <div id="dep-warning"></div>
+    <div id="module-grid"></div>
 
-<p>Na de splitsing bestaat de tool uit meerdere bestanden in de repo:</p>
+    <div class="sep"></div>
+    <div class="section-title" style="font-size:13px">Snelzoekgids</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;margin-top:10px">
+      <div id="qg-left"></div>
+      <div id="qg-right"></div>
+    </div>
+  </div>
 
-<div class="prompt-box"><span class="kw">sui-turf-map/
-├── index.html</span>          ← alleen HTML-structuur + &lt;script src&gt;-verwijzingen
-<span class="kw">├── globals-stub.js</span>     ← jouw spiekbriefje voor context (niet live)
-<span class="kw">└── modules/
-    ├── core.js</span>          ← data laden, globals
-<span class="kw">    ├── canvas.js</span>        ← kaart tekenen
-<span class="kw">    ├── garrison.js</span>      ← garrison modal
-<span class="kw">    ├── analyzer.js</span>      ← battle analyzer
-<span class="kw">    └── …</span>               ← alle andere modules</div>
+  <!-- ── Right: compose + generate ── -->
+  <div id="right">
+    <div id="right-top">
+      <div class="section-title">Geselecteerd</div>
+      <div id="selection-summary">
+        <div id="sel-list"></div>
+        <div id="sel-empty">Nog niets geselecteerd.</div>
+      </div>
 
-<div class="tip"><strong>Voordeel:</strong> je stuurt Claude nu alleen het kleine relevante bestand mee, in plaats van de hele index.html van 4400 regels.</div>
+      <div class="sep"></div>
 
+      <label class="req-label">Beschrijf je verzoek</label>
+      <textarea id="request-area" placeholder="Bijv: Voeg een knop toe aan de garrison-modal die alle turfs met meer dan 5 verdedigers markeert in het rood…"></textarea>
+      <div id="token-est">Selecteer eerst modules links.</div>
 
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<h2>Stap-voor-stap werkwijze</h2>
+      <div class="hint">
+        globals-stub.js wordt automatisch meegenomen.<br>
+        Zorg dat <code>globals-stub.js</code> en <code>modules/</code> op dezelfde server staan.
+      </div>
+    </div>
+    <div id="right-bottom">
+      <button id="gen-btn" disabled>⚡ Genereer pakketje</button>
+      <div id="gen-status"></div>
+    </div>
+  </div>
 
-<div class="stap">
-  <div class="stap-nr">1</div>
-  <div class="stap-body">
-    <div class="stap-title">Zoek op: welke module heeft dit?</div>
-    Gebruik de <strong>Module-tabel</strong> hieronder. Zoek op de functienaam, het onderdeel van de UI, of de feature die je wilt wijzigen. De tabel geeft je de bestandsnaam.
+</div>
+
+<!-- ── Output modal ── -->
+<div id="output-modal">
+  <div id="output-box">
+    <div id="output-head">
+      <div>
+        <div id="output-head-title">📦 Pakketje klaar</div>
+        <div id="output-head-meta"></div>
+      </div>
+      <div id="output-actions">
+        <button class="out-btn" id="copy-btn" onclick="copyOutput()">⧉ Kopieer alles</button>
+        <button class="out-btn" id="dl-btn" onclick="downloadOutput()">⬇ Download .txt</button>
+        <button class="out-btn" id="close-btn" onclick="closeOutput()">✕ Sluiten</button>
+      </div>
+    </div>
+    <div id="output-text"></div>
+    <div id="output-footer">
+      <span>Plak dit in Claude.ai als één bericht — of upload de .txt als bijlage.</span>
+      <span id="out-tokens"></span>
+    </div>
   </div>
 </div>
 
-<div class="stap">
-  <div class="stap-nr">2</div>
-  <div class="stap-body">
-    <div class="stap-title">Open die module in GitHub Desktop / teksteditor</div>
-    Ga naar <code>modules/&lt;naam&gt;.js</code> in de repo-map. Kopieer de volledige inhoud van dat bestand.
-  </div>
-</div>
+<script>
+// ── Module definitions ────────────────────────────────────────────────────────
+const MODULES = [
+  { id:'core',        name:'Core',        file:'modules/core.js',        size:'~168 r',
+    desc:'Data laden, globals, vriend/vijand marks',
+    kw:'loadData · tiles · players · loadMarks · markColor',
+    tags:['data','blockchain','tiles','players','marks','vriend','vijand'],
+    deps:[] },
+  { id:'route',       name:'Route',       file:'modules/route.js',       size:'~131 r',
+    desc:'A*-routeberekening, routepaneel op de kaart',
+    kw:'findRoute · routeMode · pad berekenen · routepaneel',
+    tags:['route','pad','routepaneel','afstand','A*'],
+    deps:[] },
+  { id:'canvas',      name:'Canvas',      file:'modules/canvas.js',      size:'~414 r',
+    desc:'Kaart tekenen, buurpopup, minimap, animaties',
+    kw:'drawMap · drawMinimap · tile kleur · tooltip · buurpopup',
+    tags:['kaart','tekenen','tile kleur','tooltip','buurpopup','minimap','overlay','drawMap'],
+    depNote:'Canvas roept _atkSim aan (sim.js) voor aanvalsadvies in de buurpopup.',
+    deps:[] },
+  { id:'input',       name:'Input',       file:'modules/input.js',       size:'~284 r',
+    desc:'Muis, scrollen, slepen, touch/pinch, zoom',
+    kw:'zoom · pan · slepen · tap · pinch · klik · rechtsklik',
+    tags:['zoom','pan','slepen','touch','pinch','klik','muis','scroll','rechtsklik','mobiel'],
+    deps:[] },
+  { id:'sidebar',     name:'Sidebar',     file:'modules/sidebar.js',     size:'~152 r',
+    desc:'Spelerslijst, zoekbalk, filters',
+    kw:'zoeken · filteren · spelersrij · compact · friends · enemies',
+    tags:['spelerslijst','zoeken','filter','sidebar','compact','friends','enemies','inactive'],
+    deps:[] },
+  { id:'export',      name:'Export',      file:'modules/export.js',      size:'~281 r',
+    desc:'PNG, GIF, CSV exporteren + refresh modal',
+    kw:'exportPNG · exportGIF · exportCSV · refresh · GitHub token',
+    tags:['export','png','gif','csv','refresh','vernieuwen','download'],
+    deps:[] },
+  { id:'battle-hist', name:'Battle Hist', file:'modules/battle-hist.js', size:'~272 r',
+    desc:'24h overlay (turf-wijzigingen) + nieuwsticker',
+    kw:'24h overlay · changedTiles · ticker · groen rood kaart',
+    tags:['24h','overlay','ticker','aanvallen','turf wisselen','groen','rood'],
+    depNote:'De 24h-overlay wordt getekend in drawMap() in canvas.js.',
+    deps:[] },
+  { id:'garrison',    name:'Garrison',    file:'modules/garrison.js',    size:'~232 r',
+    desc:'Garrison-modal: Navigate, Recall, History, Raids, Attack tabs',
+    kw:'garrison · navigate · recall · sorteren · turf selecteren',
+    tags:['garrison','modal','navigate','recall','tabs','sorteren','verdedigers'],
+    deps:[] },
+  { id:'wallet',      name:'Wallet',      file:'modules/wallet.js',      size:'~289 r',
+    desc:'Wallet koppelen (Slush/Suiet), recall uitvoeren',
+    kw:'wallet · Slush · Suiet · recall · DVD NFT · transactie',
+    tags:['wallet','slush','suiet','recall','transactie','dvd','blockchain','connect'],
+    depNote:'Wallet werkt samen met garrison.js — stuur beide mee bij recall-wijzigingen.',
+    deps:['garrison'] },
+  { id:'ui-helpers',  name:'UI Helpers',  file:'modules/ui-helpers.js',  size:'~95 r',
+    desc:'Lineal, toolbar-dropdowns, compact/top10, zoomindicator',
+    kw:'lineaal · ruler · Intel-menu · More-menu · compact · top10',
+    tags:['lineaal','ruler','dropdown','compact','top10','menu','intel','more'],
+    deps:[] },
+  { id:'leaderboard', name:'Leaderboard', file:'modules/leaderboard.js', size:'~246 r',
+    desc:'Leaderboard (24h/7d trends), mini-profiel popup',
+    kw:'leaderboard · ranglijst · trend · mini-profile · 24h · 7d',
+    tags:['leaderboard','ranglijst','trend','mini profiel','spelershistorie'],
+    deps:[] },
+  { id:'gar-history', name:'Gar History', file:'modules/gar-history.js', size:'~179 r',
+    desc:'Garrison History-tab (grafiek) + Raids-tab',
+    kw:'history grafiek · raids · loot · aanvalsgeschiedenis',
+    tags:['history','grafiek','raids','loot','aanvalsgeschiedenis','garrison tabs'],
+    deps:['garrison'] },
+  { id:'sim',         name:'Sim',         file:'modules/sim.js',         size:'~178 r',
+    desc:'Monte Carlo gevechtsimulator, aanvalsadviseur',
+    kw:'battle sim · aanvalsadvies · winPct · HM BC EF · _atkSim',
+    tags:['simulator','battle','aanvalsadvies','winpct','monte carlo','_atkSim'],
+    depNote:'sim.js wordt gebruikt door canvas.js, gar-history.js én analyzer.js.',
+    deps:[] },
+  { id:'ghost',       name:'Ghost',       file:'modules/ghost.js',       size:'~110 r',
+    desc:'Ghost mode — spelers met 1 turf highlighten',
+    kw:'ghost mode · 1 turf spelers · pulse overlay',
+    tags:['ghost','1 turf','overlay','pulse'],
+    depNote:'drawGhostTiles() wordt aangeroepen vanuit drawMap() in canvas.js.',
+    deps:[] },
+  { id:'intel',       name:'Intel',       file:'modules/intel.js',       size:'~156 r',
+    desc:'Soft Targets-modal + Vendetta Gazette (wekelijks rapport)',
+    kw:'soft targets · inactieve spelers · gazette · weekly report',
+    tags:['soft targets','inactief','gazette','weekly report','pdf','krant'],
+    deps:[] },
+  { id:'profile',     name:'Profile',     file:'modules/profile.js',     size:'~104 r',
+    desc:'Mijn profiel-modal (eigen spelers, wallet opslaan)',
+    kw:'mijn profiel · wallet adres · speler toevoegen · verwijderen',
+    tags:['profiel','mijn profiel','wallet adres','speler toevoegen'],
+    deps:[] },
+  { id:'analyzer',    name:'Analyzer',    file:'modules/analyzer.js',    size:'~229 r',
+    desc:'Battle Analyzer — analyseer gevecht via SuiVision-URL',
+    kw:'battle analyzer · SuiVision URL · last battle · countdown',
+    tags:['battle analyzer','suivision','url','last battle','countdown'],
+    depNote:'Analyzer gebruikt _atkSim en _armyArray uit sim.js.',
+    deps:[] },
+  { id:'css',  name:'CSS',  file:'index.html', size:'~315 r', cssHtml:true, lineRange:'r.12–327',
+    desc:'Alle opmaak — kleuren, knoppen, modals, mobiel responsive',
+    kw:'kleur · knop stijl · layout · modal uiterlijk · responsive · mobiel',
+    tags:['css','kleur','knop','layout','modal','uiterlijk','responsive','mobiel','stijl'],
+    deps:[] },
+  { id:'html', name:'HTML', file:'index.html', size:'~528 r', cssHtml:true, lineRange:'r.328–856',
+    desc:'HTML-structuur — toolbar, modals, sidebar-opbouw',
+    kw:'knop toevoegen · nieuw element · toolbar · modal HTML · structuur',
+    tags:['html','knop toevoegen','element','toolbar','modal html','structuur'],
+    deps:[] },
+];
 
-<div class="stap">
-  <div class="stap-nr">3</div>
-  <div class="stap-body">
-    <div class="stap-title">Stuur Claude: globals-stub + de module + je verzoek</div>
-    Zie het promptsjabloon hieronder. Upload <code>globals-stub.js</code> en de module als bijlage, of plak de inhoud.
-    <div class="tip" style="margin-top:8px"><strong>Nooit</strong> de hele index.html meesturen — dat kost 30K tokens. De stub + één module = 2–5K tokens.</div>
-  </div>
-</div>
+const QUICK_GUIDE = [
+  ['Kleur/stijl knop of tekst',   'css'],
+  ['Knop toevoegen aan toolbar',   'html'],
+  ['Nieuwe modal toevoegen',       'html,css'],
+  ['Spelersrij anders weergeven',  'sidebar'],
+  ['Tile-kleur op de kaart',       'canvas'],
+  ['Mobiele weergave aanpassen',   'css'],
+  ['Garrison-tabs aanpassen',      'garrison'],
+  ['Aanvalsadvies verbeteren',     'sim'],
+  ['Battle Analyzer uitbreiden',   'analyzer'],
+  ['Soft Targets logica wijzigen', 'intel'],
+  ['Leaderboard / trends',         'leaderboard'],
+  ['Routeberekening',              'route'],
+  ['24h overlay aanpassen',        'battle-hist'],
+  ['Ghost mode wijzigen',          'ghost'],
+  ['Recall / wallet',              'garrison,wallet'],
+  ['Data laden / verwerken',       'core'],
+  ['PNG of GIF exporteren',        'export'],
+  ['Raids-overzicht in garrison',  'gar-history'],
+  ['Spelershistorie grafiek',      'gar-history'],
+  ['Ticker (nieuwsband)',          'battle-hist'],
+];
 
-<div class="stap">
-  <div class="stap-nr">4</div>
-  <div class="stap-body">
-    <div class="stap-title">Ontvang het gewijzigde modulebestand</div>
-    Claude geeft alleen het gewijzigde <code>.js</code>-bestand terug. Download het en vervang het bestand in de repo-map.
-  </div>
-</div>
+// ── State ─────────────────────────────────────────────────────────────────────
+const selected = new Set();
+let outputText = '';
 
-<div class="stap">
-  <div class="stap-nr">5</div>
-  <div class="stap-body">
-    <div class="stap-title">Commit & push via GitHub Desktop</div>
-    Commit-bericht in het Engels. Test lokaal (Python HTTP-server) voor je pusht.
-    <div class="tip" style="margin-top:8px"><strong>Vergeet niet:</strong> versienummer ophogen in index.html bij elke release.</div>
-  </div>
-</div>
+// ── Build UI ──────────────────────────────────────────────────────────────────
+function buildGrid(){
+  document.getElementById('module-grid').innerHTML = MODULES.map(m => `
+    <div class="mod-card${m.cssHtml?' css-html':''}" id="card-${m.id}" onclick="toggleModule('${m.id}')">
+      <div class="mod-card-size">${m.size}</div>
+      <div class="mod-card-name">${m.name}</div>
+      <div class="mod-card-file">${m.cssHtml ? m.file+' · '+m.lineRange : m.file}</div>
+      <div class="mod-card-desc">${m.desc}</div>
+      <div class="mod-card-kw">${m.kw}</div>
+      <div class="check">✓</div>
+    </div>`).join('');
+}
 
+function buildQuickGuide(){
+  const half = Math.ceil(QUICK_GUIDE.length / 2);
+  const rows = items => items.map(([label,ids]) => {
+    const links = ids.split(',').map(id=>`<span class="qg-link" onclick="selectQuick('${ids}')">${id}</span>`).join('+');
+    return `<div class="qg-row"><span class="qg-label">${label}</span><span>${links}</span></div>`;
+  }).join('');
+  document.getElementById('qg-left').innerHTML  = rows(QUICK_GUIDE.slice(0, half));
+  document.getElementById('qg-right').innerHTML = rows(QUICK_GUIDE.slice(half));
+}
 
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<h2>Promptsjabloon</h2>
+function selectQuick(ids){
+  ids.split(',').forEach(id => selected.add(id));
+  updateUI();
+  document.getElementById('right-top').scrollIntoView({behavior:'smooth',block:'start'});
+}
 
-<p>Kopieer dit en vul de gele stukken in:</p>
+// ── Toggle + update ───────────────────────────────────────────────────────────
+function toggleModule(id){
+  selected.has(id) ? selected.delete(id) : selected.add(id);
+  updateUI();
+}
 
-<div class="prompt-box">Ik werk aan Vendetta World Map (vwm.cryptofolio.nl), een single-page tool
-voor het Vendetta-spel op de Sui blockchain. De codebase is gesplitst in modules.
+function updateUI(){
+  // Cards
+  MODULES.forEach(m => {
+    const c = document.getElementById('card-'+m.id);
+    if(c) c.classList.toggle('selected', selected.has(m.id));
+  });
 
-<span class="kw">Bijgevoegde bestanden:</span>
-- globals-stub.js   → alle gedeelde variabelen en functiesignaturen
-- <span class="ph">[modulenaam].js</span>    → de module die je moet aanpassen
+  // Selection summary
+  const selMods = [...selected].map(id => MODULES.find(x=>x.id===id)).filter(Boolean);
+  const selList = document.getElementById('sel-list');
+  const selEmpty = document.getElementById('sel-empty');
+  if(!selMods.length){
+    selList.innerHTML = '';
+    selEmpty.style.display = '';
+  } else {
+    selEmpty.style.display = 'none';
+    selList.innerHTML = selMods.map(m =>
+      `<div style="display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a;padding:2px 0">
+        <span style="color:var(--gold)">${m.name}</span>
+        <span style="color:var(--dim);font-size:10px">${m.cssHtml?m.lineRange:m.file}</span>
+       </div>`
+    ).join('');
+  }
 
-<span class="kw">Versie:</span> <span class="ph">v3.XX</span>
+  // Dependency warnings
+  const warns = selMods.filter(m=>m.depNote).map(m=>`<b>${m.name}:</b> ${m.depNote}`);
+  const dw = document.getElementById('dep-warning');
+  if(warns.length){ dw.style.display=''; dw.innerHTML='<b>⚠ Let op afhankelijkheden:</b><br>'+warns.join('<br>'); }
+  else dw.style.display='none';
 
-<span class="kw">Verzoek:</span>
-<span class="ph">[beschrijf hier wat je wilt wijzigen, zo concreet mogelijk]</span>
+  // Token estimate
+  const SIZE_TOKENS = {'~168 r':700,'~131 r':550,'~414 r':1700,'~284 r':1200,'~152 r':640,
+    '~281 r':1180,'~272 r':1140,'~232 r':970,'~289 r':1210,'~95 r':400,
+    '~246 r':1030,'~179 r':750,'~178 r':745,'~110 r':460,'~156 r':655,
+    '~104 r':435,'~229 r':960,'~315 r':1320,'~528 r':2210};
+  const req = document.getElementById('request-area').value;
+  const tEl = document.getElementById('token-est');
+  if(selMods.length){
+    let est = 1500 + 300 + Math.round(req.length/4);
+    selMods.forEach(m => est += SIZE_TOKENS[m.size]||800);
+    const col = est<8000?'var(--green)':est<15000?'var(--gold)':'var(--red)';
+    tEl.innerHTML = `Geschat: <span style="color:${col}">~${(est/1000).toFixed(1)}K tokens</span> (was ~30K)`;
+  } else {
+    tEl.textContent = 'Selecteer eerst modules links.';
+  }
 
-<span class="kw">Regels:</span>
-- Wijzig alleen <span class="ph">[modulenaam].js</span>, niet de andere bestanden
-- Geef het complete gewijzigde bestand terug als download
-- Verhoog het versienummer niet (dat doe ik zelf in index.html)
-- Commitbericht in het Engels als je dat suggereert</div>
+  // Generate button
+  document.getElementById('gen-btn').disabled = !selMods.length || !req.trim();
+}
 
-<div class="warn"><strong>Extra modules meesturen?</strong> Alleen als de wijziging functies aanraakt die in meerdere modules leven. Zie de kolom "Let op" in de tabel.</div>
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+async function fetchFile(url){
+  try {
+    const r = await fetch(url+'?t='+Date.now());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.text();
+  } catch(e) {
+    return `// ⚠ KON NIET LADEN: ${url}\n// Fout: ${e.message}\n// Plak de inhoud hier handmatig.`;
+  }
+}
 
+// ── Generate ──────────────────────────────────────────────────────────────────
+async function generate(){
+  const req = document.getElementById('request-area').value.trim();
+  const selMods = [...selected].map(id=>MODULES.find(x=>x.id===id)).filter(Boolean);
+  if(!req || !selMods.length) return;
 
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<h2>Module-tabel — wat zit waar?</h2>
+  const btn = document.getElementById('gen-btn');
+  const status = document.getElementById('gen-status');
+  btn.disabled = true;
 
-<p>Zoek hieronder op wat je wilt aanpassen.</p>
+  const ver = document.getElementById('ver-badge').textContent || 'v3.43';
 
-<table>
-  <thead>
-    <tr>
-      <th>Module</th>
-      <th>Bestand</th>
-      <th>Grootte</th>
-      <th>Wat zit erin?</th>
-      <th>Trefwoorden</th>
-    </tr>
-  </thead>
-  <tbody>
+  // Fetch globals stub
+  status.textContent = 'globals-stub.js ophalen…';
+  const stub = await fetchFile('./globals-stub.js');
 
-    <tr>
-      <td><span class="mod-name">core</span></td>
-      <td><span class="mod-file">modules/core.js</span></td>
-      <td><span class="mod-lines">~168 r</span></td>
-      <td class="mod-desc">Data laden (blockchain), globals, marks (vriend/vijand)</td>
-      <td class="mod-kw">loadData, tiles, players, loadMarks, markColor</td>
-    </tr>
+  // Fetch each module
+  const contents = [];
+  for(const m of selMods){
+    if(m.cssHtml){
+      contents.push({m, text:
+        `// ── ${m.name.toUpperCase()} (${m.lineRange} in index.html) ──────────────────\n`+
+        `// Kopieer regels ${m.lineRange} uit index.html en plak ze hier,\n`+
+        `// of laat Claude de wijziging beschrijven als diff/instructie.`
+      });
+    } else {
+      status.textContent = `${m.file} ophalen…`;
+      contents.push({m, text: await fetchFile('./'+m.file)});
+    }
+  }
 
-    <tr>
-      <td><span class="mod-name">route</span></td>
-      <td><span class="mod-file">modules/route.js</span></td>
-      <td><span class="mod-lines">~131 r</span></td>
-      <td class="mod-desc">A*-routeberekening, routeweergave, routepaneel</td>
-      <td class="mod-kw">findRoute, routeMode, routepaneel, pad berekenen</td>
-    </tr>
+  // Instructions per module
+  const instruct = selMods.map(m => m.cssHtml
+    ? `- Wijzig de ${m.name}-sectie in index.html (${m.lineRange})`
+    : `- Wijzig alleen ${m.file} — geef het complete gewijzigde bestand terug als download`
+  ).join('\n');
 
-    <tr>
-      <td><span class="mod-name">canvas</span></td>
-      <td><span class="mod-file">modules/canvas.js</span></td>
-      <td><span class="mod-lines">~414 r</span></td>
-      <td class="mod-desc">Kaart tekenen, buurpopup, puls-animatie, minimap</td>
-      <td class="mod-kw">drawMap, drawMinimap, kleur tile, tooltips, buurpopup, neighbor popup <span class="badge badge-gold">groot</span></td>
-    </tr>
+  const depWarns = selMods.filter(m=>m.depNote).map(m=>`⚠ ${m.name}: ${m.depNote}`);
 
-    <tr>
-      <td><span class="mod-name">input</span></td>
-      <td><span class="mod-file">modules/input.js</span></td>
-      <td><span class="mod-lines">~284 r</span></td>
-      <td class="mod-desc">Muisklikken, scrollen, slepen, touch/pinch, zoomknoppen</td>
-      <td class="mod-kw">zoom, pan, sleep, tap, pinch, klik op tile, rechtsklik, minimap klik</td>
-    </tr>
+  // Assemble
+  const parts = [
+    `════════════════════════════════════════════════════════`,
+    `VENDETTA WORLD MAP — WIJZIGINGSVERZOEK`,
+    `Versie: ${ver}  ·  Modules: ${selMods.map(m=>m.name).join(', ')}`,
+    `════════════════════════════════════════════════════════`,
+    '',
+    'VERZOEK:',
+    req,
+    '',
+    'INSTRUCTIES:',
+    instruct,
+    '- Versienummer NIET ophogen (dat doe ik zelf in index.html)',
+    '- Commitbericht in het Engels',
+    depWarns.length ? '\nLET OP AFHANKELIJKHEDEN:\n'+depWarns.join('\n') : null,
+    '',
+    '════════════════════════════════════════════════════════',
+    'GLOBALS-STUB (globals-stub.js — gedeelde state van alle modules)',
+    '════════════════════════════════════════════════════════',
+    '',
+    stub,
+  ];
 
-    <tr>
-      <td><span class="mod-name">sidebar</span></td>
-      <td><span class="mod-file">modules/sidebar.js</span></td>
-      <td><span class="mod-lines">~152 r</span></td>
-      <td class="mod-desc">Spelerslijst, zoekbalk, filters (all/inactive/friends/enemies)</td>
-      <td class="mod-kw">zoeken, filteren, spelersrij, compact modus, vriend vijand filter</td>
-    </tr>
+  for(const {m,text} of contents){
+    parts.push(
+      '',
+      '════════════════════════════════════════════════════════',
+      `MODULE: ${m.name.toUpperCase()} — ${m.cssHtml?'index.html '+m.lineRange:m.file}`,
+      '════════════════════════════════════════════════════════',
+      '',
+      text
+    );
+  }
 
-    <tr>
-      <td><span class="mod-name">export</span></td>
-      <td><span class="mod-file">modules/export.js</span></td>
-      <td><span class="mod-lines">~281 r</span></td>
-      <td class="mod-desc">PNG- en GIF-export, CSV-export, data vernieuwen (refresh modal)</td>
-      <td class="mod-kw">exportPNG, exportGIF, exportCSV, GIF encoder, refresh, GitHub token</td>
-    </tr>
+  outputText = parts.filter(p=>p!==null).join('\n');
 
-    <tr>
-      <td><span class="mod-name">battle-hist</span></td>
-      <td><span class="mod-file">modules/battle-hist.js</span></td>
-      <td><span class="mod-lines">~272 r</span></td>
-      <td class="mod-desc">24h overlay (welke turfs wisselden van eigenaar), nieuwsticker</td>
-      <td class="mod-kw">24h overlay, changedTiles, ticker, aanvallen overlay, groen/rood op kaart</td>
-    </tr>
+  // Show output modal
+  document.getElementById('output-text').textContent = outputText;
+  document.getElementById('output-head-meta').textContent =
+    `${selMods.length} module${selMods.length>1?'s':''} · ~${Math.round(outputText.length/4).toLocaleString()} tokens`;
+  document.getElementById('out-tokens').textContent =
+    `${outputText.split('\n').length} regels · ~${Math.round(outputText.length/4).toLocaleString()} tokens`;
+  document.getElementById('output-modal').classList.add('open');
 
-    <tr>
-      <td><span class="mod-name">garrison</span></td>
-      <td><span class="mod-file">modules/garrison.js</span></td>
-      <td><span class="mod-lines">~232 r</span></td>
-      <td class="mod-desc">Garrison-modal (Navigate, Recall, History, Raids, Attack tabs)</td>
-      <td class="mod-kw">garrison, navigate tab, recall tab, sorteren, turf selecteren, openGarrison</td>
-    </tr>
+  btn.disabled = false;
+  status.textContent = '';
+}
 
-    <tr>
-      <td><span class="mod-name">wallet</span></td>
-      <td><span class="mod-file">modules/wallet.js</span></td>
-      <td><span class="mod-lines">~289 r</span></td>
-      <td class="mod-desc">Wallet koppelen (Slush/Suiet), transactie bouwen, recall uitvoeren</td>
-      <td class="mod-kw">wallet, Slush, Suiet, recall uitvoeren, DVD NFT, blockchain transactie <span class="badge badge-red">complex</span></td>
-    </tr>
+function copyOutput(){
+  navigator.clipboard.writeText(outputText).then(()=>{
+    const btn = document.getElementById('copy-btn');
+    btn.textContent='✓ Gekopieerd!'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='⧉ Kopieer alles'; btn.classList.remove('copied'); }, 2000);
+  });
+}
 
-    <tr>
-      <td><span class="mod-name">ui-helpers</span></td>
-      <td><span class="mod-file">modules/ui-helpers.js</span></td>
-      <td><span class="mod-lines">~95 r</span></td>
-      <td class="mod-desc">Coördinatenlinial, toolbar-dropdowns, compact/top10 modus, zoomindicator</td>
-      <td class="mod-kw">lineaal, ruler, Intel-menu, More-menu, compact knop, top10 knop</td>
-    </tr>
+function downloadOutput(){
+  const ver = document.getElementById('ver-badge').textContent.replace(/\s/g,'') || 'v3.43';
+  const mods = [...selected].join('-');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([outputText],{type:'text/plain'}));
+  a.download = `vwm-verzoek-${ver}-${mods}.txt`;
+  a.click();
+}
 
-    <tr>
-      <td><span class="mod-name">leaderboard</span></td>
-      <td><span class="mod-file">modules/leaderboard.js</span></td>
-      <td><span class="mod-lines">~246 r</span></td>
-      <td class="mod-desc">Leaderboard (24h/7d trends), mini-profiel popup, spelershistorie laden</td>
-      <td class="mod-kw">leaderboard, ranglijst, trend, mini-profile, tile change, 24h, 7d</td>
-    </tr>
+function closeOutput(){
+  document.getElementById('output-modal').classList.remove('open');
+}
 
-    <tr>
-      <td><span class="mod-name">gar-history</span></td>
-      <td><span class="mod-file">modules/gar-history.js</span></td>
-      <td><span class="mod-lines">~179 r</span></td>
-      <td class="mod-desc">Garrison History-tab (SVG-grafiek) en Raids-tab in garrison-modal</td>
-      <td class="mod-kw">history grafiek, raid lijst, loot, aanvalsgeschiedenis, garrison tabs</td>
-    </tr>
+// ── Events ────────────────────────────────────────────────────────────────────
+document.getElementById('output-modal').addEventListener('click', e=>{
+  if(e.target===document.getElementById('output-modal')) closeOutput();
+});
+document.getElementById('request-area').addEventListener('input', updateUI);
+document.getElementById('gen-btn').addEventListener('click', generate);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeOutput(); });
 
-    <tr>
-      <td><span class="mod-name">sim</span></td>
-      <td><span class="mod-file">modules/sim.js</span></td>
-      <td><span class="mod-lines">~178 r</span></td>
-      <td class="mod-desc">Monte Carlo-gevechtsimulator, aanvalsadviseur (Attack-tab)</td>
-      <td class="mod-kw">battle sim, aanvalsadvies, winpct, HM BC EF, _atkSim, best attack <span class="badge badge-red">gedeeld</span></td>
-    </tr>
-
-    <tr>
-      <td><span class="mod-name">ghost</span></td>
-      <td><span class="mod-file">modules/ghost.js</span></td>
-      <td><span class="mod-lines">~110 r</span></td>
-      <td class="mod-desc">Ghost mode — spelers met slechts 1 turf highlighten op de kaart</td>
-      <td class="mod-kw">ghost mode, 1 turf spelers, pulse overlay, ghostTiles</td>
-    </tr>
-
-    <tr>
-      <td><span class="mod-name">intel</span></td>
-      <td><span class="mod-file">modules/intel.js</span></td>
-      <td><span class="mod-lines">~156 r</span></td>
-      <td class="mod-desc">Soft Targets-modal en Vendetta Gazette (wekelijks rapport)</td>
-      <td class="mod-kw">soft targets, inactieve spelers, gazette, weekly report, PDF export</td>
-    </tr>
-
-    <tr>
-      <td><span class="mod-name">profile</span></td>
-      <td><span class="mod-file">modules/profile.js</span></td>
-      <td><span class="mod-lines">~104 r</span></td>
-      <td class="mod-desc">Mijn profiel-modal (eigen spelers instellen, wallet opslaan)</td>
-      <td class="mod-kw">mijn profiel, profile modal, wallet adres, speler toevoegen/verwijderen</td>
-    </tr>
-
-    <tr>
-      <td><span class="mod-name">analyzer</span></td>
-      <td><span class="mod-file">modules/analyzer.js</span></td>
-      <td><span class="mod-lines">~229 r</span></td>
-      <td class="mod-desc">Battle Analyzer — analyseer een gevecht via SuiVision-URL of laatste gevecht</td>
-      <td class="mod-kw">battle analyzer, SuiVision URL, last battle, SimulationResultEvent, countdown</td>
-    </tr>
-
-    <tr>
-      <td><span class="mod-name">CSS</span></td>
-      <td><span class="mod-file">index.html (r.12–327)</span></td>
-      <td><span class="mod-lines">~315 r</span></td>
-      <td class="mod-desc">Alle opmaak — kleuren, knoppen, modals, mobiel</td>
-      <td class="mod-kw">kleur, lettertype, knop, layout, modal uiterlijk, responsive, mobiel</td>
-    </tr>
-
-    <tr>
-      <td><span class="mod-name">HTML</span></td>
-      <td><span class="mod-file">index.html (r.328–856)</span></td>
-      <td><span class="mod-lines">~528 r</span></td>
-      <td class="mod-desc">Alle HTML-structuur — toolbar, modals, sidebar</td>
-      <td class="mod-kw">nieuwe knop, nieuwe modal, HTML-element toevoegen, toolbar</td>
-    </tr>
-
-  </tbody>
-</table>
-
-<div class="warn"><strong>sim.js is gedeeld:</strong> de gevechtsimulator (<code>_atkSim</code>) wordt gebruikt door de neighbor-popup (canvas.js), de Attack-tab (gar-history.js) én de Battle Analyzer (analyzer.js). Stuur bij wijzigingen in sim.js ook canvas.js en analyzer.js mee als die functies aanroepen die je wijzigt.</div>
-
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<h2>Snelzoekgids — ik wil…</h2>
-
-<div class="two-col">
-  <div class="card">
-    <h4>Uiterlijk / layout wijzigen</h4>
-    <ul>
-      <li><span>Kleur knop/tekst</span>→ CSS in index.html</li>
-      <li><span>Knop toevoegen toolbar</span>→ HTML in index.html</li>
-      <li><span>Nieuwe modal</span>→ HTML + CSS in index.html</li>
-      <li><span>Spelersrij anders</span>→ sidebar.js</li>
-      <li><span>Tile kleur op kaart</span>→ canvas.js</li>
-      <li><span>Mobiele weergave</span>→ CSS in index.html</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h4>Functionaliteit wijzigen</h4>
-    <ul>
-      <li><span>Garrison tabs</span>→ garrison.js</li>
-      <li><span>Aanvalsadvies</span>→ sim.js</li>
-      <li><span>Battle Analyzer</span>→ analyzer.js</li>
-      <li><span>Soft Targets logica</span>→ intel.js</li>
-      <li><span>Leaderboard</span>→ leaderboard.js</li>
-      <li><span>Routeberekening</span>→ route.js</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h4>Data / blockchain</h4>
-    <ul>
-      <li><span>Data laden/verwerken</span>→ core.js</li>
-      <li><span>Recall uitvoeren</span>→ wallet.js</li>
-      <li><span>24h overlay</span>→ battle-hist.js</li>
-      <li><span>Spelershistorie</span>→ leaderboard.js</li>
-      <li><span>Raids-data</span>→ gar-history.js</li>
-      <li><span>Exporteren</span>→ export.js</li>
-    </ul>
-  </div>
-  <div class="card">
-    <h4>Overlays op de kaart</h4>
-    <ul>
-      <li><span>Ghost mode</span>→ ghost.js</li>
-      <li><span>24h veranderingen</span>→ battle-hist.js</li>
-      <li><span>Route overlay</span>→ route.js + canvas.js</li>
-      <li><span>Tooltip bij hover</span>→ canvas.js (muis) / input.js (touch)</li>
-      <li><span>Buurpopup</span>→ canvas.js</li>
-      <li><span>Minimap</span>→ canvas.js</li>
-    </ul>
-  </div>
-</div>
-
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<h2>Valkuilen</h2>
-
-<div class="warn"><strong>CSS of HTML wijzigen?</strong> Die zitten nog in index.html zelf (niet in een aparte module). Stuur dan: globals-stub.js + alleen de CSS-sectie (r.12–327) of HTML-sectie (r.328–856) — niet de hele file.</div>
-
-<div class="warn"><strong>Wijziging raakt meerdere modules?</strong> Stuur alle betrokken modules mee én vraag Claude om elke module apart als download te leveren.</div>
-
-<div class="tip"><strong>Twijfel je?</strong> Zoek de functienaam op in de module-tabel, of vraag Claude: "In welke module zit [functie/feature]?" met alleen globals-stub.js als bijlage. Dat kost bijna geen tokens.</div>
-
-<div class="tip"><strong>globals-stub.js bijwerken?</strong> Doe dit alleen als er nieuwe globale variabelen of functies bijkomen (na een grotere release). Vraag Claude dan om de stub bij te werken na de andere wijzigingen.</div>
-
-
-<!-- ══════════════════════════════════════════════════════════════════════════ -->
-<h2>Vuistregels op een rij</h2>
-
-<table>
-  <thead><tr><th>Situatie</th><th>Stuur mee</th><th>Verwacht tokengebruik</th></tr></thead>
-  <tbody>
-    <tr>
-      <td>Kleine wijziging in één feature</td>
-      <td>globals-stub.js + 1 module</td>
-      <td class="mod-kw">~2–4K tokens</td>
-    </tr>
-    <tr>
-      <td>Wijziging raakt 2 modules</td>
-      <td>globals-stub.js + 2 modules</td>
-      <td class="mod-kw">~4–7K tokens</td>
-    </tr>
-    <tr>
-      <td>CSS/HTML wijziging</td>
-      <td>globals-stub.js + die sectie uit index.html</td>
-      <td class="mod-kw">~3–5K tokens</td>
-    </tr>
-    <tr>
-      <td>"In welke module zit X?"</td>
-      <td>globals-stub.js</td>
-      <td class="mod-kw">~1K tokens</td>
-    </tr>
-    <tr>
-      <td class="mod-desc" style="color:#555">Vroeger: alles meesturen</td>
-      <td class="mod-desc" style="color:#555">index.html (heel)</td>
-      <td style="color:#ff8483">~30K tokens</td>
-    </tr>
-  </tbody>
-</table>
-
-
-<div class="footer">
-  VWM Spiekbriefje · v3.43+ · gegenereerd door Claude · bewaar naast globals-stub.js in de repo
-</div>
-
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildGrid();
+buildQuickGuide();
+updateUI();
+</script>
 </body>
 </html>
