@@ -812,12 +812,19 @@ async function suggestModules(){
       `${m.id}: ${m.desc} [${m.kw.replace(/ · /g,', ')}]`
     ).join('\n');
 
+    // Fetch globals-stub for richer context (cached after first call)
+    let stubContext = '';
+    try{
+      const stubText = await fetchFile('./globals-stub.js');
+      if(!stubText.startsWith('// ⚠')) stubContext = `\nFunctiesignaturen en gedeelde state:\n${stubText}`;
+    }catch(e){ /* geen stub beschikbaar, gewoon doorgaan */ }
+
     const prompt = `Je bent een assistent voor de Vendetta World Map tool (vwm.cryptofolio.nl).
 De codebase bestaat uit JavaScript-modules en HTML/CSS-blokken in index.html.
 
 Beschikbare modules:
 ${modList}
-
+${stubContext}
 Gebruikersverzoek: "${req}"
 
 Geef ALLEEN een JSON-object terug, geen uitleg, geen markdown:
