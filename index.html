@@ -607,7 +607,6 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <canvas id="minimap-canvas" width="320" height="200" title="Click to navigate"></canvas>
   </div>
 </div>
-
 <!-- Neighbor popup -->
 <div id="neighbor-popup">
   <div id="neighbor-head">
@@ -639,11 +638,11 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
     <!-- Tab 1: Navigate -->
     <div id="garrison-tab-navigate" class="active">
-      <div id="gar-nav-head" style="display:grid;grid-template-columns:1fr 50px 50px 70px 60px;padding:5px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
+      <div id="gar-nav-head" style="display:grid;grid-template-columns:1fr 70px 50px 50px 60px;padding:5px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
         <span>Position</span>
-        <span style="color:#ff8483;text-align:right;cursor:pointer" onclick="garSortBy('EF')">E</span>
-        <span style="color:#89c6ff;text-align:right;cursor:pointer" onclick="garSortBy('BC')">B</span>
         <span style="color:#aaa;text-align:right;cursor:pointer" onclick="garSortBy('HM')">H</span>
+        <span style="color:#89c6ff;text-align:right;cursor:pointer" onclick="garSortBy('BC')">B</span>
+        <span style="color:#ff8483;text-align:right;cursor:pointer" onclick="garSortBy('EF')">E</span>
         <span style="text-align:right;cursor:pointer" onclick="garSortBy('total')">Total</span>
       </div>
       <div style="display:flex;gap:8px;padding:4px 18px;border-bottom:1px solid #1a1a1a;align-items:center;min-height:26px">
@@ -669,12 +668,12 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
     <!-- Tab 5: Recall -->
     <div id="garrison-tab-recall">
-      <div id="gar-recall-head" style="display:grid;grid-template-columns:20px 120px 60px 60px 80px auto;padding:6px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
+      <div id="gar-recall-head" style="display:grid;grid-template-columns:20px 120px 80px 60px 60px auto;padding:6px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
         <span></span>
         <span>Position</span>
-        <span style="color:#ff8483;text-align:right;padding-right:8px;cursor:pointer" onclick="garSortBy('EF')">E</span>
-        <span style="color:#89c6ff;text-align:right;padding-right:8px;cursor:pointer" onclick="garSortBy('BC')">B</span>
         <span style="color:#aaa;text-align:right;padding-right:8px;cursor:pointer" onclick="garSortBy('HM')">H</span>
+        <span style="color:#89c6ff;text-align:right;padding-right:8px;cursor:pointer" onclick="garSortBy('BC')">B</span>
+        <span style="color:#ff8483;text-align:right;padding-right:8px;cursor:pointer" onclick="garSortBy('EF')">E</span>
         <span style="text-align:right;cursor:pointer" onclick="garSortBy('total')">Total</span>
       </div>
       <div style="display:flex;gap:8px;padding:6px 18px;border-bottom:1px solid #1a1a1a;align-items:center">
@@ -691,6 +690,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 </div>
 
 <!-- Leaderboard modal -->
+
 <div id="leaderboard-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
   <div style="background:#111;border:2px solid #222;width:100%;max-width:560px;font-family:var(--font-mono)">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:2px solid #222;background:#0a0a0a">

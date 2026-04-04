@@ -81,8 +81,8 @@ function _renderGarSortIndicators(){
   const navHead=document.getElementById('gar-nav-head');
   if(navHead){
     const spans=navHead.querySelectorAll('span');
-    // spans[0]=Position, [1]=E, [2]=B, [3]=H, [4]=Total
-    [['EF',1],['BC',2],['HM',3],['total',4]].forEach(([col,si])=>{
+    // spans[0]=Position, [1]=H, [2]=B, [3]=E, [4]=Total
+    [['HM',1],['BC',2],['EF',3],['total',4]].forEach(([col,si])=>{
       const k=garSortKeys.findIndex(k=>k.col===col);
       const arrow=k>=0?(garSortKeys[k].dir==='desc'?'▼':'▲'):'';
       const num=k>=0&&garSortKeys.length>1?`<sup>${k+1}</sup>`:'';
@@ -93,8 +93,8 @@ function _renderGarSortIndicators(){
   const recHead=document.getElementById('gar-recall-head');
   if(recHead){
     const spans=recHead.querySelectorAll('span');
-    // spans[0]=empty, [1]=Position, [2]=E, [3]=B, [4]=H, [5]=Total
-    [['EF',2],['BC',3],['HM',4],['total',5]].forEach(([col,si])=>{
+    // spans[0]=empty, [1]=Position, [2]=H, [3]=B, [4]=E, [5]=Total
+    [['HM',2],['BC',3],['EF',4],['total',5]].forEach(([col,si])=>{
       const k=garSortKeys.findIndex(k=>k.col===col);
       const arrow=k>=0?(garSortKeys[k].dir==='desc'?'▼':'▲'):'';
       const num=k>=0&&garSortKeys.length>1?`<sup>${k+1}</sup>`:'';
@@ -151,9 +151,9 @@ function renderGarrisonNavList(){
     const tot=t.gE+t.gB+t.gH;
     return `<div class="gar-nav-row" onclick="garNavJump(${t.x},${t.y})" title="Jump to (${t.x}, ${t.y})">
       <span class="gar-nav-pos">(${t.x}, ${t.y})${hqBadge}</span>
-      <span class="gar-nav-e">${t.gE?t.gE+'E':'-'}</span>
-      <span class="gar-nav-b">${t.gB?t.gB+'B':'-'}</span>
       <span class="gar-nav-h">${t.gH?t.gH+'H':'-'}</span>
+      <span class="gar-nav-b">${t.gB?t.gB+'B':'-'}</span>
+      <span class="gar-nav-e">${t.gE?t.gE+'E':'-'}</span>
       <span class="gar-nav-tot">${tot||'-'}</span>
     </div>`;
   }).join('');
@@ -181,9 +181,9 @@ function renderGarrisonList(){
     return `<div class="gar-row${selCls}" onclick="toggleGarrisonRow(${i})">
       <input class="gar-check" type="checkbox" ${row.selected?'checked':''} ${noOid?'disabled':''} onclick="event.stopPropagation();toggleGarrisonRow(${i})">
       <span class="gar-pos">(${t.x}, ${t.y})${hqBadge}</span>
-      <span class="gar-e">${t.gE}E</span>
-      <span class="gar-b">${t.gB}B</span>
       <span class="gar-h">${t.gH}H</span>
+      <span class="gar-b">${t.gB}B</span>
+      <span class="gar-e">${t.gE}E</span>
       <span class="gar-total">${tot}</span>
     </div>`;
   }).join('');
