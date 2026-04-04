@@ -472,6 +472,7 @@ body.map-only #analyse-btn{display:none!important}
 .toolbar-dd-menu button:hover{background:#1a1a1a;box-shadow:none}
 .toolbar-dd-menu button:last-child{border-bottom:none}
 .toolbar-dd-menu button:disabled{opacity:0.35;cursor:default}
+.toolbar-dd-menu button.toolbar-dd-sub{padding-left:24px;font-size:10px;color:#999}
 /* ── ZOOM INDICATOR ── */
 #zoom-indicator{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);border:1px solid #333;padding:2px 6px;font-size:9px;font-family:var(--font-mono);color:#999;pointer-events:none;z-index:10}
 
@@ -490,6 +491,7 @@ body.map-only #analyse-btn{display:none!important}
 button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-gold);box-shadow:2.5px 2.5px 0 #3a2a00}
 
 /* ── END: css-misc ── */
+
 </style>
 </head>
 <body>
@@ -526,6 +528,8 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <div class="toolbar-dd-sep" style="height:1px;background:#222;margin:2px 0"></div>
     <button id="report-dd-btn" onclick="openReport();closeMoreMenu()" style="display:none">📰 Weekly Report</button>
     <button onclick="exportPNG();closeMoreMenu()">⬇ Export PNG</button>
+    <button onclick="exportPNGHD(2);closeMoreMenu()" class="toolbar-dd-sub">⬇ Export PNG 2×</button>
+    <button onclick="exportPNGHD(3);closeMoreMenu()" class="toolbar-dd-sub">⬇ Export PNG 3×</button>
     <button onclick="exportGIF();closeMoreMenu()" id="gifBtn">🎬 Export GIF</button>
     <button onclick="exportCSV();closeMoreMenu()" id="csvBtn">⬇ Export CSV</button>
     <button onclick="openProfileModal();closeMoreMenu()">⚙ My Profile</button>

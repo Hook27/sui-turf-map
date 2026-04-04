@@ -6,9 +6,8 @@ function fileTimestamp(){
   return `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}-${pad(n.getHours())}${pad(n.getMinutes())}${pad(n.getSeconds())}`;
 }
 
-function exportPNG(){
+function _exportPNGCore(scale, suffix){
   const cv=document.getElementById('map');
-  const scale=3;
   const offscreen=document.createElement('canvas');
   offscreen.width=cv.width*scale;
   offscreen.height=cv.height*scale;
@@ -59,8 +58,11 @@ function exportPNG(){
 
   const a=document.createElement('a');
   a.href=offscreen.toDataURL('image/png');
-  a.download=`vendetta_map_${fileTimestamp()}.png`;a.click();
+  a.download=`vendetta_map${suffix||''}_${fileTimestamp()}.png`;a.click();
 }
+
+function exportPNG(){ _exportPNGCore(3,''); }
+function exportPNGHD(factor){ _exportPNGCore(3*factor,`_${factor}x`); }
 
 async function exportGIF(){
   if(snapshots.length<2){alert('Need at least 2 snapshots to create an animation.');return;}
