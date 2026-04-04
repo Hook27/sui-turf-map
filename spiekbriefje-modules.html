@@ -121,7 +121,7 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);min-height:1
 <div id="hdr">
   <h1>VWM Pakketje Maker</h1>
   <div id="hdr-sub">Selecteer modules → typ verzoek → genereer kant-en-klare Claude-prompt</div>
-  <div id="ver-badge">v3.43</div>
+  <div id="ver-badge">v4.00</div>
 </div>
 
 <div id="app">
@@ -235,6 +235,7 @@ const MODULES = [
     desc:'Garrison-modal: Navigate, Recall, History, Raids, Attack tabs',
     kw:'garrison · navigate · recall · sorteren · turf selecteren',
     tags:['garrison','modal','navigate','recall','tabs','sorteren','verdedigers'],
+    depNote:'Kolomvolgorde (E/B/H) en kolomkoppen staan ook in de HTML-headers in index.html. Voeg HTML toe als je kolommen herordent of hernoemt.',
     deps:[] },
   { id:'wallet',      name:'Wallet',      file:'modules/wallet.js',      size:'~289 r',
     desc:'Wallet koppelen (Slush/Suiet), recall uitvoeren',
@@ -304,7 +305,7 @@ const QUICK_GUIDE = [
   ['Spelersrij anders weergeven',  'sidebar'],
   ['Tile-kleur op de kaart',       'canvas'],
   ['Mobiele weergave aanpassen',   'css'],
-  ['Garrison-tabs aanpassen',      'garrison'],
+  ['Garrison-tabs aanpassen',      'garrison,html'],
   ['Aanvalsadvies verbeteren',     'sim'],
   ['Battle Analyzer uitbreiden',   'analyzer'],
   ['Soft Targets logica wijzigen', 'intel'],
@@ -430,7 +431,7 @@ async function generate(){
   const status = document.getElementById('gen-status');
   btn.disabled = true;
 
-  const ver = document.getElementById('ver-badge').textContent || 'v3.43';
+  const ver = document.getElementById('ver-badge').textContent || 'v4.00';
 
   // Fetch globals stub
   status.textContent = 'globals-stub.js ophalen…';
@@ -516,11 +517,14 @@ function copyOutput(){
 }
 
 function downloadOutput(){
-  const ver = document.getElementById('ver-badge').textContent.replace(/\s/g,'') || 'v3.43';
+  const ver = document.getElementById('ver-badge').textContent.replace(/\s/g,'') || 'v4.00';
   const mods = [...selected].join('-');
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const dt = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([outputText],{type:'text/plain'}));
-  a.download = `vwm-verzoek-${ver}-${mods}.txt`;
+  a.download = `vwm-verzoek-${ver}-${mods}-${dt}.txt`;
   a.click();
 }
 
