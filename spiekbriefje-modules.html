@@ -107,6 +107,21 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);min-height:1
 .sep{height:1px;background:var(--border);margin:16px 0}
 .hint{font-size:10px;color:var(--dim);line-height:1.6;margin-top:8px}
 
+/* ── AI Suggest ── */
+#suggest-btn{width:100%;margin-top:8px;padding:6px;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:transparent;color:var(--blue);border:2px solid var(--blue);cursor:pointer;box-shadow:2px 2px 0 #0a2040;transition:all .08s}
+#suggest-btn:hover{background:#050d18}
+#suggest-btn:active{transform:translate(1px,1px);box-shadow:none}
+#suggest-btn:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
+#suggest-result{display:none;margin-top:10px;background:#050d18;border:1px solid var(--blue);padding:10px 12px}
+#suggest-result .sug-title{font-size:9px;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+#suggest-result .sug-modules{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.sug-chip{font-size:9px;padding:2px 8px;background:#0a1a2a;border:1px solid var(--blue);color:var(--blue);cursor:pointer;font-family:var(--mono);font-weight:700;text-transform:uppercase}
+.sug-chip:hover{background:var(--blue);color:#000}
+.sug-chip.selected{background:var(--blue);color:#000}
+#suggest-apply{font-size:9px;padding:3px 10px;background:var(--green);color:#000;border:none;cursor:pointer;font-family:var(--mono);font-weight:700;text-transform:uppercase;box-shadow:2px 2px 0 #1a3a1a}
+#suggest-apply:hover{background:#8fffbe}
+#suggest-reason{font-size:9px;color:#666;margin-top:6px;line-height:1.6;font-style:italic}
+
 @media(max-width:720px){
   #app{grid-template-columns:1fr;height:auto}
   #left{border-right:none;border-bottom:2px solid var(--border)}
@@ -154,6 +169,13 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);min-height:1
 
       <label class="req-label">Beschrijf je verzoek</label>
       <textarea id="request-area" placeholder="Bijv: Voeg een knop toe aan de garrison-modal die alle turfs met meer dan 5 verdedigers markeert in het rood…"></textarea>
+      <button id="suggest-btn" disabled onclick="suggestModules()">🤖 Suggereer modules</button>
+      <div id="suggest-result">
+        <div class="sug-title">Aanbevolen modules</div>
+        <div class="sug-modules" id="sug-chips"></div>
+        <button id="suggest-apply" onclick="applySuggestions()">✓ Selecteer alle aanbevelingen</button>
+        <div class="sug-reason" id="suggest-reason"></div>
+      </div>
       <div id="token-est">Selecteer eerst modules links.</div>
 
       <div class="hint">
@@ -164,9 +186,30 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);min-height:1
     <div id="right-bottom">
       <button id="gen-btn" disabled>⚡ Genereer pakketje</button>
       <div id="gen-status"></div>
+      <button onclick="openApiKeyModal()" id="apikey-btn" style="width:100%;margin-top:6px;padding:4px;font-size:9px;background:transparent;border:1px solid #2a2a2a;color:#555;cursor:pointer;font-family:var(--mono);text-transform:uppercase;letter-spacing:.3px;box-shadow:none">🔑 API-sleutel instellen</button>
     </div>
   </div>
 
+</div>
+
+<!-- ── API Key modal ── -->
+<div id="apikey-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;align-items:center;justify-content:center">
+  <div style="background:#111;border:2px solid var(--blue);width:100%;max-width:420px;padding:24px;box-shadow:6px 6px 0 #000;font-family:var(--mono)">
+    <div style="font-family:var(--bang);font-size:18px;color:var(--blue);letter-spacing:1px;margin-bottom:6px">🔑 API-sleutel instellen</div>
+    <div style="font-size:10px;color:#888;margin-bottom:14px;line-height:1.7">
+      Vul je Anthropic API-sleutel in voor AI-suggesties.<br>
+      Wordt alleen in <strong style="color:#aaa">jouw browser</strong> opgeslagen (localStorage).<br>
+      Genereer een sleutel op <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--blue)">console.anthropic.com →</a>
+    </div>
+    <input id="apikey-input" type="password" placeholder="sk-ant-api03-…"
+      style="width:100%;background:#050505;color:#ccc;border:2px solid #333;padding:8px 10px;font-family:var(--mono);font-size:11px;outline:none;margin-bottom:6px">
+    <div id="apikey-status" style="font-size:10px;min-height:16px;margin-bottom:12px;color:#888"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeApiKeyModal()" style="font-size:10px;padding:4px 14px;background:transparent;border-color:#555;color:#999">Annuleren</button>
+      <button onclick="saveApiKey()" style="font-size:10px;padding:4px 14px;background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:2px 2px 0 #0a2040">Opslaan</button>
+      <button onclick="clearApiKey()" style="font-size:10px;padding:4px 14px;background:transparent;border-color:var(--red);color:var(--red);box-shadow:none">Verwijderen</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── Output modal ── -->
@@ -469,8 +512,9 @@ function updateUI(){
     tEl.textContent = 'Selecteer eerst modules links.';
   }
 
-  // Generate button
+  // Generate + suggest buttons
   document.getElementById('gen-btn').disabled = !selMods.length || !req.trim();
+  document.getElementById('suggest-btn').disabled = !req.trim();
 }
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
@@ -643,18 +687,206 @@ function closeOutput(){
   document.getElementById('output-modal').classList.remove('open');
 }
 
+// ── API KEY MANAGEMENT ────────────────────────────────────────────────────────
+const APIKEY_STORAGE = 'vwm_anthropic_key';
+
+function loadApiKey(){ return localStorage.getItem(APIKEY_STORAGE)||''; }
+
+function openApiKeyModal(){
+  const saved = loadApiKey();
+  const input = document.getElementById('apikey-input');
+  input.value = saved ? '••••••••' + saved.slice(-6) : '';
+  const st = document.getElementById('apikey-status');
+  st.textContent = saved ? '✓ Sleutel opgeslagen (eindigt op …'+saved.slice(-6)+')' : 'Geen sleutel ingesteld.';
+  st.style.color = saved ? 'var(--green)' : '#888';
+  document.getElementById('apikey-modal').style.display = 'flex';
+}
+
+function closeApiKeyModal(){
+  document.getElementById('apikey-modal').style.display = 'none';
+}
+
+function saveApiKey(){
+  const val = document.getElementById('apikey-input').value.trim();
+  if(!val || val.startsWith('••')){
+    document.getElementById('apikey-status').textContent = 'Voer een geldige sleutel in.';
+    document.getElementById('apikey-status').style.color = 'var(--red)';
+    return;
+  }
+  if(!val.startsWith('sk-ant-')){
+    document.getElementById('apikey-status').textContent = 'Sleutel moet beginnen met sk-ant-…';
+    document.getElementById('apikey-status').style.color = 'var(--red)';
+    return;
+  }
+  localStorage.setItem(APIKEY_STORAGE, val);
+  document.getElementById('apikey-status').textContent = '✓ Opgeslagen!';
+  document.getElementById('apikey-status').style.color = 'var(--green)';
+  updateApiKeyBtn();
+  setTimeout(closeApiKeyModal, 800);
+}
+
+function clearApiKey(){
+  localStorage.removeItem(APIKEY_STORAGE);
+  document.getElementById('apikey-input').value = '';
+  document.getElementById('apikey-status').textContent = 'Sleutel verwijderd.';
+  document.getElementById('apikey-status').style.color = '#888';
+  updateApiKeyBtn();
+}
+
+function updateApiKeyBtn(){
+  const btn = document.getElementById('apikey-btn');
+  const has = !!loadApiKey();
+  btn.textContent = has ? '🔑 API-sleutel ✓ (wijzigen)' : '🔑 API-sleutel instellen';
+  btn.style.color = has ? 'var(--green)' : '#555';
+  btn.style.borderColor = has ? '#1a3a1a' : '#2a2a2a';
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') {
+    closeOutput();
+    closeApiKeyModal();
+  }
+});
+
+// ── AI MODULE SUGGESTER ───────────────────────────────────────────────────────
+let _suggestedIds = [];
+
+// ── Keyword fallback (no API needed) ──────────────────────────────────────────
+function suggestByKeywords(req){
+  const q = req.toLowerCase();
+  const scores = new Map();
+  for(const m of MODULES){
+    let score = 0;
+    const searchable = [m.id, m.name, m.desc, m.kw, ...(m.tags||[])].join(' ').toLowerCase();
+    // Split query into words and score each
+    for(const word of q.split(/\s+/)){
+      if(word.length < 3) continue;
+      if(searchable.includes(word)) score += 2;
+    }
+    // Bonus: whole-phrase match in desc or kw
+    if(m.desc.toLowerCase().includes(q.slice(0,20))) score += 3;
+    if(score > 0) scores.set(m.id, score);
+  }
+  return [...scores.entries()]
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,5)
+    .map(([id])=>id);
+}
+
+async function suggestModules(){
+  const req = document.getElementById('request-area').value.trim();
+  if(!req) return;
+
+  const btn = document.getElementById('suggest-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Analyseren…';
+  document.getElementById('suggest-result').style.display = 'none';
+
+  const apiKey = loadApiKey();
+  let suggestedIds = [];
+  let reason = '';
+  let method = '';
+
+  if(apiKey){
+    // ── Claude API ──────────────────────────────────────────────────────────
+    const modList = MODULES.map(m =>
+      `${m.id}: ${m.desc} [${m.kw.replace(/ · /g,', ')}]`
+    ).join('\n');
+
+    const prompt = `Je bent een assistent voor de Vendetta World Map tool (vwm.cryptofolio.nl).
+De codebase bestaat uit JavaScript-modules en HTML/CSS-blokken in index.html.
+
+Beschikbare modules:
+${modList}
+
+Gebruikersverzoek: "${req}"
+
+Geef ALLEEN een JSON-object terug, geen uitleg, geen markdown:
+{"modules":["id1","id2"],"reason":"één zin waarom"}
+
+Kies alleen de modules die daadwerkelijk gewijzigd moeten worden. Maximaal 5.`;
+
+    try{
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,messages:[{role:'user',content:prompt}]})
+      });
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      const data = await resp.json();
+      const text = (data.content?.[0]?.text||'').replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(text);
+      suggestedIds = (parsed.modules||[]).filter(id=>MODULES.find(m=>m.id===id));
+      reason = parsed.reason||'';
+      method = '🤖 Claude';
+    }catch(e){
+      // Fall back to keyword matching
+      suggestedIds = suggestByKeywords(req);
+      reason = 'Claude niet bereikbaar — trefwoordmatch gebruikt.';
+      method = '🔤 Keywords';
+    }
+  } else {
+    // ── Keyword fallback ────────────────────────────────────────────────────
+    suggestedIds = suggestByKeywords(req);
+    reason = suggestedIds.length
+      ? 'Gebaseerd op trefwoorden. Stel een API-sleutel in voor slimmere suggesties.'
+      : 'Geen overeenkomsten gevonden — probeer andere termen of selecteer handmatig.';
+    method = '🔤 Keywords';
+  }
+
+  _suggestedIds = suggestedIds;
+
+  // Render chips
+  const chips = document.getElementById('sug-chips');
+  if(!suggestedIds.length){
+    chips.innerHTML = '<span style="color:#666;font-size:10px">Geen suggesties gevonden.</span>';
+  } else {
+    chips.innerHTML = suggestedIds.map(id=>{
+      const m = MODULES.find(x=>x.id===id);
+      const isSel = selected.has(id);
+      return `<span class="sug-chip${isSel?' selected':''}" id="chip-${id}" onclick="toggleChip('${id}')">${m?.name||id}</span>`;
+    }).join('');
+  }
+
+  document.getElementById('suggest-reason').textContent = `${method} — ${reason}`;
+  document.getElementById('suggest-result').style.display = 'block';
+
+  btn.disabled = false;
+  btn.textContent = '🤖 Suggereer modules';
+}
+
+function toggleChip(id){
+  selected.has(id) ? selected.delete(id) : selected.add(id);
+  const chip = document.getElementById('chip-'+id);
+  if(chip) chip.classList.toggle('selected', selected.has(id));
+  updateUI();
+}
+
+function applySuggestions(){
+  _suggestedIds.forEach(id => selected.add(id));
+  document.getElementById('suggest-result').style.display = 'none';
+  updateUI();
+  document.getElementById('selection-summary').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 // ── Events ────────────────────────────────────────────────────────────────────
 document.getElementById('output-modal').addEventListener('click', e=>{
   if(e.target===document.getElementById('output-modal')) closeOutput();
 });
+document.getElementById('apikey-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') saveApiKey();
+});
 document.getElementById('request-area').addEventListener('input', updateUI);
 document.getElementById('gen-btn').addEventListener('click', generate);
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeOutput(); });
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ closeOutput(); closeApiKeyModal(); }
+});
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 buildGrid();
 buildQuickGuide();
 updateUI();
+updateApiKeyBtn();
 </script>
 </body>
 </html>
