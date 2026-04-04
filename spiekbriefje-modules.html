@@ -184,7 +184,10 @@ body{font-family:var(--mono);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
     <div id="right-bottom">
-      <button id="gen-btn" disabled>⚡ Genereer pakketje</button>
+      <div style="display:flex;gap:6px">
+        <button id="gen-btn" disabled style="flex:1">⚡ Genereer pakketje</button>
+        <button onclick="clearAll()" title="Wis alles" style="padding:10px 14px;background:transparent;border:2px solid #333;color:#666;box-shadow:none;flex-shrink:0;font-size:14px">✕</button>
+      </div>
       <div id="gen-status"></div>
       <button onclick="openApiKeyModal()" id="apikey-btn" style="width:100%;margin-top:6px;padding:4px;font-size:9px;background:transparent;border:1px solid #2a2a2a;color:#555;cursor:pointer;font-family:var(--mono);text-transform:uppercase;letter-spacing:.3px;box-shadow:none">🔑 API-sleutel instellen</button>
     </div>
@@ -867,6 +870,17 @@ function applySuggestions(){
   document.getElementById('suggest-result').style.display = 'none';
   updateUI();
   document.getElementById('selection-summary').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function clearAll(){
+  // Wis tekstveld
+  document.getElementById('request-area').value = '';
+  // Deselecteer alle modules
+  selected.clear();
+  // Verberg suggesties
+  document.getElementById('suggest-result').style.display = 'none';
+  // Update UI
+  updateUI();
 }
 
 // ── Events ────────────────────────────────────────────────────────────────────
