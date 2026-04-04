@@ -600,7 +600,7 @@ async function generate(){
       const isCss = m.anchor.startsWith('css-');
       const blockStart = isCss ? `/* ── BLOCK: ${m.anchor} ── */` : `<!-- ── BLOCK: ${m.anchor} ── -->`;
       const blockEnd   = isCss ? `/* ── END: ${m.anchor} ── */`   : `<!-- ── END: ${m.anchor} ── -->`;
-      return `- Geef de gewijzigde ${m.name}-sectie terug als downloadbaar snippet.\n  Vervang in index.html alles tussen (en inclusief) "${blockStart}" en "${blockEnd}".`;
+      return `- Geef de gewijzigde ${m.name}-sectie terug als downloadbaar snippet (inclusief de BLOCK/END ankerregels).\n- Vermeld EXPLICIET in je antwoord: "Vervang in index.html alles tussen ${blockStart} en ${blockEnd} met dit snippet."`;
     } else {
       return `- Wijzig ${multiJs?'':'alleen '}${m.file} — geef het complete gewijzigde bestand terug als download`;
     }
@@ -611,12 +611,12 @@ async function generate(){
   // Paste instructions for anchor-based snippets
   const anchorMods = selMods.filter(m=>m.anchor);
   const pasteInstructions = anchorMods.length
-    ? '\nHOE HET SNIPPET PLAKKEN IN INDEX.HTML:\n' +
+    ? '\nHOE INDEX.HTML AANPASSEN (verplicht te vermelden in je antwoord):\n' +
       anchorMods.map(m => {
         const isCss = m.anchor.startsWith('css-');
         const bs = isCss ? `/* ── BLOCK: ${m.anchor} ── */` : `<!-- ── BLOCK: ${m.anchor} ── -->`;
         const be = isCss ? `/* ── END: ${m.anchor} ── */`   : `<!-- ── END: ${m.anchor} ── -->`;
-        return `- ${m.name}: zoek in index.html naar "${bs}", selecteer t/m "${be}", verwijder de selectie en plak het snippet.`;
+        return `- ${m.name}: open index.html → zoek naar "${bs}" → selecteer t/m "${be}" → verwijder → plak het snippet.`;
       }).join('\n')
     : null;
 
