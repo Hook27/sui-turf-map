@@ -69,6 +69,17 @@ async function loadHistory(){
 
 async function loadLatest(){
   await loadData('data.json');
+  // Re-fetch history.json so snapshots[] is up-to-date before loadBattleHistory() runs.
+  // Without this, a user-triggered reload would compute the 24h overlay against the
+  // snapshot list from the initial page load instead of the current one.
+  try{
+    const r=await fetch('history.json?t='+Date.now());
+    if(r.ok){
+      const h=await r.json();
+      snapshots=h.snapshots||[];
+      if(snapshots.length>1) document.getElementById('battle-btn').style.display='';
+    }
+  }catch(e){ console.warn('loadLatest: could not refresh history.json —',e.message); }
   loadBattleHistory();
 }
 
