@@ -170,7 +170,7 @@ function closeMiniProfile(){}
 
 // MODULE: gar-history (r.3459–3637)
 function renderGarrisonHistory(){}  // SVG chart
-function renderGarrisonRaids(){}
+function renderGarrisonAttacks(){}
 
 // MODULE: sim (r.3638–3815)
 function _atkSim(atkArmy, defArmy, N){}    // → {winPct, avgRounds, avgSurv}

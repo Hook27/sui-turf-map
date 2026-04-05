@@ -638,6 +638,7 @@ print("Fetching raid events...")
 
 RAIDS_FILE  = "raids.json"
 MAX_RAIDS   = 500
+CAPTURE_EVENT_TYPE = "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::CaptureEvent"
 # Exact event type addresses from on-chain inspection
 RAID_EVENT_TYPES = [
     # Primary: RaidEvent — attacker/defender names, cash, weapon
@@ -687,12 +688,10 @@ if needs_backfill:
                         r["xp"] = raw_xp / SCALE
                         backfilled_xp += 1
                 # Capture detection — any CaptureEvent in same TX
-                if "CaptureEvent" in ev_type and "is_capture" not in r:
+                if "CaptureEvent" in ev_type:
                     r["is_capture"] = True
                     backfilled_cap += 1
-            # Mark as checked even if no capture found
-            if "is_capture" not in r:
-                r["is_capture"] = False
+            # is_capture already initialised to False by parse_raid_event
             time.sleep(DELAY)
         except Exception as e:
             print(f"    Warning: backfill failed for {r['digest'][:16]}: {e}")
@@ -798,6 +797,35 @@ for event_type in RAID_EVENT_TYPES:
 
 new_raids = list(new_raids_by_digest.values())
 
+# ── CAPTURE CROSS-REFERENCE ───────────────────────────────────────────────────
+# Fetch CaptureEvent TX digests and mark matching raids as is_capture=True.
+# This covers all raids (new + existing) without requiring per-TX backfill calls.
+print("  Cross-referencing CaptureEvents...")
+try:
+    capture_digests = set()
+    cap_cursor = None
+    for _ in range(10):  # up to 500 CaptureEvents
+        result = rpc("suix_queryEvents", [{"MoveEventType": CAPTURE_EVENT_TYPE}, cap_cursor, 50, True])
+        for ev in (result.get("data") or []):
+            d = ev.get("id", {}).get("txDigest", "")
+            if d:
+                capture_digests.add(d)
+        if not result.get("hasNextPage"):
+            break
+        cap_cursor = result.get("nextCursor")
+        time.sleep(DELAY)
+    marked = 0
+    for r in new_raids + existing_raids:
+        if r.get("digest") in capture_digests:
+            if not r.get("is_capture"):
+                r["is_capture"] = True
+                marked += 1
+        else:
+            r["is_capture"] = False
+    print(f"  CaptureEvent digests: {len(capture_digests)}, raids updated: {marked}")
+except Exception as e:
+    print(f"  Warning: CaptureEvent cross-reference failed: {e}")
+
 if not new_raids and not any(r.get("xp", 0) > 0 for r in existing_raids):
     print("  No new raid events found")
 else:
@@ -817,7 +845,7 @@ print("Fetching HQ destroyed events...")
 
 HQ_DESTROYED_FILE = "hq_destroyed.json"
 HQ_DESTROYED_EVENT = "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::HeadquarterDestroyedEvent"
-CAPTURE_EVENT_TYPE = "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672aeb7f240d::game_events::CaptureEvent"
+# CAPTURE_EVENT_TYPE defined near RAID_EVENT_TYPES above
 MAX_HQD = 200
 
 try:

@@ -125,8 +125,8 @@ function renderGarrisonHistory(){
   }
 }
 
-function renderGarrisonRaids(){
-  const el = document.getElementById('gar-raids-list');
+function renderGarrisonAttacks(){
+  const el = document.getElementById('gar-attacks-list');
   if(!garrisonPid){ el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No player selected.</div>'; return; }
   const raids = (battleHistoryData&&battleHistoryData.raids)||[];
   const hqd   = (battleHistoryData&&battleHistoryData.hqDestroyed)||[];
@@ -141,7 +141,7 @@ function renderGarrisonRaids(){
     .sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
 
   if(!allEvents.length){
-    el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No raids found for this player.<br><span style="color:#777">Raid data is collected from the next run onwards.</span></div>';
+    el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No attacks found for this player.<br><span style="color:#777">Attack data is collected from the next run onwards.</span></div>';
     return;
   }
   function fmtAge(ts){const h=Math.round((Date.now()-new Date(ts))/3600000);return h<1?'just now':h<24?h+'h ago':Math.floor(h/24)+'d ago';}
@@ -150,8 +150,10 @@ function renderGarrisonRaids(){
     if(r.cash>0)    parts.push(`<span style="color:#FAC775">$${r.cash.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`);
     if(r.weapons>0) parts.push(`<span style="color:#ff8483">${r.weapons.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})} arms</span>`);
     if(r.xp>0)      parts.push(`<span style="color:#89c6ff">${r.xp.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})} XP</span>`);
-    return parts.length?parts.join(' · '):'<span style="color:#777">nothing looted</span>';
+    return parts.join(' · ');
   }
+  function hasLoot(r){ return (r.cash||0)>0||(r.weapons||0)>0||(r.xp||0)>0; }
+
   el.innerHTML = allEvents.map(r=>{
     const isAtk = r.attacker_pid===garrisonPid;
     if(r._type==='hqd'){
@@ -160,20 +162,46 @@ function renderGarrisonRaids(){
       const dir = isAtk
         ? `<span style="color:#ff8483">💥 HQ destroyed</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span> <span style="color:#999;font-size:9px">(held ground)</span>`
         : `<span style="color:#FAC775">💥 HQ destroyed by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span> <span style="color:#999;font-size:9px">(still standing)</span>`;
+      const loot = fmtLoot(r);
       return `<div class="${rowCls}">
         <div>${dir}</div>
-        <div class="gar-raid-loot">${fmtLoot(r)}</div>
+        ${loot?`<div class="gar-raid-loot">${isAtk?'Looted: ':'Lost: '}${loot}</div>`:''}
         <div class="gar-raid-meta">${fmtAge(r.timestamp)}</div>
       </div>`;
     }
-    const rowCls = isAtk?'gar-raid-row as-attacker':'gar-raid-row as-defender';
-    const captureTag = r.is_capture?` <span style="color:#6fffa9;font-size:9px">[captured]</span>`:'';
-    const dir = isAtk
-      ? `<span style="color:#ff8483">⚔ Raided</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span>${captureTag}`
-      : `<span style="color:#89c6ff">🛡 Raided by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span>${captureTag}`;
+
+    const captured = !!r.is_capture;
+    const looted   = hasLoot(r);
+    const rowCls   = isAtk?'gar-raid-row as-attacker':'gar-raid-row as-defender';
+    let dir, resultLine;
+
+    if(isAtk){
+      if(captured && !looted){
+        dir        = `<span style="color:#ff8483">⚔ Attacked</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span>`;
+        resultLine = `<div class="gar-raid-loot"><span style="color:#6fffa9">Captured turf</span></div>`;
+      } else if(captured && looted){
+        dir        = `<span style="color:#ff8483">⚔ Raided + Captured</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span>`;
+        resultLine = `<div class="gar-raid-loot">Looted: ${fmtLoot(r)} · <span style="color:#6fffa9">captured turf</span></div>`;
+      } else {
+        dir        = `<span style="color:#ff8483">⚔ Raided</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span>`;
+        resultLine = `<div class="gar-raid-loot">Looted: ${looted?fmtLoot(r):'<span style="color:#777">nothing</span>'}</div>`;
+      }
+    } else {
+      if(captured && !looted){
+        dir        = `<span style="color:#FAC775">⚔ Turf captured by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span>`;
+        resultLine = `<div class="gar-raid-loot"><span style="color:#ff8483">Lost turf</span></div>`;
+      } else if(captured && looted){
+        dir        = `<span style="color:#FAC775">⚔ Raided + captured by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span>`;
+        resultLine = `<div class="gar-raid-loot">Lost: ${fmtLoot(r)} · <span style="color:#ff8483">lost turf</span></div>`;
+      } else {
+        dir        = `<span style="color:#89c6ff">🛡 Raided by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span>`;
+        resultLine = `<div class="gar-raid-loot">Lost: ${looted?fmtLoot(r):'<span style="color:#777">nothing</span>'}</div>`;
+      }
+    }
+
     return `<div class="${rowCls}">
       <div>${dir}</div>
-      <div class="gar-raid-loot">${isAtk?'Looted: ':'Lost: '}${fmtLoot(r)}</div>
+      ${resultLine}
       <div class="gar-raid-meta">${fmtAge(r.timestamp)}</div>
     </div>`;
   }).join('');

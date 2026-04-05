@@ -6,12 +6,12 @@ let garrisonRows = []; // [{tile, selected}]
 let garrisonAllTiles = []; // all tiles for navigate tab (incl HQ)
 
 function switchGarrisonTab(tab){
-  ['navigate','recall','history','raids','attack'].forEach(t=>{
+  ['navigate','recall','history','attacks','attack'].forEach(t=>{
     document.getElementById(`garrison-tab-${t}`).classList.toggle('active', t===tab);
     document.getElementById(`tab-btn-${t}`).classList.toggle('active', t===tab);
   });
   if(tab==='history') renderGarrisonHistory();
-  if(tab==='raids')   renderGarrisonRaids();
+  if(tab==='attacks') renderGarrisonAttacks();
   if(tab==='attack')  renderAttackAdvisor();
 }
 
