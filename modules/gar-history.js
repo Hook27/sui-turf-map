@@ -128,31 +128,61 @@ function renderGarrisonHistory(){
 function renderGarrisonAttacks(){
   const el = document.getElementById('gar-attacks-list');
   if(!garrisonPid){ el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No player selected.</div>'; return; }
-  const raids      = (battleHistoryData&&battleHistoryData.raids)||[];
-  const hqd        = (battleHistoryData&&battleHistoryData.hqDestroyed)||[];
-  const hqCaptures = (battleHistoryData&&battleHistoryData.hqCaptures)||[];
+  const raids          = (battleHistoryData&&battleHistoryData.raids)||[];
+  const hqd            = (battleHistoryData&&battleHistoryData.hqDestroyed)||[];
+  const hqCaptures     = (battleHistoryData&&battleHistoryData.hqCaptures)||[];
+  const freeTurfAtks   = (battleHistoryData&&battleHistoryData.freeTurfAttacks)||[];
 
   const playerRaids = raids.filter(r=>r.attacker_pid===garrisonPid||r.defender_pid===garrisonPid);
+
   // HQ destroyed events (attacker was repelled)
   const playerHqd = hqd.filter(d=>d.attacker_pid===garrisonPid||d.defender_pid===garrisonPid)
     .map(d=>({...d, _type:'hqd'}));
+
   // HQ capture events — stored in hq_captures.json, not in raids.json
   const playerHqCap = hqCaptures
     .filter(c=>c.new_pid===garrisonPid||c.prev_pid===garrisonPid)
     .map(c=>({...c, _type:'hqcap', attacker_pid:c.new_pid, attacker_name:c.new_name||'Unknown', defender_pid:c.prev_pid, defender_name:c.prev_name||'Unknown'}));
 
-  // Turf captures from snapshot comparison — covers non-raid attacks that don't appear in raids.json.
-  // raids.json only records loot/raid transactions; regular turf captures only show up in changedTiles.
+  // Free turf attacks — exact timestamps from free_turf_attacks.json (blockchain events).
+  // Only show attacks by this player (as attacker); free turfs have no defender.
+  const playerFta = freeTurfAtks
+    .filter(f=>f.attacker_pid===garrisonPid)
+    .map(f=>({...f, _type:'fta'}));
+
+  // Digest set of free turf attacks already covered by exact blockchain data,
+  // used to suppress the snapshot fallback for the same tile change.
+  const ftaDigests = new Set(playerFta.map(f=>f.digest));
+
+  // Snapshot fallback — covers plain attacks on occupied turfs (no raid loot) that
+  // don't appear in any JSON file, and free turf claims not yet in free_turf_attacks.json.
+  // type:'new'      = free turf claimed (no prior owner)
+  // type:'captured' = turf taken from another player without a raid transaction
   const changedTiles = (battleHistoryData&&battleHistoryData.changedTiles)||[];
-  const pidInfo = (battleHistoryData&&battleHistoryData.pidInfo)||new Map();
-  const timeRange = battleHistoryData ? `${battleHistoryData.fromLabel} → ${battleHistoryData.toLabel}` : 'last 24h';
-  const snapshotCaptures = changedTiles
+  const pidInfo      = (battleHistoryData&&battleHistoryData.pidInfo)||new Map();
+  const timeRange    = battleHistoryData ? `${battleHistoryData.fromLabel} → ${battleHistoryData.toLabel}` : 'last 24h';
+  const snapTs       = battleHistoryData?.toMs || Date.now();
+
+  // Dedup: skip snapshot 'captured' entries already covered by a raid+capture pair,
+  // and skip snapshot 'new' entries already covered by an exact free turf attack entry.
+  const raidCapturePairs = new Set(
+    playerRaids.filter(r=>r.is_capture).map(r=>`${r.attacker_pid}|${r.defender_pid}`)
+  );
+
+  const snapshotEvents = changedTiles
     .filter(c=>(c.type==='captured'||c.type==='new')&&(c.toPid===garrisonPid||c.fromPid===garrisonPid))
+    .filter(c=>{
+      if(c.type==='captured') return !raidCapturePairs.has(`${c.toPid}|${c.fromPid}`);
+      // type==='new': only show if we have no exact blockchain record for this player's free turf attacks
+      if(c.type==='new') return playerFta.length===0;
+      return true;
+    })
     .map(c=>{
       const atkInfo=pidInfo.get(c.toPid)||{};
       const defInfo=pidInfo.get(c.fromPid)||{};
       return {
         _type:'snapshot_capture',
+        _ts: snapTs,
         attacker_pid:c.toPid, attacker_name:atkInfo.name||'Unknown',
         defender_pid:c.fromPid||null, defender_name:defInfo.name||null,
         isClaim:c.type==='new',
@@ -160,9 +190,9 @@ function renderGarrisonAttacks(){
       };
     });
 
-  // Timestamped events first (newest first), then snapshot captures
-  const timedEvents=[...playerRaids,...playerHqd,...playerHqCap].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
-  const allEvents=[...timedEvents,...snapshotCaptures];
+  // Merge all event types and sort chronologically (newest first).
+  const allEvents=[...playerRaids,...playerHqd,...playerHqCap,...playerFta,...snapshotEvents]
+    .sort((a,b)=>(b._ts||new Date(b.timestamp).getTime())-(a._ts||new Date(a.timestamp).getTime()));
 
   if(!allEvents.length){
     el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No attacks found for this player.<br><span style="color:#777">Attack data is collected from the next run onwards.</span></div>';
@@ -180,6 +210,18 @@ function renderGarrisonAttacks(){
 
   el.innerHTML = allEvents.map(r=>{
     const isAtk = r.attacker_pid===garrisonPid;
+    if(r._type==='fta'){
+      // Free turf attack — exact timestamp from blockchain
+      const armyParts=Object.entries(r.army||{}).map(([n,c])=>`${c}× ${n}`).join(', ');
+      const result=r.won
+        ?`<span style="color:#6fffa9">Turf claimed</span>`
+        :`<span style="color:#ff8483">Attack failed</span>`;
+      return `<div class="gar-raid-row as-attacker">
+        <div><span style="color:#6fffa9">📍 Attacked free turf</span></div>
+        <div class="gar-raid-loot">${result}${armyParts?` · ${esc(armyParts)}`:''}</div>
+        <div class="gar-raid-meta">${fmtAge(r.timestamp)}</div>
+      </div>`;
+    }
     if(r._type==='snapshot_capture'){
       // Turf capture from snapshot comparison — no exact timestamp available
       const rowCls = isAtk?'gar-raid-row as-attacker':'gar-raid-row as-defender';

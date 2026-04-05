@@ -93,7 +93,7 @@ async function loadBattleHistory(){
 
   const oldest = window[0];
   const newest = window[window.length-1];
-  battleHistoryData={changedTiles,playerChanges,pidInfo,fromLabel:oldest.label,toLabel:newest.label};
+  battleHistoryData={changedTiles,playerChanges,pidInfo,fromLabel:oldest.label,toLabel:newest.label,fromMs:oldest.ms,toMs:newest.ms};
   // Load HQ captures
   try{
     const hqr=await fetch('hq_captures.json?t='+Date.now());
@@ -103,6 +103,11 @@ async function loadBattleHistory(){
   try{
     const rdr=await fetch('raids.json?t='+Date.now());
     if(rdr.ok) battleHistoryData.raids=await rdr.json();
+  }catch(e){}
+  // Load free turf attacks (attack_free_turf transactions with exact timestamps)
+  try{
+    const ftar=await fetch('free_turf_attacks.json?t='+Date.now());
+    if(ftar.ok) battleHistoryData.freeTurfAttacks=await ftar.json();
   }catch(e){}
   // Load HQ destroyed events
   try{

@@ -835,6 +835,92 @@ else:
     with open(RAIDS_FILE, "w", encoding="utf-8") as f:
         json.dump(all_raids, f, separators=(",", ":"), ensure_ascii=False)
     print(f"  raids.json updated ({len(all_raids)} total, {len(new_raids)} new)")
+
+# ── FREE TURF ATTACK TRACKING ─────────────────────────────────────────────────
+# attack_free_turf transactions fire a SimulationResultEvent with defender_id=null
+# and defender_name=null, which is why they were excluded from raids.json.
+# We capture them separately in free_turf_attacks.json, using the same
+# SimulationResultEvent source but keeping only entries with no defender.
+print("Fetching free turf attack events...")
+
+FREE_TURF_FILE  = "free_turf_attacks.json"
+MAX_FREE_TURF   = 500
+
+try:
+    existing_fta = json.loads(open(FREE_TURF_FILE, encoding="utf-8").read())
+except Exception:
+    existing_fta = []
+
+known_fta_digests = {r["digest"] for r in existing_fta if r.get("digest")}
+
+new_fta_by_digest = {}
+
+# SimulationResultEvent is the only on-chain event for attack_free_turf;
+# it has attacker_name, attacker_id, battle_status, and no defender fields.
+SIM_EVENT_TYPE = "0x63081c5dd824a49289b6557d9f9bcf8613fe801e89dbad728616348a58b4b40a::ibattle::SimulationResultEvent"
+
+fta_cursor = None
+fta_pages  = 0
+fta_found  = 0
+try:
+    while fta_pages < 10:
+        params = [{"MoveEventType": SIM_EVENT_TYPE}, fta_cursor, 50, True]
+        result = rpc("suix_queryEvents", params)
+        events = result.get("data", [])
+        if not events and fta_pages == 0:
+            break
+        for ev in events:
+            parsed = ev.get("parsedJson") or {}
+            # Only free turf attacks have no defender_id and no defender_name
+            if parsed.get("defender_id") or parsed.get("defender_name"):
+                continue
+            tx    = ev.get("id", {}).get("txDigest") or ""
+            ts_ms = ev.get("timestampMs") or parsed.get("timestamp")
+            ts    = datetime.fromtimestamp(int(ts_ms)/1000, tz=timezone.utc).isoformat() if ts_ms else now_utc.isoformat()
+            if not tx or tx in known_fta_digests:
+                continue
+            if tx in new_fta_by_digest:
+                continue
+            # battle_status 1 = attacker wins (turf claimed), 0 = attacker loses
+            battle_status = int(parsed.get("battle_status", 0))
+            units = parsed.get("attacker_units") or []
+            army  = {}
+            for u in units:
+                n = u.get("gangster_name","")
+                army[n] = army.get(n, 0) + 1
+            new_fta_by_digest[tx] = {
+                "digest":        tx,
+                "attacker_pid":  parsed.get("attacker_id")   or "",
+                "attacker_name": parsed.get("attacker_name") or "",
+                "won":           battle_status == 1,
+                "army":          army,
+                "timestamp":     ts,
+            }
+            fta_found += 1
+        fta_pages += 1
+        if not result.get("hasNextPage"):
+            break
+        fta_cursor = result.get("nextCursor")
+        time.sleep(DELAY)
+    print(f"  SimulationResultEvent (free turf): {fta_pages} page(s), {fta_found} new")
+except Exception as e:
+    print(f"  Warning: free turf attack fetch failed: {e}")
+
+new_fta = list(new_fta_by_digest.values())
+if new_fta:
+    all_fta = existing_fta + new_fta
+    all_fta.sort(key=lambda r: r["timestamp"])
+    all_fta = all_fta[-MAX_FREE_TURF:]
+    with open(FREE_TURF_FILE, "w", encoding="utf-8") as f:
+        json.dump(all_fta, f, separators=(",", ":"), ensure_ascii=False)
+    print(f"  free_turf_attacks.json updated ({len(all_fta)} total, {len(new_fta)} new)")
+else:
+    # Ensure file exists even if empty
+    if not existing_fta:
+        with open(FREE_TURF_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+    print("  No new free turf attack events found")
+
 # ── HQ DESTROYED TRACKING ──────────────────────────────────────────────────────
 # HeadquarterDestroyedEvent fires when an HQ is attacked and the attacker wins.
 # This happens for BOTH attack_type 2 (capture blocked, 11+ defenders) and
