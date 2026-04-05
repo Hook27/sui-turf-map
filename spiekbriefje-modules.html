@@ -629,13 +629,12 @@ function buildOutput(){
   const {req, selMods, ver, stub, contents} = _lastGenData;
 
   if(outputMode === 'vscode'){
-    // ── Claude Code mode: compact @-prompt ──────────────────────────────────
+    // ── Claude Code mode ─────────────────────────────────────────────────────
+    // JS modules → @-verwijzing; anchor blocks → inhoud inline (geen @index.html)
     const atRefs = ['@globals-stub.js'];
     selMods.forEach(m => {
       if(!m.anchor) atRefs.push(`@${m.file}`);
     });
-    // For anchor blocks: reference index.html
-    if(selMods.some(m=>m.anchor)) atRefs.push('@index.html');
 
     const anchorMods = selMods.filter(m=>m.anchor);
     const anchorInstruct = anchorMods.map(m => {
@@ -651,8 +650,13 @@ function buildOutput(){
 
     const depWarns = selMods.filter(m=>m.depNote).map(m=>`⚠ ${m.name}: ${m.depNote}`);
 
+    // Build inline anchor content blocks
+    const anchorBlocks = contents.filter(({m}) => m.anchor).map(({m, text}) =>
+      `── ${m.name.toUpperCase()} [${m.anchor}] ──\n${text}`
+    ).join('\n\n');
+
     outputText = [
-      '── CONTEXT (plak dit in Claude Code) ──',
+      '── CONTEXT (@-verwijzingen handmatig intypen in Claude Code) ──',
       atRefs.join('\n'),
       '',
       '── VERZOEK ──',
@@ -665,6 +669,7 @@ function buildOutput(){
       '- Commitbericht in het Engels',
       '- Als onduidelijk: stel eerst een verduidelijkingsvraag',
       depWarns.length ? '\nLET OP:\n'+depWarns.join('\n') : null,
+      anchorBlocks ? `\n── HTML/CSS BLOKKEN (kopieer mee in Claude Code) ──\n${anchorBlocks}` : null,
     ].filter(p=>p!==null).join('\n');
 
   } else {
