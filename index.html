@@ -867,7 +867,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 <div id="refresh-modal">
   <div id="refresh-box">
     <h2>⚡ Trigger data refresh</h2>
-    <p>This triggers the GitHub Actions workflow to re-fetch all blockchain data. It runs in the background and takes about 10 minutes. The map will update automatically on next reload.</p>
+    <p>This triggers the GitHub Actions workflow to re-fetch all blockchain data. It runs in the background and takes about 20 minutes. The map will update automatically on next reload.</p>
     <p>Enter your GitHub Personal Access Token (needs <code>workflow</code> scope):<br>
     <a href="https://github.com/settings/tokens/new?scopes=workflow&description=SUI+Turf+Map" target="_blank" style="color:#378ADD;font-size:11px">Create token on GitHub →</a></p>
     <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx">
@@ -875,7 +875,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <input type="text" id="gh-repo" placeholder="Hook27/sui-turf-map" value="Hook27/sui-turf-map">
     <div id="refresh-result"></div>
     <div class="modal-btns">
-      <button onclick="closeRefreshModal()">Cancel</button>
+      <button onclick="closeRefreshModal()">Close</button>
       <button class="primary" onclick="triggerRefresh()">▶ Start refresh</button>
     </div>
   </div>
