@@ -128,13 +128,18 @@ function renderGarrisonHistory(){
 function renderGarrisonAttacks(){
   const el = document.getElementById('gar-attacks-list');
   if(!garrisonPid){ el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No player selected.</div>'; return; }
-  const raids = (battleHistoryData&&battleHistoryData.raids)||[];
-  const hqd   = (battleHistoryData&&battleHistoryData.hqDestroyed)||[];
+  const raids      = (battleHistoryData&&battleHistoryData.raids)||[];
+  const hqd        = (battleHistoryData&&battleHistoryData.hqDestroyed)||[];
+  const hqCaptures = (battleHistoryData&&battleHistoryData.hqCaptures)||[];
 
   const playerRaids = raids.filter(r=>r.attacker_pid===garrisonPid||r.defender_pid===garrisonPid);
-  // Add HQ destroyed events as a special row type
+  // HQ destroyed events (attacker was repelled)
   const playerHqd = hqd.filter(d=>d.attacker_pid===garrisonPid||d.defender_pid===garrisonPid)
     .map(d=>({...d, _type:'hqd'}));
+  // HQ capture events — stored in hq_captures.json, not in raids.json
+  const playerHqCap = hqCaptures
+    .filter(c=>c.new_pid===garrisonPid||c.prev_pid===garrisonPid)
+    .map(c=>({...c, _type:'hqcap', attacker_pid:c.new_pid, attacker_name:c.new_name||'Unknown', defender_pid:c.prev_pid, defender_name:c.prev_name||'Unknown'}));
 
   // Turf captures from snapshot comparison — covers non-raid attacks that don't appear in raids.json.
   // raids.json only records loot/raid transactions; regular turf captures only show up in changedTiles.
@@ -156,7 +161,7 @@ function renderGarrisonAttacks(){
     });
 
   // Timestamped events first (newest first), then snapshot captures
-  const timedEvents=[...playerRaids,...playerHqd].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  const timedEvents=[...playerRaids,...playerHqd,...playerHqCap].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
   const allEvents=[...timedEvents,...snapshotCaptures];
 
   if(!allEvents.length){
@@ -191,6 +196,17 @@ function renderGarrisonAttacks(){
       return `<div class="${rowCls}">
         <div>${dir}</div>
         <div class="gar-raid-meta" style="color:#555">within ${esc(r._timeRange)}</div>
+      </div>`;
+    }
+    if(r._type==='hqcap'){
+      // HQ capture event
+      const rowCls = isAtk?'gar-raid-row as-attacker':'gar-raid-row as-defender';
+      const dir = isAtk
+        ? `<span style="color:#ff8483">🏴 Captured HQ</span> of <span style="color:#aaa">${esc(r.defender_name)}</span>`
+        : `<span style="color:#FAC775">🏴 HQ captured by</span> <span style="color:#aaa">${esc(r.attacker_name)}</span>`;
+      return `<div class="${rowCls}">
+        <div>${dir}</div>
+        <div class="gar-raid-meta">${fmtAge(r.timestamp)}</div>
       </div>`;
     }
     if(r._type==='hqd'){
