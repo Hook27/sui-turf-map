@@ -99,15 +99,19 @@ function renderPlayerList(){
     const lcdTxt=p.lcd!=null?`${p.lcd}d`:'';
     const lcdCls=p.lcd>=70?'old':p.lcd>=35?'warn':'';
     const feedDaysOverdue=p.feed?((Date.now()-p.feed)/(24*60*60*1000)):0;
-    const feedTxt=feedDaysOverdue>=7?`no feed ${Math.floor(feedDaysOverdue)}d`:feedDaysOverdue>=3?`feed ${Math.floor(feedDaysOverdue)}d`:'';
-    const feedCls=feedDaysOverdue>=7?'old':'warn';
+    const feedDotCls=feedDaysOverdue>=7?'old':feedDaysOverdue>=3?'warn':'';
+    const feedTip=feedDaysOverdue>=7?`No feed: ${Math.floor(feedDaysOverdue)} days overdue`:
+                  feedDaysOverdue>=3?`Feed overdue: ${Math.floor(feedDaysOverdue)} days`:'';
+    const feedDot=feedDotCls
+      ?`<span class="feed-dot ${feedDotCls}" data-tip="${feedTip}"></span>`
+      :`<span class="feed-dot"></span>`;
     parts[i]=`<div class="${rowCls}${hasGar?' has-garrison':''}" onclick="onPClick('${p.pid}',event)">` +
       `<span class="prank">${i+1}</span>` +
       `<span class="pdot" style="background:${dotCol}"></span>` +
       nm +
       `<span class="ptiles">${p.tiles.toLocaleString('en')}</span>` +
-      (lcdTxt?`<span class="plcd ${lcdCls}">${lcdTxt}</span>`:'') +
-      (feedTxt?`<span class="plcd ${feedCls}">${feedTxt}</span>`:'') +
+      `<span class="plcd ${lcdCls}">${lcdTxt}</span>` +
+      feedDot +
       `<button class="p-gar-btn" onclick="openGarrison('${p.pid}',event)" title="Garrison overview">🛡</button>` +
       `<button class="p-mark-btn ${friendCls}" onclick="toggleMark('${p.pid}','friend',event)" title="Mark as friend">♥</button>` +
       `<button class="p-mark-btn ${enemyCls}" onclick="toggleMark('${p.pid}','enemy',event)" title="Mark as enemy">✕</button>` +
