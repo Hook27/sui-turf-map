@@ -98,12 +98,16 @@ function renderPlayerList(){
     const hasGar=garrisonedPids.has(p.pid);
     const lcdTxt=p.lcd!=null?`${p.lcd}d`:'';
     const lcdCls=p.lcd>=70?'old':p.lcd>=35?'warn':'';
+    const feedDaysOverdue=p.feed?((Date.now()-p.feed)/(24*60*60*1000)):0;
+    const feedTxt=feedDaysOverdue>=7?`no feed ${Math.floor(feedDaysOverdue)}d`:feedDaysOverdue>=3?`feed ${Math.floor(feedDaysOverdue)}d`:'';
+    const feedCls=feedDaysOverdue>=7?'old':'warn';
     parts[i]=`<div class="${rowCls}${hasGar?' has-garrison':''}" onclick="onPClick('${p.pid}',event)">` +
       `<span class="prank">${i+1}</span>` +
       `<span class="pdot" style="background:${dotCol}"></span>` +
       nm +
       `<span class="ptiles">${p.tiles.toLocaleString('en')}</span>` +
       (lcdTxt?`<span class="plcd ${lcdCls}">${lcdTxt}</span>`:'') +
+      (feedTxt?`<span class="plcd ${feedCls}">${feedTxt}</span>`:'') +
       `<button class="p-gar-btn" onclick="openGarrison('${p.pid}',event)" title="Garrison overview">🛡</button>` +
       `<button class="p-mark-btn ${friendCls}" onclick="toggleMark('${p.pid}','friend',event)" title="Mark as friend">♥</button>` +
       `<button class="p-mark-btn ${enemyCls}" onclick="toggleMark('${p.pid}','enemy',event)" title="Mark as enemy">✕</button>` +
