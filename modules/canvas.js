@@ -55,84 +55,70 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
   const p=players.find(pl=>pl.pid===pid)||{};
   document.getElementById('neighbor-title').textContent = p.name||'[unknown]';
 
-  // ── Attack suggestion for clicked tile ──
+  // ── Attack suggestion + live garrison (shared state) ──
   const atkEl=document.getElementById('neighbor-attack-suggestion');
   const nbrsHead=document.getElementById('neighbor-neighbors-head');
   if(nbrsHead){ nbrsHead.style.display='block'; nbrsHead.textContent=`Neighbors (${nbrs?nbrs.size:0})`; }
-  if(atkEl){
-    const tile=clickedTile||null;
-    const defTotal=tile?(tile.gE||0)+(tile.gB||0)+(tile.gH||0):0;
-    if(tile){
-      atkEl.style.cssText='display:block;padding:8px 14px 10px;background:#0d0d14;border-bottom:1px solid #1a1a1a';
-      if(defTotal===0){
-        atkEl.innerHTML=`
-          <div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Attack Suggestion</div>
-          <div style="font-size:10px;color:#6fffa9;font-family:var(--font-mono)">No garrison — any army wins</div>`;
-      } else {
-        const GRID='display:grid;grid-template-columns:76px 22px 22px 22px 1fr 1fr;font-size:11px;align-items:center;padding:3px 0;border-top:1px solid #1a1a1a;font-family:var(--font-mono)';
-        const HDR='display:grid;grid-template-columns:76px 22px 22px 22px 1fr 1fr;font-size:9px;text-transform:uppercase;margin-bottom:4px;align-items:center;font-family:var(--font-mono)';
-        function tableHTML(aH,aB,aE,winHtml,rndHtml){
-          return `
-          <div style="${HDR}">
-            <span></span>
-            <span style="text-align:center;color:#ccc">H</span>
-            <span style="text-align:center;color:#6fffa9">B</span>
-            <span style="text-align:center;color:#ff8483">E</span>
-            <span style="text-align:center;color:#999">Chance</span>
-            <span style="text-align:center;color:#999">Rnd</span>
-          </div>
-          <div style="${GRID}">
-            <span style="font-size:9px;color:#999;text-transform:uppercase">Attackers</span>
-            <span style="text-align:center;color:#ccc">${aH}</span>
-            <span style="text-align:center;color:#6fffa9">${aB}</span>
-            <span style="text-align:center;color:#ff8483">${aE}</span>
-            <span style="text-align:center">${winHtml}</span>
-            <span style="text-align:center">${rndHtml}</span>
-          </div>
-          <div style="${GRID};font-style:italic">
-            <span style="font-size:9px;color:#999;text-transform:uppercase">Defenders</span>
-            <span style="text-align:center;color:#ccc">${tile.gH||0}</span>
-            <span style="text-align:center;color:#6fffa9">${tile.gB||0}</span>
-            <span style="text-align:center;color:#ff8483">${tile.gE||0}</span>
-            <span></span>
-            <span></span>
-          </div>`;
-        }
-        atkEl.innerHTML=`
-          <div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Attack Suggestion</div>
-          ${tableHTML('…','…','…','<span style="color:#999">…</span>','<span style="color:#999">…</span>')}`;
-        setTimeout(()=>{
-          const defObj={EF:tile.gE||0,BC:tile.gB||0,HM:tile.gH||0};
-          const cacheKey=_compKey(defObj);
-          let best;
-          if(_ATK_CACHE.has(cacheKey)){
-            best=_ATK_CACHE.get(cacheKey)[0];
-          } else {
-            const defArray=_armyArray(defObj);
-            const scored=_ALL_COMPS.map(comp=>{
-              const r=_atkSim(_armyArray(comp),defArray,300);
-              return {...comp,...r};
-            }).sort((a,b)=>b.winPct-a.winPct||(a.total-b.total)||(a.avgRounds-b.avgRounds));
-            const refined=scored.slice(0,3).map(comp=>{
-              const r=_atkSim(_armyArray(comp),defArray,2000);
-              return {...comp,...r};
-            }).sort((a,b)=>b.winPct-a.winPct||(a.total-b.total)||(a.avgRounds-b.avgRounds));
-            _ATK_CACHE.set(cacheKey,refined);
-            best=refined[0];
-          }
-          const winCol=best.winPct>=80?'#6fffa9':best.winPct>=50?'#FAC775':'#E24B4A';
-          const gasWarn=best.avgRounds>16?' ⚠':''; const rndCol=best.avgRounds>16?'#E24B4A':winCol;
-          atkEl.innerHTML=`
-            <div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Attack Suggestion</div>
-            ${tableHTML(best.HM,best.BC,best.EF,
-              `<span style="color:${winCol}">${best.winPct.toFixed(0)}%</span>`,
-              `<span style="color:${rndCol}">~${best.avgRounds.toFixed(0)}${gasWarn}</span>`
-            )}`;
-        },20);
-      }
-    } else {
-      atkEl.style.display='none';
+  const tile=clickedTile||null;
+  let runAtkSim=null;
+  if(tile&&atkEl){
+    atkEl.style.cssText='display:block;padding:8px 14px 10px;background:#0d0d14;border-bottom:1px solid #1a1a1a';
+    const GRID='display:grid;grid-template-columns:76px 38px 38px 38px 1fr 1fr;font-size:11px;align-items:center;padding:3px 0;border-top:1px solid #1a1a1a;font-family:var(--font-mono)';
+    const HDR='display:grid;grid-template-columns:76px 38px 38px 38px 1fr 1fr;font-size:9px;text-transform:uppercase;margin-bottom:4px;align-items:center;font-family:var(--font-mono)';
+    const ATK_HEAD='<div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Attack Suggestion</div>';
+    function tableHTML(aH,aB,aE,winHtml,rndHtml){
+      return `
+      <div style="${HDR}">
+        <span></span>
+        <span style="text-align:center;color:#ccc">H</span>
+        <span style="text-align:center;color:#6fffa9">B</span>
+        <span style="text-align:center;color:#ff8483">E</span>
+        <span style="text-align:center;color:#999">Chance</span>
+        <span style="text-align:center;color:#999">Rnd</span>
+      </div>
+      <div style="${GRID}">
+        <span style="font-size:9px;color:#999;text-transform:uppercase">Attackers</span>
+        <span style="text-align:center;color:#ccc">${aH}</span>
+        <span style="text-align:center;color:#6fffa9">${aB}</span>
+        <span style="text-align:center;color:#ff8483">${aE}</span>
+        <span style="text-align:center">${winHtml}</span>
+        <span style="text-align:center">${rndHtml}</span>
+      </div>`;
     }
+    runAtkSim=function(defHM,defBC,defEF){
+      if(defHM===0&&defBC===0&&defEF===0){
+        atkEl.innerHTML=ATK_HEAD+'<div style="font-size:10px;color:#6fffa9;font-family:var(--font-mono)">No garrison — any army wins</div>';
+        return;
+      }
+      const defObj={EF:defEF,BC:defBC,HM:defHM};
+      const cacheKey=_compKey(defObj);
+      let best;
+      if(_ATK_CACHE.has(cacheKey)){
+        best=_ATK_CACHE.get(cacheKey)[0];
+      } else {
+        const defArray=_armyArray(defObj);
+        const scored=_ALL_COMPS.map(comp=>{
+          const r=_atkSim(_armyArray(comp),defArray,300);
+          return {...comp,...r};
+        }).sort((a,b)=>b.winPct-a.winPct||(a.total-b.total)||(a.avgRounds-b.avgRounds));
+        const refined=scored.slice(0,3).map(comp=>{
+          const r=_atkSim(_armyArray(comp),defArray,2000);
+          return {...comp,...r};
+        }).sort((a,b)=>b.winPct-a.winPct||(a.total-b.total)||(a.avgRounds-b.avgRounds));
+        _ATK_CACHE.set(cacheKey,refined);
+        best=refined[0];
+      }
+      const winCol=best.winPct>=80?'#6fffa9':best.winPct>=50?'#FAC775':'#E24B4A';
+      const gasWarn=best.avgRounds>16?' ⚠':''; const rndCol=best.avgRounds>16?'#E24B4A':winCol;
+      atkEl.innerHTML=ATK_HEAD+tableHTML(best.HM,best.BC,best.EF,
+        `<span style="color:${winCol}">${best.winPct.toFixed(0)}%</span>`,
+        `<span style="color:${rndCol}">~${best.avgRounds.toFixed(0)}${gasWarn}</span>`
+      );
+    };
+    // Loading state — sim runs after live data resolves
+    atkEl.innerHTML=ATK_HEAD+tableHTML('…','…','…','<span style="color:#999">…</span>','<span style="color:#999">…</span>');
+  } else if(atkEl){
+    atkEl.style.display='none';
   }
   const list=document.getElementById('neighbor-list');
   const marks=loadMarks();
@@ -164,6 +150,39 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
   if(ly+ph>window.innerHeight-10) ly=window.innerHeight-ph-10;
   if(ly<10) ly=10;
   popup.style.left=lx+'px';popup.style.top=ly+'px';
+
+  // ── Live garrison fetch — drives attack sim ──
+  const liveEl=document.getElementById('neighbor-live-gar');
+  if(liveEl&&tile){
+    if(clickedTile.oid){
+      liveEl.innerHTML='<div style="padding:6px 14px;font-size:9px;color:#555;font-family:var(--font-mono)">Loading live data…</div>';
+      fetchTurfLive(clickedTile.oid).then(function(live){
+        if(popup.style.display==='none') return;
+        const ts=new Date(live.cachedAt).toLocaleTimeString();
+        const cdInfo=rtCooldownRemaining(live.cooldown);
+        liveEl.innerHTML='<div style="padding:6px 14px 8px;background:#080d08;border-bottom:1px solid #1a1a1a">'+
+          '<div style="font-size:9px;color:#6fffa9;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">⟳ Live garrison</div>'+
+          '<div style="font-size:11px;font-family:var(--font-mono);display:flex;gap:10px;align-items:baseline">'+
+          '<span style="color:#aaa">'+live.hm+'H</span>'+
+          '<span style="color:#6fffa9">'+live.bc+'B</span>'+
+          '<span style="color:#ff8483">'+live.ef+'E</span>'+
+          '<span style="color:#555;font-size:9px">= '+live.total+'</span>'+
+          (cdInfo.label!=='—'?'<span style="color:#FAC775;font-size:9px;margin-left:4px">cd '+cdInfo.label+'</span>':'')+
+          '</div>'+
+          '<div style="font-size:8px;color:#444;font-family:var(--font-mono);margin-top:3px">'+ts+'</div>'+
+          '</div>';
+        if(runAtkSim) setTimeout(()=>runAtkSim(live.hm,live.bc,live.ef),0);
+      }).catch(function(){
+        liveEl.innerHTML='';
+        if(runAtkSim) setTimeout(()=>runAtkSim(tile.gH||0,tile.gB||0,tile.gE||0),0);
+      });
+    } else {
+      liveEl.innerHTML='';
+      if(runAtkSim) setTimeout(()=>runAtkSim(tile.gH||0,tile.gB||0,tile.gE||0),20);
+    }
+  } else if(tile&&runAtkSim){
+    setTimeout(()=>runAtkSim(tile.gH||0,tile.gB||0,tile.gE||0),20);
+  }
 }
 function closeNeighborPopup(){document.getElementById('neighbor-popup').style.display='none';}
 function onNeighborClick(pid){closeNeighborPopup();jumpToPlayer(pid);}

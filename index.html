@@ -528,7 +528,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 <!-- ── BLOCK: html-toolbar ── -->
 <div id="toolbar">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v4.05</span>
+  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v4.06</span>
   <div class="sep"></div>
   <button id="route-btn" class="tb-btn" onclick="toggleRouteMode()">🗺 <span class="tb-label">Route</span></button>
   <span id="route-indicator">Click a turf or player to select A → B</span>
@@ -664,6 +664,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     <h3 id="neighbor-title">Player</h3>
     <button id="neighbor-close" onclick="closeNeighborPopup()">✕</button>
   </div>
+  <div id="neighbor-live-gar"></div>
   <div id="neighbor-attack-suggestion" style="display:none"></div>
   <div id="neighbor-neighbors-head" style="display:none;padding:6px 14px 4px;border-top:1px solid #1a1a1a;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px"></div>
   <div id="neighbor-list"></div>
@@ -682,6 +683,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
       </div>
       <button id="garrison-close" onclick="closeGarrison()">✕</button>
     </div>
+    <div id="garrison-live-section" style="display:none;border-bottom:2px solid #1a1a1a;background:#080d08;padding:10px 18px"></div>
     <div id="garrison-tabs">
       <button class="gar-tab active" id="tab-btn-navigate" onclick="switchGarrisonTab('navigate')">🗺 Navigate</button>
       <button class="gar-tab" id="tab-btn-history" onclick="switchGarrisonTab('history')">📈 History</button>
@@ -934,6 +936,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 <script src="modules/intel.js"></script>
 <script src="modules/profile.js"></script>
 <script src="modules/analyzer.js"></script>
+<script src="modules/realtime.js"></script>
 <script src="modules/boot.js"></script>
 
 

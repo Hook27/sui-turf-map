@@ -143,6 +143,68 @@ function openGarrison(pid, e){
   document.getElementById('garrison-recall-bar').classList.remove('visible');
   switchGarrisonTab('navigate');
   document.getElementById('garrison-modal').classList.add('open');
+
+  // ── Live player data fetch ──
+  const liveSec=document.getElementById('garrison-live-section');
+  if(liveSec){
+    liveSec.style.display='none';
+    liveSec.innerHTML='';
+    fetchPlayerLive(pid).then(function(live){
+      if(!document.getElementById('garrison-modal').classList.contains('open')) return;
+      const g=live.gangsters;
+      const ts=new Date(live.cachedAt).toLocaleTimeString();
+      const cdLabels={
+        feed_people:'Feed people', raid_cooldown:'Raid', mission_cooldown:'Mission',
+        safe_cooldown:'Safe', hire_scouts_cooldown:'Scouts', bullet_purchase:'Bullets',
+        hospitalization:'Hospital', blackmail_attack_cooldown:'Blackmail atk',
+        blackmail_looted_cooldown:'Blackmail loot', attack_protection:'Atk protection',
+        boost_production:'Boost prod'
+      };
+      const perkLabels={
+        boost_production:'Boost prod', attack_protection:'Atk protection',
+        blackmail_protection:'Blackmail prot', newbie_protection:'Newbie prot',
+        attack_reset:'Atk reset'
+      };
+      let activeCd=[];
+      for(const k in live.timers){
+        const cd=rtCooldownRemaining(live.timers[k]);
+        if(cd.ms>0) activeCd.push({key:k, label:cdLabels[k]||k, remaining:cd.label});
+      }
+      activeCd.sort((a,b)=>live.timers[a.key]-live.timers[b.key]);
+      activeCd=activeCd.slice(0,5);
+      const activePerks=[];
+      for(const pk in live.perks){
+        const cd=rtCooldownRemaining(live.perks[pk]);
+        if(cd.ms>0) activePerks.push({label:perkLabels[pk]||pk, remaining:cd.label});
+      }
+      let html=
+        '<div style="font-size:9px;color:#6fffa9;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">'+
+        '⟳ Live data <span style="color:#444;font-size:8px;margin-left:6px">'+ts+'</span></div>'+
+        '<div style="font-size:10px;font-family:var(--font-mono);margin-bottom:6px">'+
+        '<span style="color:#888;font-size:9px;text-transform:uppercase;margin-right:6px">Gangsters</span>'+
+        '<span style="color:#aaa">'+g.hm+'H</span> '+
+        '<span style="color:#6fffa9">'+g.bc+'B</span> '+
+        '<span style="color:#ff8483">'+g.ef+'E</span> '+
+        '<span style="color:#555;font-size:9px"> · '+g.total+' total · '+g.recruits+' recruits</span>'+
+        '</div>';
+      if(activeCd.length){
+        html+='<div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cooldowns</div>'+
+          '<div style="font-size:10px;font-family:var(--font-mono);display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:5px">';
+        for(const cd of activeCd)
+          html+='<span><span style="color:#888">'+cd.label+'</span> <span style="color:#FAC775">'+cd.remaining+'</span></span>';
+        html+='</div>';
+      }
+      if(activePerks.length){
+        html+='<div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Perks</div>'+
+          '<div style="font-size:10px;font-family:var(--font-mono);display:flex;flex-wrap:wrap;gap:4px 12px">';
+        for(const pk of activePerks)
+          html+='<span><span style="color:#888">'+pk.label+'</span> <span style="color:#89c6ff">'+pk.remaining+'</span></span>';
+        html+='</div>';
+      }
+      liveSec.innerHTML=html;
+      liveSec.style.display='block';
+    }).catch(function(){ /* silently skip */ });
+  }
 }
 
 function renderGarrisonNavList(){
