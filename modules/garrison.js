@@ -158,7 +158,7 @@ function openGarrison(pid, e){
         blackmail_protection:'Blackmail prot', newbie_protection:'Newbie prot',
         attack_reset:'Atk reset', raid_cooldown:'Raid cooldown', mission_cooldown:'Mission',
         safe_cooldown:'Safe', hire_scouts_cooldown:'Scouts', bullet_purchase:'Bullets',
-        hospitalization:'Hospital', blackmail_attack_cooldown:'Blackmail atk',
+        hospitalization:'Hospital', blackmail_attack_cooldown:'Blackmail',
         blackmail_looted_cooldown:'Blackmail loot', capture_cooldown:'Capture cooldown'
       };
       const PERK_KEYS=['boost_production','attack_protection','blackmail_protection','newbie_protection','attack_reset'];
@@ -170,7 +170,8 @@ function openGarrison(pid, e){
         var hours=Math.floor((totalMinutes%1440)/60);
         var minutes=totalMinutes%60;
         if(days>0) return days+' days '+hours+' hours '+minutes+' minutes';
-        return hours+' hours '+minutes+' minutes';
+        if(hours>0) return hours+' hours '+minutes+' minutes';
+        return minutes+' minutes';
       }
       const feedDeadline=live.timers['feed_people']||0;
       const nowMs=Date.now();
