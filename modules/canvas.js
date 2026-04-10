@@ -184,14 +184,20 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
           '<div style="font-size:8px;color:#444;font-family:var(--font-mono);margin-top:3px">'+ts+'</div>'+
           '</div>';
         if(runAtkSim) setTimeout(()=>runAtkSim(live.hm,live.bc,live.ef),0);
-        // Second fetch: attack shield from owner player data
-        if(live.ownerId){
-          fetchPlayerLive(live.ownerId).then(function(playerData){
+        // Second fetch: owner player data for cooldowns
+        const _ownerFetchId=live.ownerId||pid;
+        fetchPlayerLive(_ownerFetchId).then(function(playerData){
             if(popup.style.display==='none') return;
             var shieldUntil=(playerData.timers&&playerData.timers['attack_protection'])||0;
+            var raidUntil=(playerData.timers&&playerData.timers['raid_cooldown'])||0;
+            var captureUntil=(playerData.timers&&playerData.timers['capture_cooldown'])||0;
             var shieldCd=rtCooldownRemaining(shieldUntil);
+            var raidCd=rtCooldownRemaining(raidUntil);
+            var captureCd=rtCooldownRemaining(captureUntil);
             var lines=[];
-            if(cdInfo.label!=='—') lines.push('<span style="color:#888">Raid cd</span> <span style="color:#FAC775">'+cdInfo.label+'</span>');
+            if(cdInfo.label!=='—') lines.push('<span style="color:#888">Turf cd</span> <span style="color:#FAC775">'+cdInfo.label+'</span>');
+            if(raidCd.label!=='—') lines.push('<span style="color:#888">Raid cooldown</span> <span style="color:#FAC775">'+raidCd.label+'</span>');
+            if(captureCd.label!=='—') lines.push('<span style="color:#888">Capture cooldown</span> <span style="color:#FAC775">'+captureCd.label+'</span>');
             if(shieldCd.label!=='—') lines.push('<span style="color:#888">Attack shield</span> <span style="color:#FAC775">'+shieldCd.label+'</span>');
             if(lines.length){
               var cdDiv=document.createElement('div');
@@ -201,7 +207,6 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
               liveEl.appendChild(cdDiv);
             }
           }).catch(function(){});
-        }
       }).catch(function(){
         liveEl.innerHTML='';
         if(runAtkSim) setTimeout(()=>runAtkSim(tile.gH||0,tile.gB||0,tile.gE||0),0);

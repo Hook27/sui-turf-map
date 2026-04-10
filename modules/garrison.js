@@ -156,10 +156,10 @@ function openGarrison(pid, e){
       const TIMER_LABELS={
         boost_production:'Boost prod', attack_protection:'Atk protection',
         blackmail_protection:'Blackmail prot', newbie_protection:'Newbie prot',
-        attack_reset:'Atk reset', raid_cooldown:'Raid', mission_cooldown:'Mission',
+        attack_reset:'Atk reset', raid_cooldown:'Raid cooldown', mission_cooldown:'Mission',
         safe_cooldown:'Safe', hire_scouts_cooldown:'Scouts', bullet_purchase:'Bullets',
         hospitalization:'Hospital', blackmail_attack_cooldown:'Blackmail atk',
-        blackmail_looted_cooldown:'Blackmail loot', capture_cooldown:'Capture'
+        blackmail_looted_cooldown:'Blackmail loot', capture_cooldown:'Capture cooldown'
       };
       const PERK_KEYS=['boost_production','attack_protection','blackmail_protection','newbie_protection','attack_reset'];
       const TIMER_KEYS=['raid_cooldown','mission_cooldown','safe_cooldown','hire_scouts_cooldown','bullet_purchase','hospitalization','blackmail_attack_cooldown','blackmail_looted_cooldown','capture_cooldown'];
