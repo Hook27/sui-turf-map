@@ -125,23 +125,36 @@ week_raids = [
     and r.get("defender_name")  # exclude failed raids / free turf attacks
 ]
 
-# Top raiders by number of raids
+CASH_THRESHOLD = 1.0
+pure_captures     = [r for r in week_raids if r.get("is_capture") and r.get("cash", 0) <= CASH_THRESHOLD]
+capture_and_raids = [r for r in week_raids if r.get("is_capture") and r.get("cash", 0) > CASH_THRESHOLD]
+pure_raids        = [r for r in week_raids if not r.get("is_capture")]
+
+# Top attackers per type
+capture_count = {}
+for r in pure_captures + capture_and_raids:
+    name = r.get("attacker_name") or r.get("attacker_pid","")[:8]
+    capture_count[name] = capture_count.get(name, 0) + 1
+top_capturers = sorted(capture_count.items(), key=lambda x: -x[1])[:5]
+
 raid_count = {}
-for r in week_raids:
+for r in pure_raids + capture_and_raids:
     name = r.get("attacker_name") or r.get("attacker_pid","")[:8]
     raid_count[name] = raid_count.get(name, 0) + 1
 top_raiders = sorted(raid_count.items(), key=lambda x: -x[1])[:5]
 
-# Most raided victims
-victim_count = {}
-for r in week_raids:
+# Most targeted victims per type
+capture_victim_count = {}
+for r in pure_captures + capture_and_raids:
     name = r.get("defender_name") or r.get("defender_pid","")[:8]
-    victim_count[name] = victim_count.get(name, 0) + 1
-top_victims = sorted(victim_count.items(), key=lambda x: -x[1])[:5]
+    capture_victim_count[name] = capture_victim_count.get(name, 0) + 1
+top_capture_victims = sorted(capture_victim_count.items(), key=lambda x: -x[1])[:5]
 
-# Separate pure raids from raids-that-were-also-captures
-capture_raids  = [r for r in week_raids if r.get("is_capture")]
-pure_raids     = [r for r in week_raids if not r.get("is_capture")]
+raid_victim_count = {}
+for r in pure_raids + capture_and_raids:
+    name = r.get("defender_name") or r.get("defender_pid","")[:8]
+    raid_victim_count[name] = raid_victim_count.get(name, 0) + 1
+top_raid_victims = sorted(raid_victim_count.items(), key=lambda x: -x[1])[:5]
 
 week_hqd = [
     d for d in all_hqd
@@ -154,13 +167,12 @@ for d in week_hqd:
     hqd_count[name] = hqd_count.get(name, 0) + 1
 top_hqd = sorted(hqd_count.items(), key=lambda x: -x[1])[:5]
 
-# Total loot this week
-total_cash    = sum(r.get("cash", 0)    for r in week_raids)
-total_weapons = sum(r.get("weapons", 0) for r in week_raids)
-total_xp      = sum(r.get("xp", 0)     for r in week_raids)
-
-# Most lucrative single raid (by cash + weapons combined)
-biggest_raid = max(week_raids, key=lambda r: r.get("cash",0)+r.get("weapons",0), default=None)
+# Loot stats — only from raids (pure_raids + capture_and_raids)
+loot_raids    = pure_raids + capture_and_raids
+total_cash    = sum(r.get("cash", 0)    for r in loot_raids)
+total_weapons = sum(r.get("weapons", 0) for r in loot_raids)
+total_xp      = sum(r.get("xp", 0)     for r in loot_raids)
+biggest_raid  = max(loot_raids, key=lambda r: r.get("cash",0)+r.get("weapons",0), default=None)
 
 # ── BUILD STATS SUMMARY ───────────────────────────────────────────────────────
 def fmt_list(items, key_name="name", val_name="net", prefix="+"):
@@ -173,21 +185,30 @@ def fmt_list(items, key_name="name", val_name="net", prefix="+"):
     return "\n".join(lines) if lines else "  (none)"
 
 raid_section = f"""
-RAIDS THIS WEEK: {len(week_raids)} total
-- Of which also resulted in a turf capture: {len(capture_raids)}
-- Pure plunder raids (no capture):          {len(pure_raids)}
-- Total cash looted:    {total_cash:,.2f}
-- Total weapons looted: {total_weapons:,.2f}
-- Total XP looted:      {total_xp:,.2f}
+ATTACKS THIS WEEK:
+- Pure captures (territory only, no loot): {len(pure_captures)}
+- Raids (loot only, no capture):           {len(pure_raids)}
+- Capture + Raid (territory AND loot):     {len(capture_and_raids)}
 
-HQ DESTROYED (attacked but defender held ground): {len(week_hqd)} total
-{chr(10).join(f"  - {name}: destroyed {cnt} HQ(s)" for name, cnt in top_hqd) or "  (none)"}
+MOST ACTIVE TERRITORY ATTACKERS (captures):
+{chr(10).join(f"  - {name}: {cnt} capture(s)" for name, cnt in top_capturers) or "  (none)"}
 
-MOST ACTIVE RAIDERS:
+MOST TARGETED TERRITORIES (captures):
+{chr(10).join(f"  - {name}: captured {cnt} time(s)" for name, cnt in top_capture_victims) or "  (none)"}
+
+MOST ACTIVE RAIDERS (loot attacks):
 {chr(10).join(f"  - {name}: {cnt} raid(s)" for name, cnt in top_raiders) or "  (none)"}
 
 MOST RAIDED PLAYERS:
-{chr(10).join(f"  - {name}: raided {cnt} time(s)" for name, cnt in top_victims) or "  (none)"}
+{chr(10).join(f"  - {name}: raided {cnt} time(s)" for name, cnt in top_raid_victims) or "  (none)"}
+
+TOTAL LOOT THIS WEEK:
+- Cash:    {total_cash:,.2f}
+- Weapons: {total_weapons:,.2f}
+- XP:      {total_xp:,.2f}
+
+HQ DESTROYED (attacked but defender held ground): {len(week_hqd)} total
+{chr(10).join(f"  - {name}: destroyed {cnt} HQ(s)" for name, cnt in top_hqd) or "  (none)"}
 
 BIGGEST SINGLE RAID:
 {f"  - {biggest_raid['attacker_name'] or '[unknown]'} raided {biggest_raid['defender_name'] or '[unknown]'} — ${biggest_raid['cash']:.2f} cash, {biggest_raid['weapons']:.2f} arms, {biggest_raid['xp']:.2f} XP" if biggest_raid else "  (none)"}
@@ -277,6 +298,13 @@ GAME MECHANICS KNOWLEDGE (use this to write accurate, flavourful stories):
   * After an HQ attack: 6 hours raid protection
 - Ghost turfs: abandoned tiles with little or no garrison — easy targets for expansion
 - The leaderboard ranks players by number of turfs held
+- There are THREE distinct attack types on player-owned turfs:
+  * Capture = take ownership of a turf, NO resources looted (cash=0)
+  * Raid = steal resources ONLY, turf stays with defender
+  * Capture+Raid = take ownership AND loot resources
+- IMPORTANT: Do NOT call captures "raids" — they are territorial attacks, not plunder operations
+- A player with many captures is a territorial conqueror, not a raider
+- Only mention "raids" when the attacker actually looted resources (cash > 0)
 
 Rules:
 - Write in authentic 1920s newspaper prose: florid, dramatic, with colourful nicknames and underworld slang
@@ -493,7 +521,8 @@ report = {
         "total_tiles_end":   total_new,
         "hq_captures":       len(week_captures),
         "raids":             len(week_raids),
-        "raids_with_capture": len(capture_raids),
+        "pure_captures":     len(pure_captures),
+        "capture_and_raids": len(capture_and_raids),
         "pure_raids":        len(pure_raids),
         "total_cash_looted": round(total_cash, 2),
         "newcomers":         len(newcomers),
