@@ -15,7 +15,7 @@ SNAPSHOTS_DIR    = "snapshots"
 HQ_CAPTURES_FILE = "hq_captures.json"
 REPORT_FILE      = "weekly_report.json"
 ANTHROPIC_API    = "https://api.anthropic.com/v1/messages"
-MODEL            = "claude-sonnet-4-20250514"
+MODEL            = "claude-sonnet-4-6"
 
 # ── LOAD SNAPSHOTS FROM LAST 7 DAYS ──────────────────────────────────────────
 now_utc   = datetime.now(timezone.utc)
@@ -67,6 +67,37 @@ for pid in all_pids:
     net = new_tiles - old_tiles
     name = (new_p or old_p).get("name") or "[unknown]"
     changes.append({"pid": pid, "name": name, "old": old_tiles, "new": new_tiles, "net": net})
+
+# Garrison delta per player
+def build_pid_index(snap):
+    return {p["pid"]: i for i, p in enumerate(snap.get("players", []))}
+
+old_pid_idx = build_pid_index(snap_old)
+new_pid_idx = build_pid_index(snap_new)
+
+def garrison_for_pid(snap, pid_idx_map, pid):
+    idx = pid_idx_map.get(pid)
+    if idx is None:
+        return 0
+    total = 0
+    for t in snap.get("tiles", []):
+        if t.get("p") == idx:
+            total += t.get("g_h", 0) + t.get("g_b", 0) + t.get("g_e", 0)
+    return total
+
+garrison_changes = []
+for pid in all_pids:
+    name = (new_players.get(pid) or old_players.get(pid) or {}).get("name") or "[unknown]"
+    g_old = garrison_for_pid(snap_old, old_pid_idx, pid)
+    g_new = garrison_for_pid(snap_new, new_pid_idx, pid)
+    delta = g_new - g_old
+    if delta != 0:
+        garrison_changes.append({"name": name, "delta": delta, "g_new": g_new})
+
+top_garrison_growers   = sorted([g for g in garrison_changes if g["delta"] > 0],
+                                  key=lambda x: -x["delta"])[:5]
+top_garrison_shrinkers = sorted([g for g in garrison_changes if g["delta"] < 0],
+                                  key=lambda x:  x["delta"])[:5]
 
 gainers   = sorted([c for c in changes if c["net"] > 0],  key=lambda x: -x["net"])[:10]
 losers    = sorted([c for c in changes if c["net"] < 0],  key=lambda x:  x["net"])[:10]
@@ -193,16 +224,16 @@ ATTACKS THIS WEEK:
 MOST ACTIVE TERRITORY ATTACKERS (captures):
 {chr(10).join(f"  - {name}: {cnt} capture(s)" for name, cnt in top_capturers) or "  (none)"}
 
-MOST TARGETED TERRITORIES (captures):
-{chr(10).join(f"  - {name}: captured {cnt} time(s)" for name, cnt in top_capture_victims) or "  (none)"}
+MOST TARGETED TERRITORIES:
+{chr(10).join(f"  - {name}: captured from {cnt} time(s)" for name, cnt in top_capture_victims) or "  (none)"}
 
-MOST ACTIVE RAIDERS (loot attacks):
+MOST ACTIVE RAIDERS (loot attacks only):
 {chr(10).join(f"  - {name}: {cnt} raid(s)" for name, cnt in top_raiders) or "  (none)"}
 
 MOST RAIDED PLAYERS:
 {chr(10).join(f"  - {name}: raided {cnt} time(s)" for name, cnt in top_raid_victims) or "  (none)"}
 
-TOTAL LOOT THIS WEEK:
+TOTAL LOOT THIS WEEK (raids only):
 - Cash:    {total_cash:,.2f}
 - Weapons: {total_weapons:,.2f}
 - XP:      {total_xp:,.2f}
@@ -229,6 +260,13 @@ TOP GAINERS (turfs claimed this week):
 
 TOP LOSERS (turfs lost this week):
 {fmt_list(losers)}
+
+GARRISON CHANGES THIS WEEK:
+BIGGEST ARMY BUILDERS (garrison units added):
+{chr(10).join(f"  - {g['name']}: +{g['delta']} units (now {g['g_new']})" for g in top_garrison_growers) or "  (none)"}
+
+BIGGEST ARMY LOSSES (garrison units removed):
+{chr(10).join(f"  - {g['name']}: {g['delta']} units (now {g['g_new']})" for g in top_garrison_shrinkers) or "  (none)"}
 
 NEW PLAYERS APPEARING THIS WEEK ({len(newcomers)} total):
 {chr(10).join(f"  - {c['name']} ({c['new']} turfs)" for c in newcomers[:8]) or "  (none)"}
@@ -298,13 +336,25 @@ GAME MECHANICS KNOWLEDGE (use this to write accurate, flavourful stories):
   * After an HQ attack: 6 hours raid protection
 - Ghost turfs: abandoned tiles with little or no garrison — easy targets for expansion
 - The leaderboard ranks players by number of turfs held
+- Garrison = the total number of gangsters deployed across all turfs of a player
+  (summed from each turf's individual garrison)
+- Garrison growth means a player is training and deploying more gangsters —
+  building military strength. Use this for narrative: a growing garrison = a boss
+  who is fortifying, preparing for war, or expanding capacity.
+- Garrison shrinkage can mean: gangsters lost in battles, units recalled to HQ,
+  or strategic repositioning.
 - There are THREE distinct attack types on player-owned turfs:
-  * Capture = take ownership of a turf, NO resources looted (cash=0)
+  * Capture = take ownership of a turf, NO resources looted (cash = 0)
   * Raid = steal resources ONLY, turf stays with defender
   * Capture+Raid = take ownership AND loot resources
-- IMPORTANT: Do NOT call captures "raids" — they are territorial attacks, not plunder operations
-- A player with many captures is a territorial conqueror, not a raider
-- Only mention "raids" when the attacker actually looted resources (cash > 0)
+- IMPORTANT: Do NOT call captures "raids" — they are territorial assaults.
+  A player with many captures is a conqueror, not a raider.
+  Only use the word "raids" when the attacker actually looted resources (cash > 0).
+- Net turf gain (from snapshot comparison) and capture count (from attack log)
+  are related but different: captures show how active a player was attacking,
+  net gain shows the result after also accounting for turfs lost to others.
+  Do NOT present both numbers as if they describe separate events — the captures
+  are HOW the net gain was achieved (partially). Use net gain as the headline number.
 
 Rules:
 - Write in authentic 1920s newspaper prose: florid, dramatic, with colourful nicknames and underworld slang
