@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python3 -c \"import json; d=json.load\\(open\\('c:/Users/Jörg/OneDrive/Documenten/GitHub/sui-turf-map/snapshots/data_2026-04-09_1414.json', encoding='utf-8'\\)\\); p=d['players'][0]; print\\(list\\(p.keys\\(\\)\\)\\)\")",
-      "Bash(python3 -c \"import json; d=json.load\\(open\\('c:/Users/Jörg/OneDrive/Documenten/GitHub/sui-turf-map/snapshots/data_2026-04-09_1414.json', encoding='utf-8'\\)\\); p=d['players'][0]; print\\(p['pid'][:20]\\)\")"
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('c:/Users/Jörg/OneDrive/Documenten/GitHub/sui-turf-map/snapshots/data_2026-04-09_1414.json', encoding='utf-8'\\)\\); p=d['players'][0]; print\\(p['pid'][:20]\\)\")",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
