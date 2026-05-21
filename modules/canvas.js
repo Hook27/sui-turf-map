@@ -62,7 +62,7 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
   const tile=clickedTile||null;
   let runAtkSim=null;
   if(tile&&atkEl){
-    atkEl.style.cssText='display:block;padding:8px 14px 10px;background:#0d0d14;border-bottom:1px solid #1a1a1a';
+    atkEl.style.cssText=`display:block;padding:8px 14px 10px;background:${_isDay()?'#f0e4cc':'#0d0d14'};border-bottom:1px solid ${_isDay()?'#d0b880':'#1a1a1a'}`;
     const GRID='display:grid;grid-template-columns:76px 38px 38px 38px 1fr 1fr;font-size:11px;align-items:center;padding:3px 0;border-top:1px solid #1a1a1a;font-family:var(--font-mono)';
     const HDR='display:grid;grid-template-columns:76px 38px 38px 38px 1fr 1fr;font-size:9px;text-transform:uppercase;margin-bottom:4px;align-items:center;font-family:var(--font-mono)';
     const ATK_HEAD='<div style="font-size:9px;color:#888;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Attack Suggestion</div>';
@@ -173,16 +173,16 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
         }
         const ts=new Date(live.cachedAt).toLocaleTimeString();
         const cdInfo=rtCooldownRemaining(live.cooldown);
-        liveEl.innerHTML='<div style="padding:6px 14px 8px;background:#080d08;border-bottom:1px solid #1a1a1a">'+
-          '<div style="font-size:9px;color:#6fffa9;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">⟳ Live garrison</div>'+
-          '<div style="font-size:11px;font-family:var(--font-mono);display:flex;gap:10px;align-items:baseline">'+
-          '<span style="color:#aaa">'+live.hm+'H</span>'+
-          '<span style="color:#6fffa9">'+live.bc+'B</span>'+
-          '<span style="color:#ff8483">'+live.ef+'E</span>'+
-          '<span style="color:#555;font-size:9px">= '+live.total+'</span>'+
-          '</div>'+
-          '<div style="font-size:8px;color:#444;font-family:var(--font-mono);margin-top:3px">'+ts+'</div>'+
-          '</div>';
+        liveEl.innerHTML=`<div style="padding:6px 14px 8px;background:${_isDay()?'#f0e8d8':'#080d08'};border-bottom:1px solid ${_isDay()?'#d0b880':'#1a1a1a'}">` +
+          `<div style="font-size:9px;color:#6fffa9;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">⟳ Live garrison</div>` +
+          `<div style="font-size:11px;font-family:var(--font-mono);display:flex;gap:10px;align-items:baseline">` +
+          `<span style="color:#aaa">${live.hm}H</span>` +
+          `<span style="color:#6fffa9">${live.bc}B</span>` +
+          `<span style="color:#ff8483">${live.ef}E</span>` +
+          `<span style="color:${_isDay()?'#a08050':'#555'};font-size:9px">= ${live.total}</span>` +
+          `</div>` +
+          `<div style="font-size:8px;color:${_isDay()?'#a08050':'#444'};font-family:var(--font-mono);margin-top:3px">${ts}</div>` +
+          `</div>`;
         if(runAtkSim) setTimeout(()=>runAtkSim(live.hm,live.bc,live.ef),0);
         // Second fetch: owner player data for cooldowns
         const _ownerFetchId=live.ownerId||pid;
@@ -201,7 +201,7 @@ function showNeighborPopup(pid,sx,sy,clickedTile){
             if(shieldCd.label!=='—') lines.push('<span style="color:#888">Attack shield</span> <span style="color:#FAC775">'+shieldCd.label+'</span>');
             if(lines.length){
               var cdDiv=document.createElement('div');
-              cdDiv.style.cssText='padding:4px 14px 6px;background:#080d08;border-bottom:1px solid #1a1a1a;font-family:var(--font-mono)';
+              cdDiv.style.cssText=`padding:4px 14px 6px;background:${_isDay()?'#f0e8d8':'#080d08'};border-bottom:1px solid ${_isDay()?'#d0b880':'#1a1a1a'};font-family:var(--font-mono)`;
               cdDiv.innerHTML='<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Cooldowns</div>'+
                 '<div style="font-size:10px;display:flex;flex-wrap:wrap;gap:4px 12px">'+lines.join('')+'</div>';
               liveEl.appendChild(cdDiv);
@@ -265,11 +265,13 @@ function flushMinimap(){
   if(_mmDirty){ drawMinimap(); _mmDirty=false; }
 }
 
+function _isDay(){ return document.documentElement.classList.contains('day'); }
+
 function drawMap(){
   const cv=_mapCv||document.getElementById('map');
   const ctx=_mapCtx||cv.getContext('2d');
   const W=cv.width,H=cv.height;
-  ctx.fillStyle='#080810';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=_isDay()?'#d8c8a0':'#080810';ctx.fillRect(0,0,W,H);
   updateZoomIndicator();
   updateRuler();
   if(!tiles.length) return;
@@ -296,8 +298,8 @@ function drawMap(){
       else if(t.isHQ){col=t.isMe?t.color:(getMark(t.pid)==='friend'?'#0a5f40':getMark(t.pid)==='enemy'?'#5f0a0a':'#6B1A1A');}
       else{
         const p=players[t.pidIdx];
-        if(top10Mode&&!top10Pids.has(t.pid)){col='#2a2a2a';}
-        else if(p&&p.inactive){col='#2a2a2a';}
+        if(top10Mode&&!top10Pids.has(t.pid)){col=_isDay()?'#c0ae80':'#2a2a2a';}
+        else if(p&&p.inactive){col=_isDay()?'#c0ae80':'#2a2a2a';}
         else{col=markColor(t.pid,t.color);}
       }
     }
@@ -387,16 +389,16 @@ function drawMap(){
       if(cx<0||cx>W||cy<0||cy>H) continue;
       const tw=ctx.measureText(lb.lbl).width;
       const pad=3;
-      ctx.fillStyle='rgba(0,0,0,0.55)';
+      ctx.fillStyle=_isDay()?'rgba(100,65,10,0.35)':'rgba(0,0,0,0.55)';
       ctx.fillRect(cx-tw/2-pad,cy-nameFs/2-pad,tw+pad*2,nameFs+pad*2);
-      ctx.fillStyle=lb.me?'#FAC775':'rgba(255,255,255,0.85)';
+      ctx.fillStyle=lb.me?(_isDay()?'#8a5e10':'#FAC775'):(_isDay()?'rgba(25,10,0,0.9)':'rgba(255,255,255,0.85)');
       ctx.fillText(lb.lbl,cx,cy);
     }
   }
   // Grid drawn after tiles — visible on black background, zoom > 0.5
   if(zoom>0.5){
     const gridAlpha=Math.min(0.9, (zoom-0.5)*0.6);
-    ctx.strokeStyle=`rgba(100,100,120,${gridAlpha})`;ctx.lineWidth=0.5;
+    ctx.strokeStyle=_isDay()?`rgba(80,50,10,${gridAlpha})`:`rgba(100,100,120,${gridAlpha})`;ctx.lineWidth=0.5;
     ctx.beginPath();
     for(let x=Math.max(minX,wx0);x<=Math.min(maxX+1,wx1);x++){const sx=(x-minX)*cs+panX;ctx.moveTo(sx,0);ctx.lineTo(sx,H);}
     for(let y=Math.max(minY,wy0);y<=Math.min(maxY+1,wy1);y++){const sy=(maxY-y)*cs+panY;ctx.moveTo(0,sy);ctx.lineTo(W,sy);}
@@ -440,7 +442,7 @@ function drawMinimap(){
   const mc=_mmCv||document.getElementById('minimap-canvas');
   const ctx=mc.getContext('2d');
   const MW=mc.width,MH=mc.height;
-  ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,MW,MH);
+  ctx.fillStyle=_isDay()?'#ccb880':'#0a0a14';ctx.fillRect(0,0,MW,MH);
   if(!tiles.length) return;
   const spanX=maxX-minX+1,spanY=maxY-minY+1;
   const sc=Math.min(MW/spanX,MH/spanY);
@@ -461,6 +463,6 @@ function drawMinimap(){
     ctx.fillRect(offX+(t.x-minX)*sc,offY+(maxY-t.y)*sc,Math.max(1,sc-0.2),Math.max(1,sc-0.2));
   }
   const cv=document.getElementById('map');
-  ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=1;
+  ctx.strokeStyle=_isDay()?'rgba(0,0,0,0.45)':'rgba(255,255,255,0.6)';ctx.lineWidth=1;
   ctx.strokeRect(offX+(-panX/(CELL*zoom))*sc,offY+(-panY/(CELL*zoom))*sc,(cv.width/(CELL*zoom))*sc,(cv.height/(CELL*zoom))*sc);
 }

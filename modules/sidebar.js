@@ -129,7 +129,7 @@ function copyPid(pid, e){
     if(!toast){
       toast = document.createElement('div');
       toast.id = 'copy-toast';
-      toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #444;color:#aaa;font-family:var(--font-mono);font-size:10px;padding:5px 14px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .2s';
+      toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${_isDay()?'#f5e6ce':'#1a1a1a'};border:1px solid ${_isDay()?'#c4924a':'#444'};color:${_isDay()?'#2a1808':'#aaa'};font-family:var(--font-mono);font-size:10px;padding:5px 14px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .2s`;
       document.body.appendChild(toast);
     }
     toast.textContent = 'Profile ID copied';

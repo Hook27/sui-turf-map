@@ -1,4 +1,4 @@
-// ── MODULE: ui-helpers.js ── Vendetta World Map v4.00 ──────────────────────────
+// ── MODULE: ui-helpers.js ── Vendetta World Map v4.13 ──────────────────────────
 
 // ── COORDINATE RULER ─────────────────────────────────────────────────────────
 function updateRuler(){
@@ -44,12 +44,20 @@ function updateRuler(){
 }
 function _openToolbarDD(btnId, ddId){
   // Close all other dropdowns first
+  const pairs = {['intel-dropdown']:'intel-btn', ['more-dropdown']:'more-btn'};
   ['intel-dropdown','more-dropdown'].forEach(id=>{
-    if(id!==ddId) document.getElementById(id).classList.remove('open');
+    if(id!==ddId){
+      document.getElementById(id).classList.remove('open');
+      document.getElementById(pairs[id])?.setAttribute('aria-expanded','false');
+    }
   });
   const btn = document.getElementById(btnId);
   const dd  = document.getElementById(ddId);
-  if(dd.classList.contains('open')){ dd.classList.remove('open'); return; }
+  if(dd.classList.contains('open')){
+    dd.classList.remove('open');
+    btn.setAttribute('aria-expanded','false');
+    return;
+  }
   const r = btn.getBoundingClientRect();
   dd.style.top  = (r.bottom + 2) + 'px';
   // On mobile: align right edge of dropdown to right edge of button
@@ -61,11 +69,18 @@ function _openToolbarDD(btnId, ddId){
     dd.style.left  = r.left + 'px';
   }
   dd.classList.add('open');
+  btn.setAttribute('aria-expanded','true');
 }
 function toggleIntelMenu(){ _openToolbarDD('intel-btn','intel-dropdown'); }
-function closeIntelMenu(){ document.getElementById('intel-dropdown').classList.remove('open'); }
+function closeIntelMenu(){
+  document.getElementById('intel-dropdown').classList.remove('open');
+  document.getElementById('intel-btn')?.setAttribute('aria-expanded','false');
+}
 function toggleMoreMenu(){ _openToolbarDD('more-btn','more-dropdown'); }
-function closeMoreMenu(){ document.getElementById('more-dropdown').classList.remove('open'); }
+function closeMoreMenu(){
+  document.getElementById('more-dropdown').classList.remove('open');
+  document.getElementById('more-btn')?.setAttribute('aria-expanded','false');
+}
 
 // ── COMPACT MODE ──────────────────────────────────────────────────────────────
 function toggleCompact(btn){
@@ -83,6 +98,35 @@ function toggleCompact(btn){
   setTimeout(()=>{ resizeCanvas(); drawMap(); drawMinimap(); }, 220);
 }
 
+// ── DAY / NIGHT THEME ────────────────────────────────────────────────────────
+var _THEME_KEY = 'vwm_theme';
+
+function _applyTheme(day){
+  document.documentElement.classList.toggle('day', day);
+  var btn = document.getElementById('theme-btn');
+  if(btn) btn.textContent = day ? '🌙' : '☀️';
+  // Defer canvas redraws so the CSS repaint can happen first
+  requestAnimationFrame(function(){
+    if(typeof drawMap     === 'function') drawMap();
+    if(typeof drawMinimap === 'function') drawMinimap();
+  });
+}
+
+function toggleTheme(){
+  var next = !document.documentElement.classList.contains('day');
+  localStorage.setItem(_THEME_KEY, next ? 'day' : 'night');
+  _applyTheme(next);
+}
+
+function initTheme(){
+  // Sync button icon with the class already applied by the inline FOUC script
+  var day = document.documentElement.classList.contains('day');
+  var btn = document.getElementById('theme-btn');
+  if(btn) btn.textContent = day ? '🌙' : '☀️';
+}
+
+initTheme();
+
 // ── TOP 10 MODE ───────────────────────────────────────────────────────────────
 function toggleTop10(){
   top10Mode=!top10Mode;
@@ -94,3 +138,114 @@ function toggleTop10(){
   }
   drawMap();
 }
+
+// ── FOCUS MANAGEMENT (WCAG 2.1) ──────────────────────────────────────────────
+(function(){
+  var _stack = []; // [{id, trigger}]
+
+  function _focusable(el){
+    return Array.prototype.slice.call(
+      el.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')
+    ).filter(function(e){ return e.offsetParent !== null; });
+  }
+
+  function _push(id){
+    var trigger = document.activeElement;
+    _stack.push({id:id, trigger:trigger});
+    var modal = document.getElementById(id);
+    if(!modal) return;
+    setTimeout(function(){
+      var first = _focusable(modal)[0];
+      if(first) first.focus();
+      else { modal.tabIndex = -1; modal.focus(); }
+    }, 60);
+  }
+
+  function _pop(id){
+    var idx = -1;
+    for(var i=_stack.length-1;i>=0;i--){ if(_stack[i].id===id){ idx=i; break; } }
+    if(idx<0) return;
+    var trigger = _stack.splice(idx,1)[0].trigger;
+    setTimeout(function(){
+      if(trigger && document.contains(trigger)) trigger.focus();
+    }, 30);
+  }
+
+  // MutationObserver: watch class and style changes on all [role="dialog"] elements
+  var observer = new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      var el = m.target;
+      if(el.getAttribute('role') !== 'dialog') return;
+      var id = el.id;
+      if(!id) return;
+      var isOpen = el.classList.contains('open') ||
+                   el.style.display === 'flex' ||
+                   el.style.display === 'block';
+      var wasOpen;
+      if(m.attributeName === 'class'){
+        wasOpen = (m.oldValue || '').indexOf('open') > -1;
+      } else { // style
+        var prev = m.oldValue || '';
+        wasOpen = prev.indexOf('flex') > -1 || prev.indexOf('block') > -1;
+      }
+      if(isOpen && !wasOpen) _push(id);
+      if(!isOpen && wasOpen) _pop(id);
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('[role="dialog"]').forEach(function(el){
+      observer.observe(el, {attributes:true, attributeOldValue:true, attributeFilter:['class','style']});
+    });
+  });
+
+  // ESC: close topmost dialog or dropdowns
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    if(_stack.length){
+      var top = _stack[_stack.length-1];
+      var modal = document.getElementById(top.id);
+      if(!modal) return;
+      // Click the first close button in the dialog
+      var closeBtn = modal.querySelector('button[aria-label^="Close"]') ||
+                     modal.querySelector('[id$="-close"]');
+      if(closeBtn) closeBtn.click();
+    } else {
+      if(typeof closeIntelMenu === 'function') closeIntelMenu();
+      if(typeof closeMoreMenu  === 'function') closeMoreMenu();
+    }
+  });
+
+  // Tab: focus trap inside topmost dialog
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Tab' || !_stack.length) return;
+    var top = _stack[_stack.length-1];
+    var modal = document.getElementById(top.id);
+    if(!modal) return;
+    var focusable = _focusable(modal);
+    if(focusable.length < 2) return;
+    var first = focusable[0], last = focusable[focusable.length-1];
+    if(e.shiftKey){
+      if(document.activeElement === first){ last.focus(); e.preventDefault(); }
+    } else {
+      if(document.activeElement === last){ first.focus(); e.preventDefault(); }
+    }
+  });
+
+  // Arrow keys: navigate between tabs in a tablist
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    var focused = document.activeElement;
+    if(!focused || focused.getAttribute('role') !== 'tab') return;
+    var tablist = focused.closest('[role="tablist"]');
+    if(!tablist) return;
+    var tabs = Array.prototype.slice.call(tablist.querySelectorAll('[role="tab"]'));
+    var idx = tabs.indexOf(focused);
+    var next = e.key === 'ArrowRight'
+      ? tabs[(idx + 1) % tabs.length]
+      : tabs[(idx - 1 + tabs.length) % tabs.length];
+    next.focus();
+    next.click();
+    e.preventDefault();
+  });
+})();

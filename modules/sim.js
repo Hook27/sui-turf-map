@@ -125,7 +125,7 @@ function _renderTileAdvice(el, tile){
     const rowsHtml=top3.map((c,i)=>{
       const roundsColor=c.avgRounds>16?'#E24B4A':c.avgRounds>12?'#FAC775':'#6fffa9';
       const winColor=c.winPct>=80?'#6fffa9':c.winPct>=50?'#FAC775':'#E24B4A';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #111">
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid ${_isDay()?'#e0ccaa':'#111'}">
         <div style="font-size:12px">${i===0?'<span style="color:#FAC775">★</span> ':''}${_atkLabel(c)} <span style="color:#888;font-size:10px">(${c.total})</span></div>
         <div style="text-align:right;font-size:11px;font-family:var(--font-mono)">
           <span style="color:${winColor}">${c.winPct.toFixed(0)}%</span>
@@ -169,10 +169,10 @@ function renderAttackAdvisor(){
   if(otherTiles.length){
     const btnHtml=otherTiles.map(t=>{
       const tot=t.gE+t.gB+t.gH;
-      return `<button onclick="_lastClickedTile=tiles[tileMap.get('${t.x},${t.y}')];renderAttackAdvisor()" style="font-size:9px;padding:3px 8px;margin:2px;font-family:var(--font-mono);background:#111;border:1px solid #222;color:#888;cursor:pointer;border-radius:2px">(${t.x},${t.y}) ${tot}u</button>`;
+      return `<button onclick="_lastClickedTile=tiles[tileMap.get('${t.x},${t.y}')];renderAttackAdvisor()" style="font-size:9px;padding:3px 8px;margin:2px;font-family:var(--font-mono);background:${_isDay()?'#ecddb8':'#111'};border:1px solid ${_isDay()?'#c4924a':'#222'};color:${_isDay()?'#806030':'#888'};cursor:pointer;border-radius:2px">(${t.x},${t.y}) ${tot}u</button>`;
     }).join('');
-    el.innerHTML+=`<div style="padding:0 18px 14px;border-top:1px solid #111;margin-top:4px">
-      <div style="font-size:9px;color:#777;font-family:var(--font-mono);margin:8px 0 4px">OTHER GARRISONED TURFS:</div>
+    el.innerHTML+=`<div style="padding:0 18px 14px;border-top:1px solid ${_isDay()?'#d0b880':'#111'};margin-top:4px">
+      <div style="font-size:9px;color:${_isDay()?'#806030':'#777'};font-family:var(--font-mono);margin:8px 0 4px">OTHER GARRISONED TURFS:</div>
       ${btnHtml}
     </div>`;
   }

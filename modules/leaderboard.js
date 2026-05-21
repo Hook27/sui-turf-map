@@ -8,8 +8,8 @@ function lbSetPeriod(p){
   ['24h','7d','cw'].forEach(id=>{
     const btn=document.getElementById('lb-period-'+id);
     if(!btn) return;
-    btn.style.borderColor = p===id ? 'var(--v-gold)' : '#333';
-    btn.style.color       = p===id ? 'var(--v-gold)' : '#666';
+    btn.style.borderColor = p===id ? 'var(--v-gold)' : (_isDay()?'#c4924a':'#333');
+    btn.style.color       = p===id ? 'var(--v-gold)' : (_isDay()?'#a08050':'#666');
   });
   renderLeaderboard();
 }
@@ -26,7 +26,7 @@ function closeLeaderboard(){
 
 function renderLeaderboard(){
   const el=document.getElementById('lb-list');
-  el.innerHTML='<div style="padding:1rem;color:#666;font-size:11px">Loading...</div>';
+  el.innerHTML=`<div style="padding:1rem;color:${_isDay()?'#806030':'#666'};font-size:11px">Loading...</div>`;
   const header=document.getElementById('lb-header');
 
   // ── Cash/Weapons tab ────────────────────────────────────────────────────────
@@ -42,13 +42,13 @@ function renderLeaderboard(){
       const rank=i+1;
       const isMe=MY_IDS.has(p.pid);
       const dotCol=markColor(p.pid,p.color||'#666');
-      const rankCol=rank<=3?'#FAC775':rank<=10?'#aaa':'#555';
-      const inactive=p.inactive?'<span style="color:#555;font-size:8px"> INACT</span>':'';
-      return `<div class="lb-row" onclick="closeLeaderboard();showMiniProfile(event,'${p.pid}')" style="display:grid;grid-template-columns:32px 1fr 80px 80px;padding:6px 14px;border-bottom:1px solid #111;cursor:pointer;${isMe?'background:#0a0a1a':''}">
+      const rankCol=rank<=3?'#FAC775':rank<=10?'#aaa':(_isDay()?'#a08050':'#555');
+      const inactive=p.inactive?`<span style="color:${_isDay()?'#a08050':'#555'};font-size:8px"> INACT</span>`:'';
+      return `<div class="lb-row" onclick="closeLeaderboard();showMiniProfile(event,'${p.pid}')" style="display:grid;grid-template-columns:32px 1fr 80px 80px;padding:6px 14px;border-bottom:1px solid ${_isDay()?'#e0ccaa':'#111'};cursor:pointer;${isMe?(_isDay()?'background:#dceef8':'background:#0a0a1a'):''}">
         <span style="color:${rankCol};font-size:10px">${rank}</span>
         <span style="display:flex;align-items:center;gap:6px">
           <span style="width:8px;height:8px;border-radius:1px;background:${dotCol};flex-shrink:0;display:inline-block"></span>
-          <span style="font-size:11px;color:${isMe?'#FAC775':'#ccc'}">${esc(p.name||'[unknown]')}${inactive}</span>
+          <span style="font-size:11px;color:${isMe?'#FAC775':(_isDay()?'#2a1808':'#ccc')}">${esc(p.name||'[unknown]')}${inactive}</span>
         </span>
         <span style="text-align:right;font-size:11px;color:#FAC775">${fmtNum(p.cash)}</span>
         <span style="text-align:right;font-size:11px;color:#e07050">${fmtNum(p.weapons)}</span>
@@ -120,33 +120,36 @@ function renderLeaderboard(){
     const prevTiles = prevCounts?.[p.pid] ?? null;
     const tileDiff = prevTiles!=null ? p.tiles - prevTiles : null;
 
+    const _nd = _isDay();
+    const _neu = _nd?'#a08050':'#555'; // neutral/dim color
+
     // Rank trend
-    let trendHtml = '<span style="color:#555">—</span>';
+    let trendHtml = `<span style="color:${_neu}">—</span>`;
     if(prevRank!=null){
       const rd = prevRank - rank; // positive = moved up
       if(rd>0)       trendHtml=`<span style="color:#6fffa9">▲${rd}</span>`;
       else if(rd<0)  trendHtml=`<span style="color:#E24B4A">▼${Math.abs(rd)}</span>`;
-      else           trendHtml='<span style="color:#555">═</span>';
+      else           trendHtml=`<span style="color:${_neu}">═</span>`;
     }
 
     // Tile change
-    let changeHtml = '<span style="color:#555">—</span>';
+    let changeHtml = `<span style="color:${_neu}">—</span>`;
     if(tileDiff!=null){
       if(tileDiff>0)      changeHtml=`<span style="color:#6fffa9">+${tileDiff}</span>`;
       else if(tileDiff<0) changeHtml=`<span style="color:#E24B4A">${tileDiff}</span>`;
-      else                changeHtml='<span style="color:#555">0</span>';
+      else                changeHtml=`<span style="color:${_neu}">0</span>`;
     }
 
     const isMe = MY_IDS.has(p.pid);
     const dotCol = markColor(p.pid, p.color||'#666');
-    const rankCol = rank<=3?'#FAC775':rank<=10?'#aaa':'#555';
-    const inactive = p.inactive?'<span style="color:#555;font-size:8px"> INACT</span>':'';
+    const rankCol = rank<=3?'#FAC775':rank<=10?'#aaa':_neu;
+    const inactive = p.inactive?`<span style="color:${_neu};font-size:8px"> INACT</span>`:'';
 
-    return `<div class="lb-row" onclick="closeLeaderboard();showMiniProfile(event,'${p.pid}')" style="display:grid;grid-template-columns:32px 1fr 52px 52px 52px;padding:6px 14px;border-bottom:1px solid #111;cursor:pointer;${isMe?'background:#0a0a1a':''}">
+    return `<div class="lb-row" onclick="closeLeaderboard();showMiniProfile(event,'${p.pid}')" style="display:grid;grid-template-columns:32px 1fr 52px 52px 52px;padding:6px 14px;border-bottom:1px solid ${_nd?'#e0ccaa':'#111'};cursor:pointer;${isMe?(_nd?'background:#dceef8':'background:#0a0a1a'):''}">
       <span style="color:${rankCol};font-size:10px">${rank}</span>
       <span style="display:flex;align-items:center;gap:6px">
         <span style="width:8px;height:8px;border-radius:1px;background:${dotCol};flex-shrink:0;display:inline-block"></span>
-        <span style="font-size:11px;color:${isMe?'#FAC775':'#ccc'}">${esc(p.name||'[unknown]')}${inactive}</span>
+        <span style="font-size:11px;color:${isMe?'#FAC775':(_nd?'#2a1808':'#ccc')}">${esc(p.name||'[unknown]')}${inactive}</span>
       </span>
       <span style="text-align:right;font-size:11px;color:#aaa">${p.tiles}</span>
       <span style="text-align:right;font-size:11px">${changeHtml}</span>

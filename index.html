@@ -36,7 +36,7 @@ body{font-family:var(--font-mono);background:var(--v-bg);color:#ccc;height:100vh
 #intel-dropdown.open{display:block}
 #more-dropdown{position:fixed;z-index:500;display:none}
 #more-dropdown.open{display:block}
-#toolbar h1{font-family:var(--font-bangers);font-size:20px;font-weight:400;color:#fff;white-space:nowrap;margin-right:2px;letter-spacing:2px;text-transform:uppercase}
+#toolbar h1{font-family:var(--font-bangers);font-size:16px;font-weight:400;color:#fff;white-space:nowrap;margin-right:2px;letter-spacing:2px;text-transform:uppercase}
 
 /* Ruby-style buttons */
 button{
@@ -528,28 +528,287 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 /* ── END: css-misc ── */
 
+/* ── BLOCK: css-day-theme ── */
+/* ── DAY / SEPIA THEME ── */
+/* Applied via html.day class — set synchronously before first paint to avoid flash. */
+
+/* Override palette variables */
+html.day {
+  --v-gold: #8a5e10;
+  --v-red:  #c0392b;
+  --v-green:#1a7a4a;
+  --v-blue: #1a60b0;
+}
+
+/* Typography & base */
+html.day body { background:#f5e6ce; color:#2a1808; }
+
+/* Toolbar */
+html.day #toolbar { background:#e8d4b0; border-color:#c4924a; }
+html.day #toolbar h1 { color:#2a1808; }
+html.day .sep { background:#c4924a; }
+html.day #age { color:#806030; }
+html.day #ver { color:#a08050; }
+html.day #route-indicator { background:#d4f0e4; border-color:#1a7a4a; color:#1a7a4a; box-shadow:2px 2px 0 #a0d0b0; }
+
+/* Ticker */
+html.day #ticker-bar { background:#f0ddb0; border-color:#c4924a; }
+html.day #ticker-label { border-right-color:#c4924a; color:#8a5e10; }
+html.day #ticker-inner { color:#806030; }
+html.day .tk-sep { color:#c4924a; }
+
+/* Map area */
+html.day #map-wrap { background:#d8c8a0; }
+html.day #minimap-canvas { background:#ccb880; border-color:#c4924a; }
+html.day #zoom-indicator { background:rgba(240,224,180,0.88); border-color:#c4924a; color:#806030; }
+html.day #zoom-btns button { background:#f5e6ce; border-color:#8a6020; box-shadow:2px 2px 0 #c4924a; color:#4a3010; }
+html.day #zoom-btns button:hover { background:#e8d8b0; color:#2a1808; box-shadow:3px 3px 0 #c4924a; }
+
+/* Tip popup */
+html.day #tip { background:#f5e6ce; border-color:#c4924a; box-shadow:4px 4px 0 #c4924a; }
+html.day #tip .tname { color:#2a1808; }
+html.day #tip .tpos { color:#a08050; }
+html.day #touch-tooltip { background:#f5e6ce; border-color:#c4924a; box-shadow:5px 5px 0 #c4924a; }
+html.day #touch-tooltip .tname { color:#2a1808; }
+
+/* Route panel */
+html.day #route-panel { background:#f5e6ce; border-color:#c4924a; box-shadow:4px 4px 0 #c4924a; }
+html.day #route-panel h3 { color:var(--v-gold); }
+html.day .route-name { color:#2a1808; }
+html.day .route-stat-label { color:#806030; }
+
+/* Right panel / sidebar */
+html.day #right-panel { background:#f5e6ce; border-color:#c4924a; }
+html.day #sidebar-head { border-color:#d8c8a0; }
+html.day .stat { background:#ecddb8; border-color:#d0b880; box-shadow:2px 2px 0 #c4924a; color:#806030; }
+html.day .stat b { color:#2a1808; }
+html.day #search { background:#f5e6ce; color:#2a1808; border-color:#c4924a; }
+html.day #search::placeholder { color:#a08050; }
+html.day #search:focus { border-color:#8a5e10; }
+html.day #search-clear { color:#a08050; }
+html.day .filter-row .fb { border-color:#c4924a; background:transparent; color:#806030; box-shadow:none; }
+html.day .filter-row .fb:hover { border-color:#8a5e10; color:#2a1808; }
+html.day .filter-row .fb.on { border-color:var(--v-blue); color:var(--v-blue); background:#dceef8; box-shadow:2px 2px 0 #5090c0; }
+html.day #inactivity-row label { color:#806030; }
+html.day #inactivity-select { background:#f5e6ce; color:#2a1808; border-color:#c4924a; }
+
+/* Player list */
+html.day #player-list { background:#f5e6ce; }
+html.day .prow { border-color:#e0ccaa; }
+html.day .prow:hover { background:#ecddb8; }
+html.day .prow.active { background:#dceef8; border-left-color:var(--v-blue); }
+html.day .prow.me { border-left-color:var(--v-gold); }
+html.day .prow.route-a { background:#d4f0e4; border-left-color:var(--v-green); }
+html.day .prow.route-b { background:#f4dcd8; border-left-color:var(--v-red); }
+html.day .prow.friend { border-left-color:var(--v-green); }
+html.day .prow.enemy  { border-left-color:var(--v-red); }
+html.day .prank { color:#c4924a; }
+html.day .pname { color:#2a1808; }
+html.day .pname.unnamed { color:#a08050; }
+html.day .ptiles { color:#806030; }
+html.day .plcd { color:#a08050; }
+html.day .p-gar-btn { background:#ecddb8; border-color:#c4924a; box-shadow:1px 1px 0 #c4924a; color:var(--v-blue); }
+html.day .p-mark-btn { background:transparent; border-color:#c4924a; color:#a08050; box-shadow:none; }
+html.day .p-mark-btn:hover { border-color:#8a5e10; color:#2a1808; }
+
+/* Buttons — sepia style */
+html.day button { background:#f5e6ce; color:#2a1808; border-color:#8a6020; box-shadow:2.5px 2.5px 0 #c4924a; }
+html.day button:hover { background:#ecddb8; box-shadow:3.5px 3.5px 0 #c4924a; }
+html.day button:active { box-shadow:none; }
+html.day button.active { background:#c8f0dc; border-color:var(--v-green); color:#1a5a2a; box-shadow:2.5px 2.5px 0 #90c8a0; }
+html.day button.primary { background:var(--v-blue); border-color:#1040a0; color:#fff; box-shadow:2.5px 2.5px 0 #1040a0; }
+html.day button.primary:hover { background:#2070c0; }
+html.day button:disabled { opacity:.45; box-shadow:none; }
+html.day button.top10-active { background:#f8f0d8; border-color:var(--v-gold); color:var(--v-gold); box-shadow:2.5px 2.5px 0 #c4924a; }
+
+/* Theme toggle button: borderless in both modes */
+html.day #theme-btn { background:transparent; border-color:transparent; color:#806030; box-shadow:none; }
+
+/* Dropdown menus */
+html.day .toolbar-dd-menu { background:#f5e6ce; border-color:#c4924a; box-shadow:4px 4px 0 #c4924a; }
+html.day .toolbar-dd-menu button { background:#f5e6ce; color:#2a1808; border-color:#e0ccaa; box-shadow:none; }
+html.day .toolbar-dd-menu button:hover { background:#ecddb8; box-shadow:none; }
+
+/* Data-tip tooltip */
+html.day [data-tip]:hover::after { background:#ecddb8; border-color:#c4924a; color:#2a1808; }
+
+/* Neighbor popup */
+html.day #neighbor-popup { background:#f5e6ce; border-color:#c4924a; box-shadow:5px 5px 0 #c4924a; }
+html.day #neighbor-head { background:#ecddb8; border-color:#d0b880; }
+html.day #neighbor-head h3 { color:var(--v-gold); }
+html.day #neighbor-close { color:#806030; }
+html.day #neighbor-close:hover { color:#2a1808; }
+html.day .nrow { border-color:#e0ccaa; }
+html.day .nrow:hover { background:#ecddb8; }
+html.day .nname { color:#2a1808; }
+html.day .nname.unnamed { color:#a08050; }
+html.day .ncontact { color:#806030; }
+html.day .nroute { background:#f5e6ce; border-color:#c4924a; color:#806030; box-shadow:1px 1px 0 #c4924a; }
+html.day .nroute:hover { background:var(--v-blue); border-color:var(--v-blue); color:#fff; }
+html.day .nmark { border-color:#c4924a; color:#806030; }
+
+/* Garrison modal */
+html.day #garrison-box { background:#f5e6ce; border-color:#c4924a; box-shadow:6px 6px 0 #c4924a; }
+html.day #garrison-head { background:#ecddb8; border-color:#d0b880; }
+html.day #garrison-title { color:#2a1808; }
+html.day #garrison-subtitle { color:#806030; }
+html.day #garrison-close { color:#806030; }
+html.day #garrison-close:hover { color:#2a1808; }
+html.day #garrison-live-section { background:#f8f2e4; border-color:#d8c8a0; }
+html.day #garrison-tabs { background:#ecddb8; border-color:#d0b880; }
+html.day .gar-tab { color:#806030; background:transparent; box-shadow:none; }
+html.day .gar-tab:hover { color:#2a1808; background:transparent; box-shadow:none; }
+html.day .gar-tab.active { color:var(--v-gold); border-color:var(--v-gold); background:#f5e6ce; box-shadow:none; }
+html.day .gar-nav-row { border-color:#e0ccaa; }
+html.day .gar-nav-row:hover { background:#ecddb8; }
+html.day .gar-nav-pos { color:#4a3010; }
+html.day .gar-row { border-color:#e0ccaa; }
+html.day .gar-row:hover { background:#ecddb8; }
+html.day .gar-row.selected { background:#d4f0e4; border-color:var(--v-green); }
+html.day .gar-pos { color:#806030; }
+html.day .gar-total { color:#806030; }
+html.day #garrison-recall-bar { background:#ecddb8; border-color:#d0b880; }
+html.day #garrison-recall-info { color:#806030; }
+html.day .gar-check { accent-color:var(--v-green); }
+html.day #gar-nav-sort-reset, html.day #gar-sort-reset, html.day #garrison-select-all { background:transparent; border-color:#c4924a; color:#806030; box-shadow:none; }
+/* Garrison sticky column headers — inline background:#111 requires !important */
+html.day #gar-nav-sticky, html.day #gar-recall-sticky { background:#f5e6ce!important; }
+html.day #gar-nav-head, html.day #gar-recall-head { border-bottom-color:#c4924a!important; color:#806030!important; }
+html.day #gar-nav-filter-row, html.day #gar-recall-filter-row { border-bottom-color:#d8c8a0!important; background:#f5e6ce; }
+
+/* Leaderboard modal — inline styles need !important */
+html.day #leaderboard-modal > div { background:#f5e6ce!important; border-color:#c4924a!important; }
+html.day #leaderboard-modal > div > div:first-child { background:#ecddb8!important; border-bottom-color:#d0b880!important; }
+html.day #lb-header { border-bottom-color:#d8c8a0!important; background:#ecddb8; color:#806030!important; }
+html.day #lb-subtitle { color:#806030; }
+html.day .lb-row { border-color:#e0ccaa; }
+html.day .lb-row:hover { background:#ecddb8; }
+
+/* Mini-profile modal — inline styles need !important */
+html.day #miniprofile-box { background:#f5e6ce!important; border-color:#c4924a!important; box-shadow:4px 4px 0 #c4924a; }
+html.day #miniprofile-box > div:first-child { background:#ecddb8!important; border-bottom-color:#d0b880!important; }
+html.day #mp-name { color:var(--v-gold); }
+
+/* Soft targets */
+html.day #softtarget-box { background:#f5e6ce; border-color:#c4924a; box-shadow:6px 6px 0 #c4924a; }
+html.day #softtarget-head { background:#ecddb8; border-color:#d0b880; }
+html.day #softtarget-title { color:var(--v-red); }
+html.day #softtarget-subtitle { color:#806030; }
+html.day #softtarget-close { color:#806030; }
+html.day #softtarget-colheads { color:#806030; border-color:#d0b880; }
+html.day .st-row { border-color:#e0ccaa; }
+html.day .st-row:hover { background:#ecddb8; }
+html.day .st-name { color:#2a1808; }
+html.day .st-lcd.warn { color:#8a5e10; }
+html.day .st-lcd.old  { color:var(--v-red); }
+html.day .st-route-btn { border-color:var(--v-blue); color:var(--v-blue); background:#dceef8; box-shadow:1px 1px 0 #5090c0; }
+
+/* Report modal */
+html.day #report-box { background:#f5e6ce; border-color:#c4924a; }
+html.day #report-head { background:#ecddb8; border-color:#d0b880; }
+html.day #report-close { color:#806030; }
+
+/* Profile modal */
+html.day #profile-box { background:#f5e6ce; border-color:#c4924a; }
+html.day #profile-box h2 { color:#2a1808; }
+html.day #profile-box p { color:#806030; }
+html.day #profile-search { background:#f5e6ce; color:#2a1808; border-color:#c4924a; }
+html.day #profile-results { border-color:#d0b880; }
+html.day .profile-result-row { border-color:#e0ccaa; }
+html.day .profile-result-row:hover { background:#ecddb8; }
+html.day .profile-result-row .pr-name { color:#2a1808; }
+html.day .profile-result-row .pr-tiles { color:#806030; }
+html.day .profile-entry-name { color:var(--v-gold); }
+html.day .profile-entry-pid { color:#806030; }
+html.day #profile-wallet-input { background:#f5e6ce!important; color:#2a1808!important; border-color:#c4924a!important; }
+html.day #profile-wallet-status { color:#806030!important; }
+
+/* Battle Analyzer modal */
+html.day #battle-analyzer-modal > div { background:#f5e6ce!important; border-color:#c4924a!important; }
+html.day #battle-analyzer-modal > div > div:first-child { background:#ecddb8!important; border-bottom-color:#d0b880!important; }
+html.day .ba-input-row { background:#ecddb8!important; border-bottom-color:#d8c8a0!important; }
+html.day #ba-url-input { background:#f5e6ce!important; color:#2a1808!important; border-color:#c4924a!important; }
+html.day #ba-wallet-label { color:#806030!important; }
+html.day #ba-result { color:#806030; }
+html.day .ba-def-panel { background:#ecddb8; border-color:#d0b880; }
+html.day .ba-right { background:#ecddb8; border-color:#d0b880; }
+html.day .ba-unit-label { color:#806030; }
+html.day .ba-unit-count.zero { color:#c0a878; }
+html.day .ba-meta { color:#806030; }
+html.day .ba-meta span { color:#4a3010; }
+html.day .ba-atk-table th { color:#806030; border-bottom-color:#d0b880; }
+html.day .ba-atk-table td { border-bottom-color:#e0ccaa; }
+html.day .ba-atk-table td:first-child { color:#2a1808; }
+html.day .ba-atk-table tr.ba-def-row td { color:#806030; }
+
+/* Wallet / Recall modal */
+html.day #wallet-box { background:#f5e6ce; border-color:#c4924a; }
+html.day #wallet-box h2 { color:#2a1808; }
+html.day #wallet-box .wsub { color:#806030; }
+html.day .wallet-label { color:#806030; }
+html.day .wallet-input { background:#f5e6ce; color:#2a1808; border-color:#c4924a; }
+html.day .wallet-input:focus { border-color:#8a5e10; }
+html.day #wallet-status, html.day #wallet-progress { color:#806030; }
+html.day #wallet-close { color:#806030; }
+
+/* Refresh modal */
+html.day #refresh-box { background:#f5e6ce; border-color:#c4924a; }
+html.day #refresh-box h2 { color:#2a1808; }
+html.day #refresh-box p { color:#806030; }
+html.day #refresh-box input { background:#f5e6ce; color:#2a1808; border-color:#c4924a; }
+html.day #refresh-box input:focus { border-color:#8a5e10; }
+
+/* Mobile floating buttons */
+html.day #sidebar-toggle { background:#f5e6ce; border-color:#c4924a; color:#806030; }
+html.day #maponly-btn { background:#f5e6ce; border-color:#c4924a; color:#806030; }
+
+/* ── END: css-day-theme ── */
+
+/* ── WCAG: SKIP LINK ── */
+.skip-link{position:absolute;top:-48px;left:6px;background:#111;color:#fff;padding:6px 12px;z-index:9999;font-family:var(--font-mono);font-size:11px;text-decoration:none;border:2px solid #555;transition:top .1s}
+.skip-link:focus{top:6px}
+html.day .skip-link{background:#f5e6ce;color:#2a1808;border-color:#c4924a}
+
+/* ── WCAG: FOCUS INDICATORS ── */
+button:focus-visible{outline:2px solid var(--v-gold)!important;outline-offset:2px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--v-gold)!important;outline-offset:1px}
+a:focus-visible{outline:2px solid var(--v-gold)!important;outline-offset:2px}
+
 </style>
+<script>
+// Synchronously apply theme class to <html> before first paint to prevent FOUC.
+(function(){
+  var s=localStorage.getItem('vwm_theme');
+  var day=s==='day';
+  if(day) document.documentElement.classList.add('day');
+})();
+</script>
 </head>
 <body>
+<a href="#player-list" class="skip-link">Skip to player list</a>
 
 <!-- ── BLOCK: html-toolbar ── -->
-<div id="toolbar">
+<div id="toolbar" role="navigation" aria-label="Main navigation">
 <div id="toolbar-scroll">
-  <h1>Vendetta World Map</h1><span id="ver" style="font-size:8px;color:#999;margin-right:8px;flex-shrink:0;font-family:var(--font-mono)">v4.12</span>
+  <h1>Vendetta World Map</h1>
   <div class="sep"></div>
-  <button id="route-btn" class="tb-btn" onclick="toggleRouteMode()">🗺 <span class="tb-label">Route</span></button>
-  <span id="route-indicator">Click a turf or player to select A → B</span>
-  <button id="battle-btn" class="tb-btn" onclick="toggleBattleHistory()" style="display:none">⚔ <span class="tb-label">24h</span></button>
-  <button id="top10-btn" class="tb-btn" onclick="toggleTop10()">★ <span class="tb-label">Top 10</span></button>
-  <button id="leaderboard-btn" class="tb-btn" onclick="openLeaderboard()">📈 <span class="tb-label">Leaderboard</span></button>
-  <button id="battle-analyzer-btn" class="tb-btn" onclick="openBattleAnalyzer()">⚔ <span class="tb-label">Battle</span></button>
+  <button id="route-btn" class="tb-btn" onclick="toggleRouteMode()" aria-label="Toggle route mode">🗺 <span class="tb-label">Route</span></button>
+  <span id="route-indicator" aria-live="polite">Click a turf or player to select A → B</span>
+  <button id="battle-btn" class="tb-btn" onclick="toggleBattleHistory()" style="display:none" aria-label="24h battle history">⚔ <span class="tb-label">24h</span></button>
+  <button id="top10-btn" class="tb-btn" onclick="toggleTop10()" aria-label="Toggle top 10 mode">★ <span class="tb-label">Top 10</span></button>
+  <button id="leaderboard-btn" class="tb-btn" onclick="openLeaderboard()" aria-label="Open leaderboard">📈 <span class="tb-label">Leaderboard</span></button>
+  <button id="battle-analyzer-btn" class="tb-btn" onclick="openBattleAnalyzer()" aria-label="Open battle analyzer">⚔ <span class="tb-label">Battle</span></button>
   <div class="sep"></div>
-  <button id="intel-btn" class="tb-btn" onclick="toggleIntelMenu()" disabled data-tip="Select a player first">🔍 <span class="tb-label">Intel</span> ▾</button>
-  <button onclick="toggleMoreMenu()" id="more-btn" class="tb-btn">⋯ <span class="tb-label">More</span> ▾</button>
+  <button id="intel-btn" class="tb-btn" onclick="toggleIntelMenu()" disabled data-tip="Select a player first" aria-label="Intel menu" aria-haspopup="true" aria-expanded="false">🔍 <span class="tb-label">Intel</span> ▾</button>
+  <button onclick="toggleMoreMenu()" id="more-btn" class="tb-btn" aria-label="More options menu" aria-haspopup="true" aria-expanded="false">⋯ <span class="tb-label">More</span> ▾</button>
   <div class="sep"></div>
-  <a href="guide.html" target="_blank" style="text-decoration:none"><button class="tb-btn" style="border-color:#555;color:#aaa">? <span class="tb-label">Guide</span></button></a>
+  <a href="guide.html" target="_blank" style="text-decoration:none" aria-label="Open guide (opens in new tab)"><button class="tb-btn" style="border-color:#555;color:#aaa">? <span class="tb-label">Guide</span></button></a>
   <div class="sep"></div>
-  <span id="age"></span>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;line-height:1.3">
+    <span id="age" style="font-size:9px"></span>
+    <span id="ver" style="font-size:7px;color:#999;font-family:var(--font-mono)">v4.13</span>
+  </div>
+  <button id="theme-btn" onclick="toggleTheme()" style="padding:4px 6px;background:transparent;border-color:transparent;color:#aaa;box-shadow:none;min-width:0;font-size:16px;line-height:1" data-tip="Toggle day/night" aria-label="Toggle day/night theme">☀️</button>
 </div>
 <div id="intel-dropdown">
   <div class="toolbar-dd-menu">
@@ -580,26 +839,26 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 <div id="ticker-bar">
   <div id="ticker-label">📡 LIVE</div>
   <div id="ticker-track">
-    <div id="ticker-inner"></div>
+    <div id="ticker-inner" aria-hidden="true"></div>
   </div>
-  <button onclick="closeTicker()" style="background:transparent;border:none;color:#999;cursor:pointer;font-size:14px;padding:0 8px;line-height:1;margin-left:4px;box-shadow:none;flex-shrink:0" data-tip="Close ticker">✕</button>
+  <button onclick="closeTicker()" style="background:transparent;border:none;color:#999;cursor:pointer;font-size:14px;padding:0 8px;line-height:1;margin-left:4px;box-shadow:none;flex-shrink:0" data-tip="Close ticker" aria-label="Close live ticker">✕</button>
 </div>
 
 <!-- Timeline bar -->
 
 
-<div id="main">
+<div id="main" role="main">
   <div id="map-wrap">
-    <canvas id="map"></canvas>
+    <canvas id="map" role="img" aria-label="Vendetta world map showing player territories"></canvas>
     <div id="ruler-x"></div>
     <div id="ruler-y"></div>
     <div id="zoom-indicator">zoom ×1.0</div>
 
     <div id="tip"><div class="tname"></div><div class="tpos"></div><div class="thq"></div><div class="tgar"></div><div class="tghost"></div></div>
     <div id="zoom-btns">
-      <button onclick="zoomBy(1.3)">+</button>
-      <button onclick="zoomBy(0.77)">−</button>
-      <button onclick="resetView()" style="font-size:11px">⊡</button>
+      <button onclick="zoomBy(1.3)" aria-label="Zoom in">+</button>
+      <button onclick="zoomBy(0.77)" aria-label="Zoom out">−</button>
+      <button onclick="resetView()" style="font-size:11px" aria-label="Fit map to screen">⊡</button>
     </div>
     <button id="sidebar-toggle" onclick="toggleSidebar()" data-tip="Player list">☰</button>
     <button id="maponly-btn" onclick="toggleMapOnly()" data-tip="Map only">⛶</button>
@@ -626,7 +885,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     </div>
   </div>
 
-  <div id="right-panel">
+  <div id="right-panel" role="complementary" aria-label="Player list">
     <div id="sidebar">
       <div id="sidebar-head">
         <div class="stats-row">
@@ -634,8 +893,8 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
           <div class="stat"><b id="s-tiles">—</b>turfs</div>
         </div>
         <div style="position:relative;display:flex;align-items:center">
-          <input type="text" id="search" placeholder="Search player..." oninput="onSearchInput(this)" style="width:100%;padding-right:28px">
-          <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;background:transparent;border:none;color:#999;font-size:14px;cursor:pointer;padding:2px;line-height:1">✕</button>
+          <input type="text" id="search" placeholder="Search player..." oninput="onSearchInput(this)" style="width:100%;padding-right:28px" aria-label="Search players by name, ID or wallet">
+          <button id="search-clear" onclick="clearSearch()" style="display:none;position:absolute;right:6px;background:transparent;border:none;color:#999;font-size:14px;cursor:pointer;padding:2px;line-height:1" aria-label="Clear search">✕</button>
         </div>
         <div class="filter-row">
           <button class="fb on" onclick="setFilter('all',this)">All</button>
@@ -645,8 +904,8 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
           <button class="fb" id="compact-btn" onclick="toggleCompact(this)" style="margin-left:auto" data-tip="Compact view">⊟</button>
         </div>
         <div id="inactivity-row">
-          <label>Hide inactive &gt;</label>
-          <select id="inactivity-select" onchange="filterPlayers()">
+          <label for="inactivity-select">Hide inactive &gt;</label>
+          <select id="inactivity-select" onchange="filterPlayers()" aria-label="Hide players inactive for more than">
             <option value="0">Off</option>
             <option value="3">3 days</option>
             <option value="7">7 days</option>
@@ -657,7 +916,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
           </select>
         </div>
       </div>
-      <div id="player-list"></div>
+      <div id="player-list" aria-live="polite" aria-relevant="additions removals" aria-label="Player rankings"></div>
     </div>
     <canvas id="minimap-canvas" width="320" height="200"></canvas>
   </div>
@@ -666,10 +925,10 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <!-- ── BLOCK: html-neighbor ── -->
 <!-- Neighbor popup -->
-<div id="neighbor-popup">
+<div id="neighbor-popup" role="dialog" aria-modal="true" aria-labelledby="neighbor-title">
   <div id="neighbor-head">
     <h3 id="neighbor-title">Player</h3>
-    <button id="neighbor-close" onclick="closeNeighborPopup()">✕</button>
+    <button id="neighbor-close" onclick="closeNeighborPopup()" aria-label="Close neighbor popup">✕</button>
   </div>
   <div id="neighbor-live-gar"></div>
   <div id="neighbor-attack-suggestion" style="display:none"></div>
@@ -681,7 +940,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 
 <!-- ── BLOCK: html-garrison ── -->
 <!-- Garrison modal -->
-<div id="garrison-modal">
+<div id="garrison-modal" role="dialog" aria-modal="true" aria-labelledby="garrison-title">
   <div id="garrison-box">
     <div id="garrison-head">
       <div>
@@ -691,17 +950,17 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
       <button id="garrison-close" onclick="closeGarrison()">✕</button>
     </div>
     <div id="garrison-live-section" style="display:none;border-bottom:2px solid #1a1a1a;background:#080d08;padding:10px 18px"></div>
-    <div id="garrison-tabs">
-      <button class="gar-tab active" id="tab-btn-navigate" onclick="switchGarrisonTab('navigate')">🗺 Navigate</button>
-      <button class="gar-tab" id="tab-btn-history" onclick="switchGarrisonTab('history')">📈 History</button>
-      <button class="gar-tab" id="tab-btn-attacks" onclick="switchGarrisonTab('attacks')">⚔ Attacks</button>
-      <button class="gar-tab" id="tab-btn-attack" onclick="switchGarrisonTab('attack')">🎯 Attack</button>
-      <button class="gar-tab" id="tab-btn-recall" onclick="switchGarrisonTab('recall')">⬆ Recall</button>
+    <div id="garrison-tabs" role="tablist" aria-label="Garrison sections">
+      <button class="gar-tab active" id="tab-btn-navigate" role="tab" aria-selected="true" aria-controls="garrison-tab-navigate" onclick="switchGarrisonTab('navigate')">🗺 Navigate</button>
+      <button class="gar-tab" id="tab-btn-history" role="tab" aria-selected="false" aria-controls="garrison-tab-history" onclick="switchGarrisonTab('history')">📈 History</button>
+      <button class="gar-tab" id="tab-btn-attacks" role="tab" aria-selected="false" aria-controls="garrison-tab-attacks" onclick="switchGarrisonTab('attacks')">⚔ Attacks</button>
+      <button class="gar-tab" id="tab-btn-attack" role="tab" aria-selected="false" aria-controls="garrison-tab-attack" onclick="switchGarrisonTab('attack')">🎯 Attack</button>
+      <button class="gar-tab" id="tab-btn-recall" role="tab" aria-selected="false" aria-controls="garrison-tab-recall" onclick="switchGarrisonTab('recall')">⬆ Recall</button>
     </div>
 
     <!-- Tab 1: Navigate -->
-    <div id="garrison-tab-navigate" class="active">
-      <div style="position:sticky;top:0;z-index:2;background:#111">
+    <div id="garrison-tab-navigate" class="active" role="tabpanel" aria-labelledby="tab-btn-navigate" tabindex="0">
+      <div id="gar-nav-sticky" style="position:sticky;top:0;z-index:2;background:#111">
         <div id="gar-nav-head" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:5px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
           <span style="text-align:center">Position</span>
           <span style="color:#aaa;text-align:center;cursor:pointer" onclick="garSortBy('HM')">H</span>
@@ -709,7 +968,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
           <span style="color:#ff8483;text-align:center;cursor:pointer" onclick="garSortBy('EF')">E</span>
           <span style="text-align:center;cursor:pointer" onclick="garSortBy('total')">Total</span>
         </div>
-        <div style="display:flex;gap:8px;padding:4px 18px;border-bottom:1px solid #1a1a1a;align-items:center;min-height:26px">
+        <div id="gar-nav-filter-row" style="display:flex;gap:8px;padding:4px 18px;border-bottom:1px solid #1a1a1a;align-items:center;min-height:26px">
           <button id="gar-nav-sort-reset" onclick="garSortReset()" style="font-size:9px;padding:2px 8px;display:none;background:transparent;border-color:#555;color:#777">✕ Reset sort</button>
         </div>
       </div>
@@ -717,23 +976,23 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
     </div>
 
     <!-- Tab 2: History -->
-    <div id="garrison-tab-history">
+    <div id="garrison-tab-history" role="tabpanel" aria-labelledby="tab-btn-history" tabindex="0">
       <div id="gar-history-chart"><div id="gar-history-empty">Loading history...</div></div>
     </div>
 
     <!-- Tab 3: Attacks -->
-    <div id="garrison-tab-attacks">
+    <div id="garrison-tab-attacks" role="tabpanel" aria-labelledby="tab-btn-attacks" tabindex="0">
       <div id="gar-attacks-list"></div>
     </div>
 
     <!-- Tab 4: Attack -->
-    <div id="garrison-tab-attack">
+    <div id="garrison-tab-attack" role="tabpanel" aria-labelledby="tab-btn-attack" tabindex="0">
       <div id="gar-attack-content" style="padding:14px 18px;"></div>
     </div>
 
     <!-- Tab 5: Recall -->
-    <div id="garrison-tab-recall">
-      <div style="position:sticky;top:0;z-index:2;background:#111">
+    <div id="garrison-tab-recall" role="tabpanel" aria-labelledby="tab-btn-recall" tabindex="0">
+      <div id="gar-recall-sticky" style="position:sticky;top:0;z-index:2;background:#111">
         <div id="gar-recall-head" style="display:grid;grid-template-columns:20px 120px 80px 60px 60px auto;padding:6px 18px;border-bottom:2px solid #222;font-size:9px;font-family:var(--font-mono);color:#888;text-transform:uppercase;letter-spacing:.5px">
           <span></span>
           <span style="text-align:center">Position</span>
@@ -742,7 +1001,7 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
           <span style="color:#ff8483;text-align:center;cursor:pointer" onclick="garSortBy('EF')">E</span>
           <span style="text-align:center;cursor:pointer" onclick="garSortBy('total')">Total</span>
         </div>
-        <div style="display:flex;gap:8px;padding:6px 18px;border-bottom:1px solid #1a1a1a;align-items:center">
+        <div id="gar-recall-filter-row" style="display:flex;gap:8px;padding:6px 18px;border-bottom:1px solid #1a1a1a;align-items:center">
           <button id="garrison-select-all" onclick="garrisonSelectAll()" style="font-size:9px;padding:2px 8px">Select all</button>
           <button id="gar-sort-reset" onclick="garSortReset()" style="font-size:9px;padding:2px 8px;display:none;background:transparent;border-color:#555;color:#777">✕ Reset sort</button>
         </div>
@@ -761,18 +1020,18 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 <!-- ── BLOCK: html-modals ── -->
 <!-- Leaderboard modal -->
 
-<div id="leaderboard-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+<div id="leaderboard-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto" role="dialog" aria-modal="true" aria-labelledby="lb-title">
   <div style="background:#111;border:2px solid #222;width:100%;max-width:560px;font-family:var(--font-mono)">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:2px solid #222;background:#0a0a0a">
       <div>
-        <div style="font-family:var(--font-bangers);font-size:16px;color:var(--v-gold);letter-spacing:1px">📈 LEADERBOARD</div>
+        <div id="lb-title" style="font-family:var(--font-bangers);font-size:16px;color:var(--v-gold);letter-spacing:1px">📈 LEADERBOARD</div>
         <div id="lb-subtitle" style="font-size:9px;color:#999;margin-top:2px">Rank trends vs 24h ago</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button id="lb-period-24h" onclick="lbSetPeriod('24h')" style="font-size:9px;padding:2px 8px;border-color:var(--v-gold);color:var(--v-gold)">24h</button>
         <button id="lb-period-7d" onclick="lbSetPeriod('7d')" style="font-size:9px;padding:2px 8px">7d</button>
         <button id="lb-period-cw" onclick="lbSetPeriod('cw')" style="font-size:9px;padding:2px 8px">💰/⚔️</button>
-        <button onclick="closeLeaderboard()" style="font-size:12px;padding:2px 8px">✕</button>
+        <button onclick="closeLeaderboard()" style="font-size:12px;padding:2px 8px" aria-label="Close leaderboard">✕</button>
       </div>
     </div>
     <div id="lb-header" style="display:grid;grid-template-columns:32px 1fr 52px 52px 52px;padding:5px 14px;border-bottom:1px solid #1a1a1a;font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.4px">
@@ -783,18 +1042,18 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 </div>
 
 <!-- Battle Analyzer modal -->
-<div id="battle-analyzer-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:300;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+<div id="battle-analyzer-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:300;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto" role="dialog" aria-modal="true" aria-labelledby="ba-title">
   <div style="background:#111;border:2px solid #222;width:100%;max-width:760px;font-family:var(--font-mono)">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:2px solid #222;background:#0a0a0a">
-      <div style="font-family:var(--font-bangers);font-size:16px;color:var(--v-gold);letter-spacing:1px">⚔ BATTLE ANALYZER</div>
-      <button onclick="closeBattleAnalyzer()" style="font-size:12px;padding:2px 8px">✕</button>
+      <div id="ba-title" style="font-family:var(--font-bangers);font-size:16px;color:var(--v-gold);letter-spacing:1px">⚔ BATTLE ANALYZER</div>
+      <button onclick="closeBattleAnalyzer()" style="font-size:12px;padding:2px 8px" aria-label="Close battle analyzer">✕</button>
     </div>
     <!-- Input row -->
     <div class="ba-input-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 16px;border-bottom:1px solid #1a1a1a;background:#0d0d14">
       <div>
         <div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Analyze URL</div>
         <div style="display:flex;gap:6px">
-          <input type="text" id="ba-url-input" placeholder="https://suivision.xyz/txblock/…" style="flex:1;background:#0a0a0a;color:#ccc;border:1px solid #333;padding:6px 10px;font-size:11px;font-family:var(--font-mono);outline:none">
+          <input type="text" id="ba-url-input" placeholder="https://suivision.xyz/txblock/…" style="flex:1;background:#0a0a0a;color:#ccc;border:1px solid #333;padding:6px 10px;font-size:11px;font-family:var(--font-mono);outline:none" aria-label="SuiVision battle transaction URL">
           <button id="ba-analyze-btn" onclick="baAnalyze()" style="font-size:10px;padding:5px 12px">Analyze</button>
         </div>
       </div>
@@ -814,25 +1073,25 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 </div>
 
 <!-- Mini-profile modal -->
-<div id="miniprofile-modal" onclick="if(event.target===this)closeMiniProfile()" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.5)">
+<div id="miniprofile-modal" onclick="if(event.target===this)closeMiniProfile()" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.5)" role="dialog" aria-modal="true" aria-labelledby="mp-name">
   <div id="miniprofile-box" style="position:absolute;background:#111;border:2px solid #333;min-width:260px;max-width:300px;font-family:var(--font-mono);box-shadow:4px 4px 0 #000">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #222;background:#0a0a0a">
       <span id="mp-name" style="font-family:var(--font-bangers);font-size:13px;color:var(--v-gold);letter-spacing:1px"></span>
-      <button onclick="closeMiniProfile()" style="font-size:11px;padding:0 6px;line-height:18px">✕</button>
+      <button onclick="closeMiniProfile()" style="font-size:11px;padding:0 6px;line-height:18px" aria-label="Close player profile">✕</button>
     </div>
     <div id="mp-body" style="padding:10px 12px;font-size:10px;line-height:1.8"></div>
   </div>
 </div>
 
 <!-- Soft Targets modal -->
-<div id="softtarget-modal">
+<div id="softtarget-modal" role="dialog" aria-modal="true" aria-labelledby="softtarget-title">
   <div id="softtarget-box">
     <div id="softtarget-head">
       <div>
         <div id="softtarget-title">🎯 Soft Targets</div>
         <div id="softtarget-subtitle">Inactive players with significant territory</div>
       </div>
-      <button id="softtarget-close" onclick="closeSoftTargets()">✕</button>
+      <button id="softtarget-close" onclick="closeSoftTargets()" aria-label="Close soft targets">✕</button>
     </div>
     <div id="softtarget-colheads">
       <span>Player</span>
@@ -845,14 +1104,14 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
   </div>
 </div>
 
-<div id="report-modal">
+<div id="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-head-title">
   <div id="report-box">
     <div id="report-head">
       <div>
         <div id="report-head-title">📰 The Vendetta Gazette</div>
         <div id="report-head-meta">—</div>
       </div>
-      <button id="report-close" onclick="closeReport()">✕</button>
+      <button id="report-close" onclick="closeReport()" aria-label="Close report">✕</button>
       <button onclick="printReport()" style="font-size:10px;padding:3px 10px;border-color:#4a3a0a;color:var(--v-gold);background:#0e0c07;box-shadow:2px 2px 0 #2a1a00;margin-right:6px">⬇ PDF</button>
     </div>
     <div id="report-content"><div id="report-loading">Loading report...</div></div>
@@ -860,17 +1119,17 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 </div>
 
 <!-- Profile settings modal -->
-<div id="profile-modal">
+<div id="profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
   <div id="profile-box">
-    <h2>⚙ My Profile</h2>
+    <h2 id="profile-modal-title">⚙ My Profile</h2>
     <p>Add your player profile(s) to highlight your turfs on the map. Search by name or paste your profile ID directly.</p>
-    <input id="profile-search" type="text" placeholder="Search player name or paste profile ID (0x...)..." oninput="onProfileSearch(this.value)">
+    <input id="profile-search" type="text" placeholder="Search player name or paste profile ID (0x...)..." oninput="onProfileSearch(this.value)" aria-label="Search player by name or profile ID">
     <div id="profile-results"></div>
     <div id="profile-current"></div>
     <div style="border-top:1px solid #222;margin:12px 0 10px"></div>
     <div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Wallet address</div>
     <div style="display:flex;gap:6px">
-      <input id="profile-wallet-input" type="text" placeholder="0x… wallet address" style="flex:1;background:#0a0a0a;color:#ccc;border:2px solid #333;border-radius:0;padding:6px 10px;font-size:11px;font-family:var(--font-mono)" oninput="this.style.borderColor='#333'">
+      <input id="profile-wallet-input" type="text" placeholder="0x… wallet address" style="flex:1;background:#0a0a0a;color:#ccc;border:2px solid #333;border-radius:0;padding:6px 10px;font-size:11px;font-family:var(--font-mono)" oninput="this.style.borderColor='#333'" aria-label="Wallet address">
       <button onclick="saveProfileWallet()" style="font-size:10px;padding:4px 12px;flex-shrink:0">Save</button>
     </div>
     <div id="profile-wallet-status" style="font-size:10px;color:#666;margin-top:5px;min-height:14px"></div>
@@ -881,19 +1140,19 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 </div>
 
 <!-- Wallet / Recall modal -->
-<div id="wallet-modal">
+<div id="wallet-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-modal-title">
   <div id="wallet-box">
-    <button id="wallet-close" onclick="closeWalletModal()">✕</button>
-    <h2>⬆ Recall garrison to HQ</h2>
+    <button id="wallet-close" onclick="closeWalletModal()" aria-label="Close wallet modal">✕</button>
+    <h2 id="wallet-modal-title">⬆ Recall garrison to HQ</h2>
     <div class="wsub" id="wallet-recall-summary">—</div>
     <div class="wallet-section">
       <div class="wallet-label">DVD NFT Object ID</div>
-      <input class="wallet-input" id="wallet-dvd" placeholder="0xafe7c462964002efe12c9601b1d75293d0b22052bc..." title="Your DVD NFT object ID">
+      <input class="wallet-input" id="wallet-dvd" placeholder="0xafe7c462964002efe12c9601b1d75293d0b22052bc..." title="Your DVD NFT object ID" aria-label="DVD NFT object ID">
       <div style="font-size:9px;color:#888;margin-top:3px">Find in Slush wallet → Assets → your Vendetta DVD NFT → Object ID</div>
     </div>
     <div class="wallet-section">
       <div class="wallet-label">Player Profile Object ID</div>
-      <input class="wallet-input" id="wallet-profile" placeholder="0x857e8e7f..." title="Your player profile object ID">
+      <input class="wallet-input" id="wallet-profile" placeholder="0x857e8e7f..." title="Your player profile object ID" aria-label="Player profile object ID">
     </div>
     <div id="wallet-status"></div>
     <button id="wallet-connect-btn" onclick="connectWallet()">🔗 Connect Slush / Suiet wallet</button>
@@ -907,15 +1166,15 @@ button.top10-active{background:#1a0f00;border-color:var(--v-gold);color:var(--v-
 </div>
 
 <!-- Refresh modal -->
-<div id="refresh-modal">
+<div id="refresh-modal" role="dialog" aria-modal="true" aria-labelledby="refresh-modal-title">
   <div id="refresh-box">
-    <h2>⚡ Trigger data refresh</h2>
+    <h2 id="refresh-modal-title">⚡ Trigger data refresh</h2>
     <p>This triggers the GitHub Actions workflow to re-fetch all blockchain data. It runs in the background and takes about 20 minutes. The map will update automatically on next reload.</p>
     <p>Enter your GitHub Personal Access Token (needs <code>workflow</code> scope):<br>
     <a href="https://github.com/settings/tokens/new?scopes=workflow&description=SUI+Turf+Map" target="_blank" style="color:#378ADD;font-size:11px">Create token on GitHub →</a></p>
-    <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx">
+    <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" aria-label="GitHub Personal Access Token">
     <p style="font-size:11px;color:#999">Repository (owner/repo):</p>
-    <input type="text" id="gh-repo" placeholder="Hook27/sui-turf-map" value="Hook27/sui-turf-map">
+    <input type="text" id="gh-repo" placeholder="Hook27/sui-turf-map" value="Hook27/sui-turf-map" aria-label="GitHub repository (owner/repo)">
     <div id="refresh-result"></div>
     <div class="modal-btns">
       <button onclick="closeRefreshModal()">Close</button>

@@ -8,7 +8,9 @@ let garrisonAllTiles = []; // all tiles for navigate tab (incl HQ)
 function switchGarrisonTab(tab){
   ['navigate','recall','history','attacks','attack'].forEach(t=>{
     document.getElementById(`garrison-tab-${t}`).classList.toggle('active', t===tab);
-    document.getElementById(`tab-btn-${t}`).classList.toggle('active', t===tab);
+    const btn=document.getElementById(`tab-btn-${t}`);
+    btn.classList.toggle('active', t===tab);
+    btn.setAttribute('aria-selected', t===tab ? 'true' : 'false');
   });
   if(tab==='history') renderGarrisonHistory();
   if(tab==='attacks') renderGarrisonAttacks();
@@ -178,7 +180,7 @@ function openGarrison(pid, e){
       const nowMs=Date.now();
       let activityHtml;
       if(!feedDeadline){
-        activityHtml='<span style="color:#666">— No recent activity</span>';
+        activityHtml=`<span style="color:${_isDay()?'#a08050':'#666'}">— No recent activity</span>`;
       } else if(feedDeadline>nowMs){
         // Deadline not yet reached — player is active
         const DAY=24*60*60*1000;
@@ -196,17 +198,18 @@ function openGarrison(pid, e){
         }
       }
 
+      const _nd=_isDay();
       let html=
-        '<div style="font-size:9px;color:#6fffa9;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">'+
-        '⟳ Live data <span style="color:#444;font-size:8px;margin-left:6px">'+ts+'</span></div>'+
-        '<div style="font-size:10px;font-family:var(--font-mono);margin-bottom:6px">'+
-        '<span style="color:#888;font-size:9px;text-transform:uppercase;margin-right:6px">Gangsters</span>'+
-        '<span style="color:#aaa">'+g.hm+'H</span> '+
-        '<span style="color:#6fffa9">'+g.bc+'B</span> '+
-        '<span style="color:#ff8483">'+g.ef+'E</span> '+
-        '<span style="color:#555;font-size:9px"> · '+g.total+' total · '+g.recruits+' recruits</span>'+
-        '</div>'+
-        '<div style="font-size:10px;font-family:var(--font-mono);margin-bottom:6px">'+activityHtml+'</div>';
+        `<div style="font-size:9px;color:#6fffa9;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">` +
+        `⟳ Live data <span style="color:${_nd?'#a08050':'#444'};font-size:8px;margin-left:6px">${ts}</span></div>` +
+        `<div style="font-size:10px;font-family:var(--font-mono);margin-bottom:6px">` +
+        `<span style="color:${_nd?'#806030':'#888'};font-size:9px;text-transform:uppercase;margin-right:6px">Gangsters</span>` +
+        `<span style="color:#aaa">${g.hm}H</span> ` +
+        `<span style="color:#6fffa9">${g.bc}B</span> ` +
+        `<span style="color:#ff8483">${g.ef}E</span> ` +
+        `<span style="color:${_nd?'#a08050':'#555'};font-size:9px"> · ${g.total} total · ${g.recruits} recruits</span>` +
+        `</div>` +
+        `<div style="font-size:10px;font-family:var(--font-mono);margin-bottom:6px">${activityHtml}</div>`;
       const timerLines=[];
       PERK_KEYS.forEach(function(key){
         const perkUntil=(live.perks&&live.perks[key])||0;

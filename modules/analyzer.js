@@ -80,7 +80,7 @@ function baStartCountdown(deadlineMs) {
 
 async function baAnalyzeDigest(digest) {
   const inner=document.getElementById('ba-result');
-  inner.innerHTML='<div style="padding:16px;text-align:center;font-size:11px;color:#555;font-family:var(--font-mono)">Fetching transaction…</div>';
+  inner.innerHTML=`<div style="padding:16px;text-align:center;font-size:11px;color:${_isDay()?'#806030':'#555'};font-family:var(--font-mono)">Fetching transaction…</div>`;
   try {
     const tx=await baRpc('sui_getTransactionBlock',[digest,{showEvents:true}]);
     const events=tx.events||[];
@@ -108,7 +108,7 @@ async function baAnalyzeDigest(digest) {
     inner.innerHTML=`
       <div class="ba-grid">
         <div class="ba-def-panel">
-          <div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;border-bottom:1px solid #1a1a1a;padding-bottom:4px">Defenders remaining</div>
+          <div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;border-bottom:1px solid ${_isDay()?'#d0b880':'#1a1a1a'};padding-bottom:4px">Defenders remaining</div>
           <div style="font-size:10px;color:#888;margin-bottom:8px"><span style="font-family:var(--font-bangers);font-size:20px;color:var(--v-gold)">${total}</span> on ${isFree?'free turf':esc(defenderName)+"'s turf"}</div>
           <div class="ba-unit-row"><span class="ba-unit-label">Henchman</span><span class="ba-unit-count hm ${surv.H===0?'zero':''}">${surv.H}</span></div>
           <div class="ba-unit-row"><span class="ba-unit-label">Bouncer</span><span class="ba-unit-count bc ${surv.B===0?'zero':''}">${surv.B}</span></div>
@@ -121,9 +121,9 @@ async function baAnalyzeDigest(digest) {
           </div>
         </div>
         <div class="ba-right">
-          <div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid #1a1a1a;padding-bottom:4px">Attack suggestions</div>
-          <div id="ba-atk-result" style="font-size:10px;color:#555">Calculating…</div>
-          ${total===0?'<div style="padding:8px;background:#0a1a0a;border:1px solid #1a3a1a;color:#6fffa9;font-size:10px;text-align:center;margin-top:8px">No defenders — tile is capturable</div>':''}
+          <div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:1px solid ${_isDay()?'#d0b880':'#1a1a1a'};padding-bottom:4px">Attack suggestions</div>
+          <div id="ba-atk-result" style="font-size:10px;color:${_isDay()?'#806030':'#555'}">Calculating…</div>
+          ${total===0?`<div style="padding:8px;background:${_isDay()?'#d4f0e4':'#0a1a0a'};border:1px solid ${_isDay()?'#1a7a4a':'#1a3a1a'};color:${_isDay()?'#1a7a4a':'#6fffa9'};font-size:10px;text-align:center;margin-top:8px">No defenders — tile is capturable</div>`:''}
         </div>
       </div>`;
 
@@ -203,7 +203,7 @@ async function baAnalyzeLastBattle(){
   if(!addr) return;
   const btn=document.getElementById('ba-last-btn');
   btn.disabled=true;
-  document.getElementById('ba-result').innerHTML='<div style="padding:16px;text-align:center;font-size:11px;color:#555;font-family:var(--font-mono)">Fetching last battle…</div>';
+  document.getElementById('ba-result').innerHTML=`<div style="padding:16px;text-align:center;font-size:11px;color:${_isDay()?'#806030':'#555'};font-family:var(--font-mono)">Fetching last battle…</div>`;
   try {
     let cursor=null,digest=null;
     for(let page=0;page<5&&!digest;page++){
