@@ -73,7 +73,7 @@ function renderGarrisonHistory(){
   const diffCol=diff>0?'#6fffa9':diff<0?'#ff8483':'#888';
 
   el.innerHTML=`
-  <div style="font-size:10px;font-family:var(--font-mono);color:#666;margin-bottom:6px;display:flex;justify-content:space-between">
+  <div style="font-size:10px;font-family:var(--font-mono);color:#888;margin-bottom:6px;display:flex;justify-content:space-between">
     <span>Turf count — last ${n} snapshots</span>
     <span style="color:${diffCol}">${diffStr} turfs vs ${labels[0]||'start'}</span>
   </div>
@@ -108,7 +108,7 @@ function renderGarrisonHistory(){
     const gdiffStr=(gdiff>=0?'+':'')+gdiff;
     const gdiffCol=gdiff>0?'#6fffa9':gdiff<0?'#ff8483':'#888';
     el.innerHTML+=`
-    <div style="font-size:10px;font-family:var(--font-mono);color:#666;margin-top:14px;margin-bottom:6px;border-top:1px solid #1a1a1a;padding-top:12px;display:flex;justify-content:space-between">
+    <div style="font-size:10px;font-family:var(--font-mono);color:#888;margin-top:14px;margin-bottom:6px;border-top:1px solid #1a1a1a;padding-top:12px;display:flex;justify-content:space-between">
       <span>Garrison — last ${gn} snapshots</span>
       <span style="color:${gdiffCol}">${gdiffStr} units vs ${garLabels[0]||'start'}</span>
     </div>
@@ -198,7 +198,7 @@ function renderGarrisonAttacks(){
     .sort((a,b)=>(b._ts||new Date(b.timestamp).getTime())-(a._ts||new Date(a.timestamp).getTime()));
 
   if(!allEvents.length){
-    el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No attacks found for this player.<br><span style="color:#777">Attack data is collected from the next run onwards.</span></div>';
+    el.innerHTML='<div style="padding:16px;color:#888;font-size:11px;font-family:var(--font-mono)">No attacks found for this player.<br><span style="color:#888">Attack data is collected from the next run onwards.</span></div>';
     return;
   }
   function fmtAge(ts){const h=Math.round((Date.now()-new Date(ts))/3600000);return h<1?'just now':h<24?h+'h ago':Math.floor(h/24)+'d ago';}
@@ -294,7 +294,7 @@ function renderGarrisonAttacks(){
         resultLine = `<div class="gar-raid-loot">Looted: ${fmtLoot(r)} · <span style="color:#6fffa9">Captured turf</span></div>`;
       } else {
         dir        = `<span style="color:#ff8483">⚔ Raided</span> <span style="color:#aaa">${esc(r.defender_name||'Unknown')}</span>`;
-        resultLine = `<div class="gar-raid-loot">Looted: ${looted?fmtLoot(r):'<span style="color:#777">nothing</span>'}</div>`;
+        resultLine = `<div class="gar-raid-loot">Looted: ${looted?fmtLoot(r):'<span style="color:#888">nothing</span>'}</div>`;
       }
     } else {
       if(captured && !looted){
@@ -305,7 +305,7 @@ function renderGarrisonAttacks(){
         resultLine = `<div class="gar-raid-loot">Lost: ${fmtLoot(r)} · <span style="color:#ff8483">Lost turf</span></div>`;
       } else {
         dir        = `<span style="color:#89c6ff">🛡 Raided by</span> <span style="color:#aaa">${esc(r.attacker_name||'Unknown')}</span>`;
-        resultLine = `<div class="gar-raid-loot">Lost: ${looted?fmtLoot(r):'<span style="color:#777">nothing</span>'}</div>`;
+        resultLine = `<div class="gar-raid-loot">Lost: ${looted?fmtLoot(r):'<span style="color:#888">nothing</span>'}</div>`;
       }
     }
 

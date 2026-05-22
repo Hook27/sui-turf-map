@@ -227,24 +227,24 @@ async function showMiniProfile(e, pid){
       const diff = p.tiles - prev;
       tileChangeHtml = diff>0?`<span style="color:#6fffa9">+${diff}</span>`:
                        diff<0?`<span style="color:#E24B4A">${diff}</span>`:
-                       '<span style="color:#666">0</span>';
+                       '<span style="color:#888">0</span>';
     }
   }
 
   document.getElementById('mp-body').innerHTML=`
     <table style="width:100%;border-collapse:collapse">
-      <tr><td style="color:#666;padding:2px 0">Rank</td><td style="text-align:right;color:#FAC775">#${rank}</td></tr>
-      <tr><td style="color:#666;padding:2px 0">Turfs</td><td style="text-align:right;color:#aaa">${p.tiles}${tileChangeHtml?' ('+tileChangeHtml+' 24h)':''}</td></tr>
-      <tr><td style="color:#666;padding:2px 0">Garrison</td><td style="text-align:right">
+      <tr><td style="color:#888;padding:2px 0">Rank</td><td style="text-align:right;color:#FAC775">#${rank}</td></tr>
+      <tr><td style="color:#888;padding:2px 0">Turfs</td><td style="text-align:right;color:#aaa">${p.tiles}${tileChangeHtml?' ('+tileChangeHtml+' 24h)':''}</td></tr>
+      <tr><td style="color:#888;padding:2px 0">Garrison</td><td style="text-align:right">
         <span style="color:#aaa">${totalH}H</span>
         <span style="color:#6fffa9;margin-left:4px">${totalB}B</span>
         <span style="color:#ff8483;margin-left:4px">${totalE}E</span>
-        <span style="color:#666;margin-left:4px">(${totalGar})</span>
+        <span style="color:#888;margin-left:4px">(${totalGar})</span>
       </td></tr>
-      <tr><td style="color:#666;padding:2px 0">Last active</td><td style="text-align:right;color:#aaa">${actStr}</td></tr>
-      <tr><td style="color:#666;padding:2px 0">Raids (atk/def)</td><td style="text-align:right;color:#aaa">${raidsAsAtk} / ${raidsAsDef}</td></tr>
+      <tr><td style="color:#888;padding:2px 0">Last active</td><td style="text-align:right;color:#aaa">${actStr}</td></tr>
+      <tr><td style="color:#888;padding:2px 0">Raids (atk/def)</td><td style="text-align:right;color:#aaa">${raidsAsAtk} / ${raidsAsDef}</td></tr>
       ${markHtml?`<tr><td colspan="2" style="padding-top:4px">${markHtml}</td></tr>`:''}
-      ${p.inactive?'<tr><td colspan="2" style="color:#666;font-size:9px;padding-top:2px">INACTIVE</td></tr>':''}
+      ${p.inactive?'<tr><td colspan="2" style="color:#888;font-size:9px;padding-top:2px">INACTIVE</td></tr>':''}
     </table>
     <div style="display:flex;gap:6px;margin-top:10px">
       <button onclick="closeMiniProfile();jumpToPlayer('${pid}')" style="font-size:9px;padding:3px 8px;flex:1">🗺 Go to</button>
