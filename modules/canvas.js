@@ -436,6 +436,36 @@ function drawMap(){
 
   // Ghost turf overlay
   drawGhostTiles(ctx);
+
+  // Nav arrow overlay
+  if(navA||navB) drawNavArrow(ctx);
+}
+
+function drawNavArrow(ctx){
+  if(!navA) return;
+  var cs=CELL*zoom;
+  var color=_isDay()?'#705a1a':'#FFD700';
+  ctx.save();
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.globalAlpha=0.85;
+  // Always draw origin marker
+  var sx1=(navA.x-minX)*cs+panX;
+  var sy1=(maxY-navA.y)*cs+panY;
+  ctx.strokeRect(sx1+1,sy1+1,cs-2,cs-2);
+  if(!navB){ctx.restore();return;}
+  // Draw arrow once both tiles are selected
+  var cx1=sx1+cs/2, cy1=sy1+cs/2;
+  var sx2=(navB.x-minX)*cs+panX;
+  var sy2=(maxY-navB.y)*cs+panY;
+  var cx2=sx2+cs/2, cy2=sy2+cs/2;
+  ctx.beginPath();ctx.moveTo(cx1,cy1);ctx.lineTo(cx2,cy2);ctx.stroke();
+  var headLen=Math.max(8,Math.min(30,cs*1.5));
+  var angle=Math.atan2(cy2-cy1,cx2-cx1);
+  var ha=Math.PI/6;
+  ctx.beginPath();
+  ctx.moveTo(cx2,cy2);ctx.lineTo(cx2-headLen*Math.cos(angle-ha),cy2-headLen*Math.sin(angle-ha));
+  ctx.moveTo(cx2,cy2);ctx.lineTo(cx2-headLen*Math.cos(angle+ha),cy2-headLen*Math.sin(angle+ha));
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawMinimap(){

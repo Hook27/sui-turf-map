@@ -44,8 +44,8 @@ function updateRuler(){
 }
 function _openToolbarDD(btnId, ddId){
   // Close all other dropdowns first
-  const pairs = {['intel-dropdown']:'intel-btn', ['more-dropdown']:'more-btn'};
-  ['intel-dropdown','more-dropdown'].forEach(id=>{
+  const pairs = {['intel-dropdown']:'intel-btn', ['more-dropdown']:'more-btn', ['nav-dropdown']:'nav-btn'};
+  ['intel-dropdown','more-dropdown','nav-dropdown'].forEach(id=>{
     if(id!==ddId){
       document.getElementById(id).classList.remove('open');
       document.getElementById(pairs[id])?.setAttribute('aria-expanded','false');
@@ -80,6 +80,41 @@ function toggleMoreMenu(){ _openToolbarDD('more-btn','more-dropdown'); }
 function closeMoreMenu(){
   document.getElementById('more-dropdown').classList.remove('open');
   document.getElementById('more-btn')?.setAttribute('aria-expanded','false');
+}
+function toggleNavMenu(){ _openToolbarDD('nav-btn','nav-dropdown'); }
+function closeNavMenu(){
+  document.getElementById('nav-dropdown').classList.remove('open');
+  document.getElementById('nav-btn')?.setAttribute('aria-expanded','false');
+}
+
+// ── NAV MODAL ────────────────────────────────────────────────────────────────
+function openNavModal(){
+  var res=buildNavText();
+  if(!res) return;
+  var body=document.getElementById('nav-body');
+  var nameA=esc(navA.name), nameB=esc(navB.name);
+  body.innerHTML=
+    '<div class="nav-route-line"><strong>'+nameA+'</strong> ('+navA.x+', '+navA.y+
+    ') &rarr; <strong>'+nameB+'</strong> ('+navB.x+', '+navB.y+')</div>'+
+    '<div class="nav-data-row"><span class="nav-data-label">Distance</span>'+
+    '<span class="nav-data-val">'+res.distLine+'</span></div>'+
+    '<div class="nav-data-row" style="border-bottom:none"><span class="nav-data-label">Direction</span>'+
+    '<span class="nav-data-val">'+res.longDir+' ('+res.shortDir+')</span></div>'+
+    '<div class="nav-ingame"><strong>In-game:</strong> '+res.inGame+'.</div>';
+  document.getElementById('nav-modal').classList.add('open');
+}
+function closeNavModal(){
+  document.getElementById('nav-modal').classList.remove('open');
+  // Keep nav state: arrow stays on canvas until explicitly cleared.
+  // Update indicator to show the active route with an inline clear button.
+  if(navA && navB){
+    var ind=document.getElementById('route-indicator');
+    if(ind){
+      ind.innerHTML=
+        'Navigate: <b style="color:#ddd">'+esc(navA.name)+'</b> &rarr; <b style="color:#ddd">'+esc(navB.name)+'</b>' +
+        '&ensp;<button onclick="resetNav()" style="padding:0 5px;font-size:9px;background:transparent;border:1px solid #666;color:#888;box-shadow:none;vertical-align:middle;line-height:1.4;cursor:pointer" aria-label="Clear navigation">✕ clear</button>';
+    }
+  }
 }
 
 // ── COMPACT MODE ──────────────────────────────────────────────────────────────
@@ -213,6 +248,7 @@ function toggleTop10(){
     } else {
       if(typeof closeIntelMenu === 'function') closeIntelMenu();
       if(typeof closeMoreMenu  === 'function') closeMoreMenu();
+      if(typeof closeNavMenu   === 'function') closeNavMenu();
     }
   });
 

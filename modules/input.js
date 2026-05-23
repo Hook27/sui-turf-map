@@ -53,7 +53,8 @@ mapWrap.addEventListener('mouseup',e=>{
     const {wx,wy}=screenToWorld(e.clientX-rect.left,e.clientY-rect.top);
     const idx=tileMap.get(`${wx},${wy}`);
     if(idx!==undefined){
-      if(routeMode) selectRoutePlayer(tiles[idx].pid);
+      if(navMode) selectNavTile(tiles[idx]);
+      else if(routeMode) selectRoutePlayer(tiles[idx].pid);
       else { _lastClickedTile=tiles[idx]; _pulseTile(tiles[idx]); selectPlayerNoPan(tiles[idx].pid); }
     }
   }
@@ -210,7 +211,9 @@ function _handleTouchEnd(e){
       const idx = tileMap.get(`${wx},${wy}`);
       if(idx !== undefined){
         const tile = tiles[idx];
-        if(routeMode){
+        if(navMode){
+          selectNavTile(tile);
+        } else if(routeMode){
           selectRoutePlayer(tile.pid);
         } else {
           const p = players[tile.pidIdx] || {};

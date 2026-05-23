@@ -36,6 +36,8 @@ body{font-family:var(--font-mono);background:var(--v-bg);color:#ccc;height:100vh
 #intel-dropdown.open{display:block}
 #more-dropdown{position:fixed;z-index:500;display:none}
 #more-dropdown.open{display:block}
+#nav-dropdown{position:fixed;z-index:500;display:none}
+#nav-dropdown.open{display:block}
 #toolbar h1{font-family:var(--font-bangers);font-size:16px;font-weight:400;color:#fff;white-space:nowrap;margin-right:2px;letter-spacing:2px;text-transform:uppercase}
 
 /* Ruby-style buttons */
@@ -277,6 +279,23 @@ button:disabled{opacity:0.35;cursor:default;box-shadow:none;transform:none}
 #refresh-box input::placeholder{color:#888}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end}
 #refresh-result{font-size:11px;margin-top:8px;min-height:18px;font-family:var(--font-mono)}
+
+/* ── NAV MODAL ── */
+#nav-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:300;align-items:center;justify-content:center}
+#nav-modal.open{display:flex}
+#nav-box{background:var(--v-panel);border:2px solid var(--v-border);min-width:300px;max-width:420px;width:calc(100% - 40px);margin:20px auto;box-shadow:6px 6px 0 #000;font-family:var(--font-mono)}
+#nav-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:2px solid var(--v-border);background:var(--v-bg)}
+#nav-modal-title{font-family:var(--font-bangers);font-size:16px;color:var(--v-gold);letter-spacing:1.5px;text-transform:uppercase}
+#nav-close{background:transparent;border:none;color:#888;font-size:16px;cursor:pointer;padding:0;line-height:1;box-shadow:none}
+#nav-close:hover{color:#ccc}
+#nav-body{padding:16px 20px}
+.nav-route-line{font-size:10px;color:#888;margin-bottom:14px;line-height:1.5;font-family:var(--font-mono)}
+.nav-route-line strong{color:#ccc}
+.nav-data-row{display:flex;gap:12px;font-size:11px;padding:5px 0;border-bottom:1px solid var(--v-border);font-family:var(--font-mono)}
+.nav-data-label{color:#888;text-transform:uppercase;letter-spacing:.4px;font-size:9px;min-width:72px;padding-top:2px;flex-shrink:0}
+.nav-data-val{color:#ddd}
+.nav-ingame{margin-top:12px;padding:8px 12px;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);font-size:10px;color:#888;line-height:1.6;font-family:var(--font-mono)}
+.nav-ingame strong{color:var(--v-gold)}
 
 /* ── END: css-popups ── */
 
@@ -762,6 +781,19 @@ html.day #refresh-box input:focus { border-color:#8a5e10; }
 html.day #sidebar-toggle { background:#f5e6ce; border-color:#c4924a; color:#806030; }
 html.day #maponly-btn { background:#f5e6ce; border-color:#c4924a; color:#806030; }
 
+/* Nav modal */
+html.day #nav-box{background:#f5e6ce;border-color:#c4924a;box-shadow:6px 6px 0 #c4924a}
+html.day #nav-head{background:#ecddb8;border-color:#d0b880}
+html.day #nav-close{color:#806030}
+html.day #nav-close:hover{color:#2a1808}
+html.day .nav-route-line{color:#705a1a}
+html.day .nav-route-line strong{color:#2a1808}
+html.day .nav-data-row{border-color:#d8c8a0}
+html.day .nav-data-label{color:#806030}
+html.day .nav-data-val{color:#2a1808}
+html.day .nav-ingame{background:rgba(138,94,16,0.05);border-color:rgba(138,94,16,0.2);color:#705a1a}
+html.day .nav-ingame strong{color:#8a5e10}
+
 /* ── END: css-day-theme ── */
 
 /* ── WCAG: SKIP LINK ── */
@@ -792,7 +824,7 @@ a:focus-visible{outline:2px solid var(--v-gold)!important;outline-offset:2px}
 <div id="toolbar-scroll">
   <h1>Vendetta World Map</h1>
   <div class="sep"></div>
-  <button id="route-btn" class="tb-btn" onclick="toggleRouteMode()" aria-label="Toggle route mode">🗺 <span class="tb-label">Route</span></button>
+  <button id="nav-btn" class="tb-btn" onclick="toggleNavMenu()" aria-label="Navigation menu" aria-haspopup="true" aria-expanded="false">🗺 <span class="tb-label">Navigate</span> ▾</button>
   <span id="route-indicator" aria-live="polite">Click a turf or player to select A → B</span>
   <button id="battle-btn" class="tb-btn" onclick="toggleBattleHistory()" style="display:none" aria-label="24h battle history">⚔ <span class="tb-label">24h</span></button>
   <button id="top10-btn" class="tb-btn" onclick="toggleTop10()" aria-label="Toggle top 10 mode">★ <span class="tb-label">Top 10</span></button>
@@ -806,7 +838,7 @@ a:focus-visible{outline:2px solid var(--v-gold)!important;outline-offset:2px}
   <div class="sep"></div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;line-height:1.3">
     <span id="age" style="font-size:9px"></span>
-    <span id="ver" style="font-size:7px;color:#999;font-family:var(--font-mono)">v4.15</span>
+    <span id="ver" style="font-size:7px;color:#999;font-family:var(--font-mono)">v4.16</span>
   </div>
   <button id="theme-btn" onclick="toggleTheme()" style="padding:4px 6px;background:transparent;border-color:transparent;color:#aaa;box-shadow:none;min-width:0;font-size:16px;line-height:1" data-tip="Toggle day/night" aria-label="Toggle day/night theme">☀️</button>
 </div>
@@ -814,6 +846,12 @@ a:focus-visible{outline:2px solid var(--v-gold)!important;outline-offset:2px}
   <div class="toolbar-dd-menu">
     <button id="ghost-dd-btn" onclick="toggleGhostMode();closeIntelMenu()" disabled>👻 Ghost Turfs</button>
     <button id="softtarget-dd-btn" onclick="openSoftTargets();closeIntelMenu()" disabled>🎯 Soft Targets</button>
+  </div>
+</div>
+<div id="nav-dropdown">
+  <div class="toolbar-dd-menu">
+    <button onclick="toggleRouteMode();closeNavMenu()">🗺 Route</button>
+    <button onclick="openNavMode()">🧭 Navigate</button>
   </div>
 </div>
 <div id="more-dropdown">
@@ -1183,6 +1221,17 @@ a:focus-visible{outline:2px solid var(--v-gold)!important;outline-offset:2px}
   </div>
 </div>
 
+
+<!-- Nav modal -->
+<div id="nav-modal" role="dialog" aria-modal="true" aria-labelledby="nav-modal-title">
+  <div id="nav-box">
+    <div id="nav-head">
+      <div id="nav-modal-title">🧭 Navigate</div>
+      <button id="nav-close" onclick="closeNavModal()" aria-label="Close navigation">✕</button>
+    </div>
+    <div id="nav-body"></div>
+  </div>
+</div>
 
 <!-- ── END: html-modals ── -->
 

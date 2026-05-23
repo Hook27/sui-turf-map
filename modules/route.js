@@ -1,4 +1,10 @@
-// ── MODULE: route.js ── Vendetta World Map v4.00 ──────────────────────────
+// ── MODULE: route.js ── Vendetta World Map v4.16 ──────────────────────────
+
+// ── NAV GLOBALS ───────────────────────────────────────────────────────────────
+var navMode = false;
+var navA = null; // {x, y, name}
+var navB = null; // {x, y, name}
+
 // ── A* PATHFINDING ────────────────────────────────────────────────────────────
 class MinHeap{
   constructor(){this.h=[];}
@@ -60,12 +66,23 @@ function findRoute(pidA,pidB){
 // ── ROUTE MODE ────────────────────────────────────────────────────────────────
 function toggleRouteMode(){
   routeMode=!routeMode;
-  const btn=document.getElementById('route-btn');
+  const btn=document.getElementById('route-btn'); // legacy ref — may be null
+  const navBtn=document.getElementById('nav-btn');
   const ind=document.getElementById('route-indicator');
   const mw=document.getElementById('map-wrap');
   const pl=document.getElementById('player-list');
-  if(routeMode){btn.classList.add('active');ind.style.display='';mw.classList.add('route-mode');pl.classList.add('route-mode-active');updateRouteIndicator();}
-  else{btn.classList.remove('active');ind.style.display='none';mw.classList.remove('route-mode');pl.classList.remove('route-mode-active');clearRoute();}
+  if(routeMode){
+    if(navMode){navMode=false;navA=null;navB=null;}
+    if(btn) btn.classList.add('active');
+    if(navBtn) navBtn.classList.add('active');
+    ind.style.display='';mw.classList.add('route-mode');pl.classList.add('route-mode-active');
+    updateRouteIndicator();
+  } else {
+    if(btn) btn.classList.remove('active');
+    if(navBtn) navBtn.classList.remove('active');
+    ind.style.display='none';mw.classList.remove('route-mode');pl.classList.remove('route-mode-active');
+    clearRoute();
+  }
 }
 
 function updateRouteIndicator(){
@@ -130,4 +147,92 @@ function zoomToRoute(){
   panX=cv.width/2-((rx0+rx1)/2-minX)*CELL*zoom;
   panY=cv.height/2-(maxY-(ry0+ry1)/2)*CELL*zoom;
   drawMap();drawMinimap();
+}
+
+// ── NAV FEATURE ───────────────────────────────────────────────────────────────
+function openNavMode(){
+  if(navMode){resetNav();return;}
+  if(routeMode) toggleRouteMode();
+  navMode=true;
+  if(typeof closeNavMenu==='function') closeNavMenu();
+  const ind=document.getElementById('route-indicator');
+  const mw=document.getElementById('map-wrap');
+  ind.style.display='inline-block';
+  ind.textContent='Navigate: click origin turf';
+  mw.classList.add('route-mode');
+  const btn=document.getElementById('nav-btn');
+  if(btn) btn.classList.add('active');
+}
+
+function resetNav(){
+  navMode=false;navA=null;navB=null;
+  const btn=document.getElementById('nav-btn');
+  if(btn) btn.classList.remove('active');
+  if(!routeMode){
+    const ind=document.getElementById('route-indicator');
+    const mw=document.getElementById('map-wrap');
+    if(ind) ind.style.display='none';
+    if(mw) mw.classList.remove('route-mode');
+  }
+  drawMap();
+}
+
+function selectNavTile(tile){
+  const p=players[tile.pidIdx]||{};
+  const name=p.name||'[unknown]';
+  const ind=document.getElementById('route-indicator');
+  if(!navA){
+    navA={x:tile.x,y:tile.y,name:name};
+    ind.textContent='Navigate: '+name+' ('+tile.x+', '+tile.y+') → click destination turf';
+    drawMap();
+  } else {
+    navB={x:tile.x,y:tile.y,name:name};
+    if(typeof openNavModal==='function') openNavModal();
+    drawMap();
+  }
+}
+
+function buildNavText(){
+  if(!navA||!navB) return null;
+  var dx=navB.x-navA.x, dy=navB.y-navA.y;
+  var absDx=Math.abs(dx), absDy=Math.abs(dy);
+  var dist=Math.sqrt(dx*dx+dy*dy);
+  // Distance line
+  var parts=[];
+  if(absDx>0) parts.push(absDx+' tiles '+(dx>0?'east':'west'));
+  if(absDy>0) parts.push(absDy+' tiles '+(dy>0?'north':'south'));
+  var distLine=parts.length?parts.join(' · '):'0 tiles (same position)';
+  // 16-point compass via bearing from north
+  var compassNames=[
+    ['N','North'],['NNE','North-northeast'],['NE','Northeast'],['ENE','East-northeast'],
+    ['E','East'],['ESE','East-southeast'],['SE','Southeast'],['SSE','South-southeast'],
+    ['S','South'],['SSW','South-southwest'],['SW','Southwest'],['WSW','West-southwest'],
+    ['W','West'],['WNW','West-northwest'],['NW','Northwest'],['NNW','North-northwest']
+  ];
+  var shortDir='—',longDir='—';
+  if(dx!==0||dy!==0){
+    // dy positive = north in game; compass bearing = (90 - atan2_deg + 360) % 360
+    var bearingDeg=(90-Math.atan2(dy,dx)*180/Math.PI+360)%360;
+    var ci=Math.round(bearingDeg/22.5)%16;
+    shortDir=compassNames[ci][0];longDir=compassNames[ci][1];
+  }
+  // In-game scroll description
+  var threshold=dist*0.10;
+  var vertDir=dy<0?'downward':'upward';
+  var horizDir=dx<0?'to the left':'to the right';
+  var inGame;
+  if(dx===0&&dy===0){
+    inGame='same position';
+  } else if(absDy<threshold){
+    inGame='scroll straight '+(dx>0?'to the right':'to the left');
+  } else if(absDx<threshold){
+    inGame='scroll straight '+vertDir;
+  } else if(absDx/absDy>=0.75&&absDx/absDy<=1.33){
+    inGame='scroll diagonally '+(dy<0?'down':'up')+'-'+(dx<0?'left':'right');
+  } else if(absDy>absDx){
+    inGame='scroll predominantly '+vertDir+', slightly '+horizDir;
+  } else {
+    inGame='scroll predominantly '+horizDir+', slightly '+(dy<0?'downward':'upward');
+  }
+  return {distLine:distLine,longDir:longDir,shortDir:shortDir,inGame:inGame};
 }
