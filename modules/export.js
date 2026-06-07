@@ -1,4 +1,4 @@
-// ── MODULE: export.js ── Vendetta World Map v4.00 ──────────────────────────
+// ── MODULE: export.js ── Vendetta World Map v4.17 ──────────────────────────
 // ── EXPORT ────────────────────────────────────────────────────────────────────
 function fileTimestamp(){
   const n=new Date();
@@ -257,25 +257,6 @@ function exportCSV(){
   a.download='sui_players_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
 
-// ── REFRESH MODAL ─────────────────────────────────────────────────────────────
-function openRefreshModal(){document.getElementById('refresh-modal').classList.add('open');}
-function closeRefreshModal(){document.getElementById('refresh-modal').classList.remove('open');document.getElementById('refresh-result').textContent='';}
-async function triggerRefresh(){
-  const token=document.getElementById('gh-token').value.trim();
-  const repo=document.getElementById('gh-repo').value.trim();
-  const el=document.getElementById('refresh-result');
-  if(!token||!repo){el.style.color='#E24B4A';el.textContent='Please fill in both fields.';return;}
-  el.style.color='#888';el.textContent='Triggering workflow...';
-  try{
-    const r=await fetch(`https://api.github.com/repos/${repo}/actions/workflows/update.yml/dispatches`,{
-      method:'POST',headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
-      body:JSON.stringify({ref:'main'})
-    });
-    if(r.status===204){el.style.color='#1D9E75';el.textContent='✓ Workflow started! Data will update in ~10 minutes.';}
-    else{const d=await r.json();el.style.color='#E24B4A';el.textContent='Error '+r.status+': '+(d.message||'unknown');}
-  }catch(e){el.style.color='#E24B4A';el.textContent='Error: '+e.message;}
-}
-document.getElementById('refresh-modal').addEventListener('click',e=>{if(e.target===document.getElementById('refresh-modal'))closeRefreshModal();});
 document.addEventListener('click',e=>{
   const popup=document.getElementById('neighbor-popup');
   if(popup.style.display!=='none'&&!popup.contains(e.target))closeNeighborPopup();
