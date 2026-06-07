@@ -414,7 +414,7 @@ li strong { color: #ddd; }
 
   <div class="nav-label">Tools</div>
   <a class="nav-link" href="#intel"><span class="nav-num">7</span> Intel Menu 🔍</a>
-  <a class="nav-link" href="#route"><span class="nav-num">8</span> Route Mode 🗺</a>
+  <a class="nav-link" href="#route"><span class="nav-num">8</span> Route &amp; Navigate 🗺</a>
   <a class="nav-link" href="#battles"><span class="nav-num">9</span> 24h Changes ⚔</a>
   <a class="nav-link" href="#leaderboard"><span class="nav-num">10</span> Leaderboard 📈</a>
   <a class="nav-link" href="#miniprofile"><span class="nav-num">11</span> Mini-Profile Card</a>
@@ -434,7 +434,7 @@ li strong { color: #ddd; }
   <div id="hero">
     <div id="hero-title">Vendetta <span>World Map</span></div>
     <div id="hero-sub">User Guide</div>
-    <div id="hero-version">v3.43</div>
+    <div id="hero-version">v4.17</div>
   </div>
 
   <!-- 1 · INTRODUCTION -->
@@ -530,7 +530,7 @@ li strong { color: #ddd; }
       <h2 class="section-title">Player Panel</h2>
     </div>
     <p>The player panel on the right lists all active players, ranked by turf count.</p>
-    <p><strong style="color:#fff">Search</strong> — type a player name to filter the list instantly.</p>
+    <p><strong style="color:#fff">Search</strong> — type a player name, profile ID, or wallet address to filter the list instantly.</p>
     <p><strong style="color:#fff">Filters:</strong></p>
     <ul>
       <li><strong>All</strong> — full list</li>
@@ -558,20 +558,20 @@ li strong { color: #ddd; }
         <p>Lists every garrisoned turf with <span class="ef">Enforcer</span> / <span class="bc">Bouncer</span> / <span class="hm">Henchman</span> counts. Click a row to jump to that turf on the map.</p>
       </div>
       <div class="tab-card">
-        <div class="tab-card-head">⬆ Recall</div>
-        <p>Select turfs with the checkboxes, then recall all gangsters from those turfs back to HQ in a single wallet transaction. <em style="color:var(--g-muted)">Currently unavailable — check back for updates.</em></p>
-      </div>
-      <div class="tab-card">
         <div class="tab-card-head">📈 History</div>
         <p>Shows a chart of the player's turf count over the past 30 days, so you can see whether they are growing, shrinking, or stable.</p>
       </div>
       <div class="tab-card">
-        <div class="tab-card-head">🗡 Raids</div>
-        <p>Lists recent raid activity for this player: incoming and outgoing raids with timestamps, outcomes, and XP gained.</p>
+        <div class="tab-card-head">⚔ Attacks</div>
+        <p>Lists recent attack activity for this player: incoming and outgoing raids with timestamps, outcomes, and XP gained.</p>
       </div>
       <div class="tab-card">
-        <div class="tab-card-head">⚔ Attack</div>
+        <div class="tab-card-head">🎯 Attack</div>
         <p>Provides an attack recommendation based on the current garrison composition. Shows the optimal attacker lineup and estimated win probability against this player's defenders.</p>
+      </div>
+      <div class="tab-card">
+        <div class="tab-card-head">⬆ Recall</div>
+        <p>Select turfs with the checkboxes, then recall all gangsters from those turfs back to HQ in a single wallet transaction. <em style="color:var(--g-muted)">Currently unavailable — check back for updates.</em></p>
       </div>
     </div>
   </section>
@@ -595,13 +595,15 @@ li strong { color: #ddd; }
     </div>
   </section>
 
-  <!-- 8 · ROUTE MODE -->
+  <!-- 8 · ROUTE & NAVIGATE -->
   <section class="section" id="route">
     <div class="section-header">
       <span class="section-num">08</span>
-      <h2 class="section-title">Route Mode 🗺</h2>
+      <h2 class="section-title">Route &amp; Navigate 🗺</h2>
     </div>
-    <p>Click <span class="key">🗺 Route</span> in the toolbar to enter route mode. Then click two players or two turfs on the map — the tool calculates the shortest path between them.</p>
+    <p>The <span class="key">🗺 Navigate ▾</span> button in the toolbar opens a dropdown with two tools: <strong style="color:#fff">Route</strong> and <strong style="color:#fff">Navigate</strong>.</p>
+
+    <p style="margin-top:18px"><strong style="color:#fff">🗺 Route</strong> — calculates the shortest path between two players or turfs. Select <span class="key">🗺 Route</span>, then click two players or two turfs on the map.</p>
     <p>The route is color-coded:</p>
     <ul style="list-style:none;margin-left:0">
       <li style="margin-bottom:8px"><span class="route-own">■ Purple</span> — turfs already owned by you (free to travel)</li>
@@ -609,6 +611,9 @@ li strong { color: #ddd; }
       <li><span class="route-conquer">■ Red</span> — turfs owned by another player (must be conquered)</li>
     </ul>
     <p style="margin-top:12px">The Route panel (bottom left) shows total steps and the breakdown across all three turf types. Click <span class="key">✕ Clear route</span> to exit.</p>
+
+    <p style="margin-top:24px"><strong style="color:#fff">🧭 Navigate</strong> — gives you the direction and distance between two turfs, handy for planning a move in-game. Select <span class="key">🧭 Navigate</span>, then click an <em>origin</em> turf followed by a <em>destination</em> turf.</p>
+    <p>A popup shows the <strong style="color:#ddd">distance</strong>, the <strong style="color:#ddd">compass direction</strong> (e.g. North-East), and an <strong style="color:#ddd">in-game direction hint</strong> to help you move there. The navigation arrow stays drawn on the map until you click <span class="key">✕ clear</span> in the toolbar indicator.</p>
   </section>
 
   <!-- 9 · 24H CHANGES -->
@@ -628,7 +633,7 @@ li strong { color: #ddd; }
       <span class="section-num">10</span>
       <h2 class="section-title">Leaderboard 📈</h2>
     </div>
-    <p>Click <span class="key">📈 Leaderboard</span> to open the rank overview. It shows all players sorted by turf count, with rank changes compared to <strong style="color:#fff">24 hours</strong> or <strong style="color:#fff">7 days</strong> ago (toggle with the period buttons).</p>
+    <p>Click <span class="key">📈 Leaderboard</span> to open the rank overview. It shows all players sorted by turf count, with rank changes compared to <strong style="color:#fff">24 hours</strong> or <strong style="color:#fff">7 days</strong> ago (toggle with the period buttons). A third button <span class="key">💰/⚔️</span> switches to a ranking of the top 50 players by cash balance.</p>
     <p>Arrows indicate movement: <span style="color:var(--g-green)">▲</span> gained ranks, <span style="color:var(--g-red)">▼</span> lost ranks. Click any player row to open their <strong style="color:#fff">mini-profile card</strong> — see section 11 for details.</p>
   </section>
 
@@ -701,9 +706,8 @@ li strong { color: #ddd; }
       </thead>
       <tbody>
         <tr><td>↺ Reload</td><td>Reload the latest data</td></tr>
-        <tr><td>⚡ Refresh data</td><td>Trigger a fresh data pull from the blockchain <em>(requires a GitHub token)</em></td></tr>
         <tr><td>📰 Weekly Report</td><td>Opens <em>The Vendetta Gazette</em>, a Roaring Twenties–style newspaper summarizing the week: top movers, biggest battles, HQ captures, and crime activity. Click <span class="key">⬇ PDF</span> to save it.</td></tr>
-        <tr><td>⬇ Export PNG</td><td>Saves a high-resolution screenshot of the current map view</td></tr>
+        <tr><td>⬇ Export PNG</td><td>Saves a high-resolution screenshot of the current map view — with optional <strong style="color:#ddd">2×</strong> and <strong style="color:#ddd">3×</strong> variants for even higher resolution</td></tr>
         <tr><td>🎬 Export GIF</td><td>Creates an animated GIF showing territory changes across saved snapshots</td></tr>
         <tr><td>⬇ Export CSV</td><td>Downloads a spreadsheet with all player data (rank, name, turf count, profile ID)</td></tr>
         <tr><td>⚙ My Profile</td><td>Configure your player identity — see Getting Started</td></tr>
@@ -718,7 +722,7 @@ li strong { color: #ddd; }
       <h2 class="section-title">Data &amp; Updates</h2>
     </div>
     <p>Map data is refreshed automatically every 6 hours. The age of the current data is always visible in the toolbar, shown in 15-minute blocks.</p>
-    <p>To check for a fresh update manually, use <span class="key">⋯ More</span> → <span class="key">↺ Reload</span>, or use <span class="key">⚡ Refresh data</span> to trigger a new data pull immediately.</p>
+    <p>To check for a fresh update manually, use <span class="key">⋯ More</span> → <span class="key">↺ Reload</span>.</p>
   </section>
 
 </div><!-- /content -->
