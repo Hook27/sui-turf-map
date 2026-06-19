@@ -358,6 +358,46 @@ function drawMap(){
     if(t.isHQ&&zoom>1.5){ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font=`${Math.round(cs*0.6)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('\u2302',sx+cs/2,sy+cs/2);}
   }
 
+  // Live turf overlay — free turfs that a right-click confirmed are now captured
+  // on-chain. Drawn like a normal tile (fill + garrison count) but with a dashed
+  // cyan border to mark it as live. Held only until the next snapshot refresh.
+  if(liveTurfs&&liveTurfs.size){
+    for(const lt of liveTurfs.values()){
+      if(lt.x<wx0||lt.x>wx1||lt.y<wy0||lt.y>wy1) continue;
+      const sx=(lt.x-minX)*cs+panX,sy=(maxY-lt.y)*cs+panY;
+      const p=players.find(pl=>pl.pid===lt.pid);
+      const col=p?markColor(lt.pid,p.color):'#b06fd6'; // fallback: owner not in snapshot
+      ctx.fillStyle=col;ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
+      // Garrison darken + count (mirrors the main-tile logic)
+      const gc=(lt.gH||0)+(lt.gB||0)+(lt.gE||0);
+      if(gc>0){
+        ctx.fillStyle=`rgba(0,0,0,${0.15+(gc/10)*0.5})`;
+        ctx.fillRect(sx+0.5,sy+0.5,cs-1,cs-1);
+        if(zoom>11){
+          const fs=Math.round(cs*0.18);
+          ctx.font=`bold ${fs}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+          const lines=[];
+          if(lt.gE) lines.push({txt:`${lt.gE}E`,col:'#ff8483'});
+          if(lt.gB) lines.push({txt:`${lt.gB}B`,col:'#6fffa9'});
+          if(lt.gH) lines.push({txt:`${lt.gH}H`,col:'#aaaaaa'});
+          const lh=fs+2,totalH=lines.length*lh,startY=sy+cs/2-totalH/2+lh/2;
+          lines.forEach((l,i)=>{ctx.fillStyle=l.col;ctx.fillText(l.txt,sx+cs/2,startY+i*lh);});
+        } else if(zoom>2){
+          ctx.fillStyle='rgba(255,255,255,0.9)';
+          ctx.font=`bold ${Math.round(cs*0.35)}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(gc,sx+cs/2,sy+cs/2);
+        }
+      }
+      // Dashed "live" border (cyan) — distinct from HQ gold and route borders.
+      const lw=Math.max(1.5,cs*0.10);
+      ctx.save();
+      ctx.setLineDash([Math.max(2,cs*0.22),Math.max(2,cs*0.16)]);
+      ctx.strokeStyle='#5fd4ff';ctx.lineWidth=lw;
+      ctx.strokeRect(sx+lw/2,sy+lw/2,cs-lw,cs-lw);
+      ctx.restore();
+    }
+  }
+
   // 7. Player name labels on main map at mid-zoom (2–10×), min 8 tiles
   if(zoom>=2&&zoom<=10){
     const nameFs=Math.max(9,Math.min(14,cs*0.55));

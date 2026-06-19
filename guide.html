@@ -485,7 +485,8 @@ li strong { color: #ddd; }
         <tr><td>Jump to a location</td><td>Click any spot on the <strong>minimap</strong> (bottom right)</td></tr>
         <tr><td>Hide the player panel</td><td><span class="key">☰</span> button (bottom left of map) — <em>mobile only</em></td></tr>
         <tr><td>Full-screen map</td><td><span class="key">⛶</span> button (bottom left of map) — <em>mobile only</em>. Hides the toolbar, ticker bar, and sidebar, leaving only the full-screen canvas with floating zoom and toggle buttons. Toggle off with the same button, which changes to <span class="key">✕</span>.</td></tr>
-        <tr><td>Neighbor popup</td><td>Right-click (desktop) or long-press (mobile) on any turf. Opens a popup listing all bordering players with their border turf counts, friend/enemy mark buttons, and a route button to calculate a path to that neighbor.</td></tr>
+        <tr><td>Neighbor popup</td><td>Right-click (desktop) or long-press (mobile) on an <strong>owned</strong> turf. Opens a popup listing all bordering players with their border turf counts, friend/enemy mark buttons, and a route button to calculate a path to that neighbor.</td></tr>
+        <tr><td>Live free-turf check</td><td>Right-click an <strong>empty</strong> turf to fetch its current on-chain status. If it's still free, a brief message confirms it. If it has just been captured, the turf is drawn live in the new owner's colour with a dashed cyan border (and garrison count when zoomed in). Handy for following a conquest in real time between the 6-hourly snapshots. The live mark is temporary — it's replaced by snapshot data on the next refresh.</td></tr>
       </tbody>
     </table>
     <p>A coordinate ruler runs along the top and left edges of the map. The current zoom level is shown in the top-left corner of the map area.</p>
