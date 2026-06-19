@@ -47,6 +47,11 @@ let snapshots=[];
 let battleHistoryData=null;
 let battleHistoryActive=false;
 
+// Live turf overlay — right-clicked free turfs confirmed captured on-chain.
+// Keyed "x,y" → {x,y,pid,gH,gB,gE}. Held only until the next snapshot refresh,
+// after which the snapshot data supersedes it (see loadData below).
+let liveTurfs=new Map();
+
 
 
 async function loadHistory(){
@@ -93,6 +98,7 @@ async function loadData(url){
   const savedZoom=zoom, savedPanX=panX, savedPanY=panY;
 
   tiles=[]; tileMap.clear(); players=[]; filteredPlayers=[]; neighborMap.clear();
+  liveTurfs.clear(); // fresh snapshot supersedes any live-checked turfs
   clearRoute();
   // Invalidate per-frame caches
   drawMap._labelSig=''; drawMap._labels=[];

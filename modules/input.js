@@ -66,7 +66,47 @@ mapWrap.addEventListener('contextmenu',e=>{
   const {wx,wy}=screenToWorld(e.clientX-rect.left,e.clientY-rect.top);
   const idx=tileMap.get(`${wx},${wy}`);
   if(idx!==undefined) { _lastClickedTile=tiles[idx]; showNeighborPopup(tiles[idx].pid,e.clientX,e.clientY,tiles[idx]); }
+  else if(tiles.length){ checkLiveTurf(wx,wy); } // empty turf → live on-chain check
 });
+
+// ── LIVE FREE-TURF CHECK (right-click on an empty turf) ───────────────────────
+// Confirms on-chain whether a currently-empty turf has just been captured. A hit
+// is held in liveTurfs (drawn with a dashed cyan border) until the next snapshot
+// refresh, which clears it (see loadData). Still-free turfs only show a toast.
+async function checkLiveTurf(wx,wy){
+  liveToast(`Checking (${wx}, ${wy})…`,4000);
+  try{
+    const res=await lookupTurfByCoord(wx,wy);
+    if(res.status==='claimed'){
+      liveTurfs.set(`${wx},${wy}`,{x:wx,y:wy,pid:res.pid,gH:res.gH,gB:res.gB,gE:res.gE});
+      const p=players.find(pl=>pl.pid===res.pid);
+      const who=p?p.name:'an unknown player';
+      liveToast(`(${wx}, ${wy}) — captured by ${who} · ${res.gH}H ${res.gB}B ${res.gE}E`,2800);
+      drawMap();drawMinimap();
+    } else {
+      // Still free — clear any earlier live mark on this tile, then confirm.
+      if(liveTurfs.delete(`${wx},${wy}`)){ drawMap();drawMinimap(); }
+      liveToast(`(${wx}, ${wy}) checked — still free`,1800);
+    }
+  }catch(err){
+    liveToast(`(${wx}, ${wy}) — live check failed`,2200);
+  }
+}
+
+// Brief bottom-centre toast (mirrors the copy-toast style in sidebar.js).
+function liveToast(msg,ms){
+  let toast=document.getElementById('live-toast');
+  if(!toast){
+    toast=document.createElement('div');
+    toast.id='live-toast';
+    toast.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${_isDay()?'#f5e6ce':'#1a1a1a'};border:1px solid ${_isDay()?'#c4924a':'#444'};color:${_isDay()?'#2a1808':'#cdd'};font-family:var(--font-mono);font-size:11px;padding:6px 16px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .2s`;
+    document.body.appendChild(toast);
+  }
+  toast.textContent=msg;
+  toast.style.opacity='1';
+  clearTimeout(toast._t);
+  toast._t=setTimeout(()=>{ toast.style.opacity='0'; },ms||2000);
+}
 mapWrap.addEventListener('mouseleave',()=>{document.getElementById('tip').style.display='none';});
 
 // ── TOUCH EVENTS (identifier-based, Android-safe) ─────────────────────────────

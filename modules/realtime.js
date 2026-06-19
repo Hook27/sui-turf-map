@@ -73,6 +73,64 @@ async function fetchTurfLive(turfId) {
   return result;
 }
 
+// ── LIVE TURF BY COORDINATE ─────────────────────────────────────────────────
+// Resolve an arbitrary map coordinate to its live on-chain turf status. Powers
+// the right-click "has this free turf been captured yet?" feature on the map.
+var RT_TURF_SYSTEM = '0x372e8fd0e12d2051860553b9e61065729dcddec11970b295bbcf19d7261cc502';
+var RT_COORD_TYPE  = '0xa0c4bb412c1d6121c1b6a40954ef76c3b1f75248211209e94726496f46a59ce0::iturf::Coordinates';
+var RT_NULL_ID     = '0x' + '0'.repeat(64);
+var _rtTurfTableId = null; // coordinates_turfs Table id (resolved once)
+
+async function rtSuiRpc(method, params) {
+  var resp = await fetch('https://fullnode.mainnet.sui.io', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({jsonrpc: '2.0', id: 1, method: method, params: params})
+  });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  return resp.json();
+}
+
+// Resolve & cache the coordinates_turfs Table id from the fixed TurfSystem object.
+async function rtGetTurfTableId() {
+  if (_rtTurfTableId) return _rtTurfTableId;
+  var d = await rtSuiRpc('sui_getObject', [RT_TURF_SYSTEM, {showContent: true}]);
+  var ct = d && d.result && d.result.data && d.result.data.content &&
+           d.result.data.content.fields && d.result.data.content.fields.coordinates_turfs;
+  var id = ct && ct.fields && ct.fields.id && ct.fields.id.id;
+  if (!id) throw new Error('rtGetTurfTableId: unexpected response shape');
+  _rtTurfTableId = id;
+  return id;
+}
+
+// Look up the live status of the turf at map coordinate (x, y).
+// Returns one of:
+//   {status: 'free'}                                — no turf object, or unowned
+//   {status: 'claimed', pid, gH, gB, gE, oid}       — currently owned
+async function lookupTurfByCoord(x, y) {
+  var table = await rtGetTurfTableId();
+  var key = {
+    type: RT_COORD_TYPE,
+    value: {
+      x: String(Math.abs(x)), x_neg: x < 0,
+      y: String(Math.abs(y)), y_neg: y < 0
+    }
+  };
+  var d = await rtSuiRpc('suix_getDynamicFieldObject', [table, key]);
+  // "Not found" can arrive top-level or nested under result.error.
+  var err = d.error || (d.result && d.result.error);
+  if (err && err.code === 'dynamicFieldNotFound') return {status: 'free'};
+  if (err) throw new Error(err.message || 'lookup RPC error');
+
+  var turfId = d.result && d.result.data && d.result.data.content &&
+               d.result.data.content.fields && d.result.data.content.fields.value;
+  if (!turfId) throw new Error('lookupTurfByCoord: unexpected response shape');
+
+  var info = await fetchTurfLive(turfId); // reuse cached garrison/owner fetch
+  if (!info.ownerId || info.ownerId === RT_NULL_ID) return {status: 'free'};
+  return {status: 'claimed', pid: info.ownerId, gH: info.hm, gB: info.bc, gE: info.ef, oid: turfId};
+}
+
 // ── FETCH PLAYER RESOURCES LIVE ──────────────────────────────────────────────
 // Fetches live cash and weapons balances from the player profile's dynamic fields.
 // Returns: {cash: number, weapons: number, cachedAt: number}
