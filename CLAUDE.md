@@ -7,6 +7,9 @@ real-time map of player territories, garrisons, leaderboards and battle data. Li
 There is no build step. `index.html` + `modules/*.js` are loaded directly. Data is pre-fetched
 into JSON files by a scheduled GitHub Actions workflow and read at runtime.
 
+Additional local maintainer notes (on-chain identifiers, hard rules, current focus) live in
+`@CLAUDE.local.md` — a gitignored, machine-local file that is not committed.
+
 ## Architecture
 
 - **`index.html`** — the whole app shell: all CSS and all HTML markup, plus the `<script>` tags
