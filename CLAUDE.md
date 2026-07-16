@@ -64,7 +64,7 @@ These are easy to break because everything is global-scope and calls by name:
 ## Versioning convention
 
 Bump the app version on **every** change to the map. The version lives in `index.html`
-(`#ver` badge, around line 825). *(Current: v4.17.)*
+(`#ver` badge, around line 825). *(Current: v4.19.)*
 
 - **Minor change** (the common case): increment the patch after the dot, e.g. `v4.16` → `v4.17`.
 - **Major change** (rare — not really expected anymore): increment before the dot and reset the

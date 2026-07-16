@@ -16,11 +16,12 @@ MAX_SNAPSHOTS    = 150  # keep last 150 snapshots (~30 days at 4x/day, with room
 SNAPSHOTS_DIR    = "snapshots"
 SCALE            = 18446744073709551616  # 2^64 fixed-point scale used for resources and raid values
 
+# fullnode.mainnet.sui.io removed (Mysten public JSON-RPC shut down July 2026);
+# blockvision.org/v1/ removed (404 since 2026-07). All three below verified 2026-07-16.
 RPC_ENDPOINTS = [
-    "https://fullnode.mainnet.sui.io:443",
-    "https://mainnet.suiet.app",
     "https://sui-rpc.publicnode.com",
-    "https://sui-mainnet.blockvision.org/v1/",
+    "https://mainnet.suiet.app",
+    "https://sui-mainnet-endpoint.blockvision.org",
 ]
 
 BATCH      = 50

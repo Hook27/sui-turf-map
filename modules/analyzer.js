@@ -1,7 +1,7 @@
 // ── MODULE: analyzer.js ── Vendetta World Map v4.00 ──────────────────────────
 
 // ── BATTLE ANALYZER ───────────────────────────────────────────────────────────
-const BA_RPC = 'https://fullnode.mainnet.sui.io';
+const BA_RPC = 'https://sui-rpc.publicnode.com'; // fullnode.mainnet.sui.io shut down July 2026
 const BA_SIM_EVENT = '0x63081c5dd824a49289b6557d9f9bcf8613fe801e89dbad728616348a58b4b40a::ibattle::SimulationResultEvent';
 let _baCountdownInterval = null;
 

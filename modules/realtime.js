@@ -3,6 +3,9 @@
 // ── CACHE ─────────────────────────────────────────────────────────────────────
 var _rtCache = {}; // key: objectId, value: {data, ts}
 var RT_CACHE_TTL = 60000; // 60 seconds
+// Mysten's public fullnode.mainnet.sui.io shut down July 2026; publicnode
+// serves the same JSON-RPC (incl. suix_* indexer methods) with CORS enabled.
+var RT_RPC = 'https://sui-rpc.publicnode.com';
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
@@ -42,7 +45,7 @@ async function fetchTurfLive(turfId) {
   if (_rtCache[turfId] && (now - _rtCache[turfId].ts) < RT_CACHE_TTL) {
     return _rtCache[turfId].data;
   }
-  var resp = await fetch('https://fullnode.mainnet.sui.io', {
+  var resp = await fetch(RT_RPC, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
@@ -82,7 +85,7 @@ var RT_NULL_ID     = '0x' + '0'.repeat(64);
 var _rtTurfTableId = null; // coordinates_turfs Table id (resolved once)
 
 async function rtSuiRpc(method, params) {
-  var resp = await fetch('https://fullnode.mainnet.sui.io', {
+  var resp = await fetch(RT_RPC, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({jsonrpc: '2.0', id: 1, method: method, params: params})
@@ -147,7 +150,7 @@ async function fetchPlayerResources(profileId) {
   var SCALE = BigInt('18446744073709551616'); // 2^64
 
   async function fetchField(fieldValue) {
-    var resp = await fetch('https://fullnode.mainnet.sui.io', {
+    var resp = await fetch(RT_RPC, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -189,7 +192,7 @@ async function fetchPlayerLive(profileId) {
   if (_rtCache[profileId] && (now - _rtCache[profileId].ts) < RT_CACHE_TTL) {
     return _rtCache[profileId].data;
   }
-  var resp = await fetch('https://fullnode.mainnet.sui.io', {
+  var resp = await fetch(RT_RPC, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
