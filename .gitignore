@@ -1,6 +1,10 @@
 # Local, non-committed Claude Code memory (see its own header)
 CLAUDE.local.md
 
+# Claude Code — machine-local files (permissions + dev launch config)
+.claude/settings.local.json
+.claude/launch.json
+
 # On-chain bot — local only, never pushed to GitHub (contains ops code for the
 # autonomous player; keys live in the Sui CLI keystore, never here)
 bot/
