@@ -18,10 +18,11 @@ SCALE            = 18446744073709551616  # 2^64 fixed-point scale used for resou
 
 # fullnode.mainnet.sui.io removed (Mysten public JSON-RPC shut down July 2026);
 # blockvision.org/v1/ removed (404 since 2026-07). All three below verified 2026-07-16.
+# publicnode last: it 403-blocks GitHub Actions runner IPs (rpc() rotates past it).
 RPC_ENDPOINTS = [
-    "https://sui-rpc.publicnode.com",
     "https://mainnet.suiet.app",
     "https://sui-mainnet-endpoint.blockvision.org",
+    "https://sui-rpc.publicnode.com",
 ]
 
 BATCH      = 50
@@ -33,6 +34,7 @@ rpc_index = 0
 
 def rpc(method, params, retries=5):
     global rpc_index
+    last_err = None
     for attempt in range(retries):
         url = RPC_ENDPOINTS[rpc_index % len(RPC_ENDPOINTS)]
         payload = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
@@ -44,18 +46,23 @@ def rpc(method, params, retries=5):
                     raise ValueError(data["error"])
                 return data["result"]
         except urllib.error.HTTPError as e:
-            if e.code in (429, 403):
+            last_err = e
+            if e.code == 429:
+                # genuine rate limit: back off on the same endpoint first
                 wait = 2 ** (attempt + 1)
-                print(f"  Rate limited ({e.code}), waiting {wait}s...")
+                print(f"  Rate limited (429) on {url}, waiting {wait}s...")
                 time.sleep(wait)
                 continue
+            # 403 = endpoint blocks this client (e.g. datacenter IPs) — rotate immediately
+            print(f"  HTTP {e.code} on {url}, rotating endpoint...")
             rpc_index += 1
-            if attempt == retries - 1: raise
             time.sleep(3)
-        except Exception:
+        except Exception as e:
+            last_err = e
             rpc_index += 1
-            if attempt == retries - 1: raise
             time.sleep(3)
+    # never fall through to an implicit None — fail loudly with the real cause
+    raise RuntimeError(f"rpc {method} failed after {retries} attempts") from last_err
 
 def signed(v, neg):
     v = int(v)
