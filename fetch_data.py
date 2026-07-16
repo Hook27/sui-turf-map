@@ -38,7 +38,12 @@ def rpc(method, params, retries=5):
     for attempt in range(retries):
         url = RPC_ENDPOINTS[rpc_index % len(RPC_ENDPOINTS)]
         payload = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
-        req = urllib.request.Request(url, data=payload, headers={"Content-Type":"application/json"})
+        # NB: a User-Agent is required — these providers 403 python-urllib's
+        # default UA (verified 2026-07-16: 403 with default, 200 with this).
+        req = urllib.request.Request(url, data=payload, headers={
+            "Content-Type": "application/json",
+            "User-Agent": "vwm-fetch/1.0 (+https://vwm.cryptofolio.nl)",
+        })
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read())
