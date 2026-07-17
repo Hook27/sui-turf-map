@@ -389,6 +389,28 @@ output = {
     "hq_register": hq_register,
 }
 
+# ── SANITY GATE ────────────────────────────────────────────────────────────────
+# A throttled/failing RPC endpoint can silently skip whole batches (the
+# except/continue blocks above tolerate per-batch errors) and yield a truncated
+# world — which then pollutes the snapshot window with phantom turf changes
+# (seen 2026-07-16: 17k tiles instead of 22k committed). Refuse to persist a
+# snapshot that lost >10% of tiles or players vs the newest existing snapshot:
+# better a red CI run than a wrong map. Override: FETCH_SANITY_RATIO=0 disables.
+_sanity_ratio = float(os.environ.get("FETCH_SANITY_RATIO", "0.9"))
+_prev_snaps = sorted(glob.glob(f"{SNAPSHOTS_DIR}/data_*.json"))
+if _sanity_ratio > 0 and _prev_snaps:
+    with open(_prev_snaps[-1], encoding="utf-8") as _f:
+        _prev = json.load(_f)
+    for _what, _new, _old in (("tiles",   len(output["tiles"]),   len(_prev.get("tiles")   or [])),
+                              ("players", len(output["players"]), len(_prev.get("players") or []))):
+        if _old and _new < _old * _sanity_ratio:
+            print(f"SANITY GATE: {_what} collapsed {_old} -> {_new} "
+                  f"(<{_sanity_ratio:.0%} of previous snapshot {_prev_snaps[-1]}) — "
+                  f"refusing to save truncated data; nothing written.")
+            sys.exit(1)
+    print(f"  Sanity gate OK: tiles {len(output['tiles'])} vs {len(_prev.get('tiles') or [])}, "
+          f"players {len(output['players'])} vs {len(_prev.get('players') or [])}")
+
 
 # ── LAST CHANGE TRACKING ──────────────────────────────────────────────────────
 # Compare current turf counts against previous snapshots to find when each
