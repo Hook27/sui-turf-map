@@ -24,6 +24,13 @@ RPC_ENDPOINTS = [
     "https://sui-mainnet-endpoint.blockvision.org",
     "https://sui-rpc.publicnode.com",
 ]
+# Optional keyed endpoint (e.g. Ankr) — set the SUI_RPC_URL secret in GitHub
+# Actions (or the env var locally) and it becomes the primary; the free
+# endpoints above remain as fallback. NEVER hardcode a keyed URL here: the
+# repo is public.
+_keyed = os.environ.get("SUI_RPC_URL", "").strip()
+if _keyed:
+    RPC_ENDPOINTS.insert(0, _keyed)
 
 BATCH      = 50
 DELAY      = 0.1
@@ -52,14 +59,15 @@ def rpc(method, params, retries=5):
                 return data["result"]
         except urllib.error.HTTPError as e:
             last_err = e
+            host = url.split("/")[2]  # log the host only — a keyed URL must not leak into CI logs
             if e.code == 429:
                 # genuine rate limit: back off on the same endpoint first
                 wait = 2 ** (attempt + 1)
-                print(f"  Rate limited (429) on {url}, waiting {wait}s...")
+                print(f"  Rate limited (429) on {host}, waiting {wait}s...")
                 time.sleep(wait)
                 continue
             # 403 = endpoint blocks this client (e.g. datacenter IPs) — rotate immediately
-            print(f"  HTTP {e.code} on {url}, rotating endpoint...")
+            print(f"  HTTP {e.code} on {host}, rotating endpoint...")
             rpc_index += 1
             time.sleep(3)
         except Exception as e:

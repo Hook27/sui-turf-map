@@ -23,6 +23,8 @@ jobs:
           python-version: '3.12'
 
       - name: Fetch blockchain data
+        env:
+          SUI_RPC_URL: ${{ secrets.SUI_RPC_URL }}
         run: python fetch_data.py
 
       - name: Commit and push data
