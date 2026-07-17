@@ -81,7 +81,7 @@ have a specific reason to touch them.
 
 - `fetch_data.py` pulls on-chain data → `data.json`, `history.json`, `snapshots/`, and other JSON
   files read by the app.
-- `.github/workflows/update.yml` — runs every **6 hours** (cron `0 */6 * * *`) + manual dispatch.
+- `.github/workflows/update.yml` — runs every **4 hours** (cron `0 */4 * * *`) + manual dispatch.
   It commits the refreshed data with messages titled `Update map data …`. Frequent data-only
   commits on `main` are normal and automated — not hand edits.
 - `.github/workflows/weekly_report.yml` — Mondays 09:00 UTC; generates The Vendetta Gazette
