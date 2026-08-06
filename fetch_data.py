@@ -180,7 +180,19 @@ for i in range(0, len(real_pids), BATCH):
 
 named = sum(1 for p in profiles.values() if p["name"])
 print(f"  Profiles: {len(profiles)} ({named} with name)")
-hq_set = {p["hqTile"] for p in profiles.values() if p.get("hqTile")}
+# HQ status is a property of (tile, owner) — never of the tile id alone. Profiles
+# are read here in step 2, tiles only in step 3, ~30 min later. An HQ captured
+# inside that window is still listed as the loser's headquarter_tile while the
+# tile already belongs to the attacker, which painted a phantom HQ on the winner's
+# turf until the next run (10 of the 150 snapshots held on 2026-08-06 showed a
+# player with 2+ HQ tiles, 9 of them in the week the bots turned aggressive).
+# Map each HQ tile to the *set* of players claiming it: a stale losing claim and a
+# fresh winning claim can briefly overlap, and a set keeps the genuine HQ intact.
+hq_owners = {}
+for _hq_pid, _hq_prof in profiles.items():
+    _hq_tile = _hq_prof.get("hqTile")
+    if _hq_tile:
+        hq_owners.setdefault(_hq_tile, set()).add(_hq_pid)
 
 # ── STEP 2.5: Cash/Weapons balances ──────────────────────────────────────────
 # Phase 1: discover dynamic-field object IDs for "cash" and "weapon" per player.
@@ -303,7 +315,8 @@ for i in range(0, len(tile_ids), BATCH):
                 if k == "henchman":   g_h = v
                 elif k == "bouncer":  g_b = v
                 elif k == "enforcer": g_e = v
-        raw_tiles.append({"x": x, "y": y, "pid": pid, "hq": tile_id in hq_set,
+        raw_tiles.append({"x": x, "y": y, "pid": pid,
+                          "hq": pid in hq_owners.get(tile_id, ()),
                           "g_h": g_h, "g_b": g_b, "g_e": g_e,
                           "oid": tile_id})
         owner_count[pid] = owner_count.get(pid, 0) + 1
@@ -535,6 +548,12 @@ for i in range(1, len(snaps_with_hq)):
     # Case 2: OID disappeared from register (HQ destroyed/captured, attacker
     # didn't plant their own HQ there). Only do this for the last pair
     # (current snapshot) to avoid re-detecting old disappearances.
+    # This is the PRIMARY detection path: since the hq flag is owner-scoped
+    # (see hq_owners above), a captured HQ leaves hq_register entirely instead of
+    # changing owner, so Case 1 no longer fires for it. Case 1 still covers the
+    # historical snapshot pairs written before that fix. Neither path duplicates
+    # the other: a stale phantom entry in reg_prev has prev_owner == the current
+    # owner, and is skipped by the new_owner == prev_owner guard below.
     if i == len(snaps_with_hq) - 1:
         # Build coord->oid map from previous snapshot's raw tiles
         # We need to know where the disappeared HQ was located
