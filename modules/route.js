@@ -5,62 +5,67 @@ var navMode = false;
 var navA = null; // {x, y, name}
 var navB = null; // {x, y, name}
 
-// ── A* PATHFINDING ────────────────────────────────────────────────────────────
-class MinHeap{
-  constructor(){this.h=[];}
-  push(i){this.h.push(i);this._up(this.h.length-1);}
-  pop(){const t=this.h[0],l=this.h.pop();if(this.h.length>0){this.h[0]=l;this._down(0);}return t;}
-  _up(i){while(i>0){const p=(i-1)>>1;if(this.h[p][0]<=this.h[i][0])break;[this.h[p],this.h[i]]=[this.h[i],this.h[p]];i=p;}}
-  _down(i){const n=this.h.length;while(true){let m=i,l=2*i+1,r=2*i+2;if(l<n&&this.h[l][0]<this.h[m][0])m=l;if(r<n&&this.h[r][0]<this.h[m][0])m=r;if(m===i)break;[this.h[m],this.h[i]]=[this.h[i],this.h[m]];i=m;}}
-  get size(){return this.h.length;}
-}
+// ── SHORTEST ROUTE ────────────────────────────────────────────────────────────
+// Every tile is passable and every step costs the same, so the shortest route
+// between two territories is fully determined: the Chebyshev distance between
+// their nearest pair of turfs, walked in a straight line. No search needed.
+//
+// This was an A* until v4.20. It returned the right LENGTH but the wrong path
+// twice over. With 8-way movement, movement in the axis that has slack is free,
+// so among the thousands of equally short paths the heap picked an arbitrary one
+// and routes zig-zagged. Worse, it anchored the start on the A-tile nearest the
+// CENTRE of B's bounding box — for a sprawling empire that centre sits in empty
+// space, so Wu-Tang → Sir Caprice started 30 tiles off and came out at 64 steps
+// where 34 suffice.
 
 function findRoute(pidA,pidB){
   const tilesA=tiles.filter(t=>t.pid===pidA);
   const tilesB=tiles.filter(t=>t.pid===pidB);
   if(!tilesA.length||!tilesB.length) return null;
-  let bx0=Infinity,bx1=-Infinity,by0=Infinity,by1=-Infinity;
-  for(const t of tilesB){if(t.x<bx0)bx0=t.x;if(t.x>bx1)bx1=t.x;if(t.y<by0)by0=t.y;if(t.y>by1)by1=t.y;}
-  function h(x,y){return Math.max(Math.max(0,bx0-x,x-bx1),Math.max(0,by0-y,y-by1));}
-  const cxB=(bx0+bx1)/2,cyB=(by0+by1)/2;
-  let st=tilesA[0],bd=Infinity;
-  for(const t of tilesA){const d=Math.max(Math.abs(t.x-cxB),Math.abs(t.y-cyB));if(d<bd){bd=d;st=t;}}
-  const targetSet=new Set(tilesB.map(t=>`${t.x},${t.y}`));
-  const gScore=new Map(),cameFrom=new Map(),heap=new MinHeap();
-  const sk=`${st.x},${st.y}`;
-  gScore.set(sk,0);heap.push([h(st.x,st.y),st.x,st.y]);
-  const bx0e=Math.min(minX,bx0)-5,bx1e=Math.max(maxX,bx1)+5;
-  const by0e=Math.min(minY,by0)-5,by1e=Math.max(maxY,by1)+5;
-  let iter=0;
-  while(heap.size>0&&iter++<200000){
-    const [f,x,y]=heap.pop();
-    const key=`${x},${y}`;
-    const g=gScore.get(key);
-    if(g===undefined||f>g+h(x,y)+0.001) continue;
-    if(targetSet.has(key)){
-      const path=[];let cur=key;
-      while(cur){
-        const [cx,cy]=cur.split(',').map(Number);
-        const tidx=tileMap.get(cur);
-        let type='empty';
-        if(targetSet.has(cur)) type='target';
-        else if(tidx!==undefined) type=tiles[tidx].pid===pidA?'own':'conquer';
-        path.unshift({x:cx,y:cy,type});
-        cur=cameFrom.get(cur);
+
+  // Nearest pair. Comparing every A-tile with every B-tile is 3M operations for
+  // two large empires, so B is bucketed into coarse cells first: an A-tile only
+  // descends into a cell whose tightest bounding box could still beat the best
+  // pair found so far. Turns |A|×|B| into roughly |A|×|cells|.
+  const CELL=16,cells=new Map();
+  for(const t of tilesB){
+    const k=`${Math.floor(t.x/CELL)},${Math.floor(t.y/CELL)}`;
+    let c=cells.get(k);
+    if(!c){c={x0:Infinity,x1:-Infinity,y0:Infinity,y1:-Infinity,list:[]};cells.set(k,c);}
+    c.list.push(t);
+    if(t.x<c.x0)c.x0=t.x;if(t.x>c.x1)c.x1=t.x;if(t.y<c.y0)c.y0=t.y;if(t.y>c.y1)c.y1=t.y;
+  }
+  const cellList=[...cells.values()];
+  let best=Infinity,from=null,to=null;
+  for(const a of tilesA){
+    for(const c of cellList){
+      const lower=Math.max(Math.max(0,c.x0-a.x,a.x-c.x1),Math.max(0,c.y0-a.y,a.y-c.y1));
+      if(lower>=best) continue;
+      for(const b of c.list){
+        const d=Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y));
+        if(d<best){best=d;from=a;to=b;}
       }
-      return path;
-    }
-    for(const [dx,dy] of DIRS8){
-      const nx=x+dx,ny=y+dy;
-      if(nx<bx0e||nx>bx1e||ny<by0e||ny>by1e) continue;
-      const nkey=`${nx},${ny}`;
-      const ng=g+1;
-      if(gScore.has(nkey)&&gScore.get(nkey)<=ng) continue;
-      gScore.set(nkey,ng);cameFrom.set(nkey,key);
-      heap.push([ng+h(nx,ny),nx,ny]);
     }
   }
-  return null;
+  if(!from) return null;
+
+  // Straight line from `from` to `to`. With D the Chebyshev distance the major
+  // axis advances by exactly 1 per step and the minor axis by 0 or 1, so every
+  // step is a legal 8-way move and the path is both minimal and dead straight.
+  const targetSet=new Set(tilesB.map(t=>`${t.x},${t.y}`));
+  const dx=to.x-from.x,dy=to.y-from.y,D=best;
+  const path=[];
+  for(let i=0;i<=D;i++){
+    const x=D?from.x+Math.round(dx*i/D):from.x;
+    const y=D?from.y+Math.round(dy*i/D):from.y;
+    const key=`${x},${y}`;
+    const tidx=tileMap.get(key);
+    let type='empty';
+    if(targetSet.has(key)) type='target';
+    else if(tidx!==undefined) type=tiles[tidx].pid===pidA?'own':'conquer';
+    path.push({x,y,type});
+  }
+  return path;
 }
 
 // ── ROUTE MODE ────────────────────────────────────────────────────────────────
