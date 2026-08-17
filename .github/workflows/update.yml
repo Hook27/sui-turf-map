@@ -10,8 +10,19 @@ on:
     # LET OP: '0 */7 * * *' is GEEN cyclus van 7 uur — cron vuurt dan op 0/7/14/21
     # en dus 4× per dag (~103% van het quotum). Een 7-uurscyclus bestaat niet in
     # cron, want 24 is geen veelvoud van 7.
-    # ⚠ Dit herhaalt zich ELK jaar in augustus. Is het quotum tegen die tijd ruimer
-    # (of de bron een andere), haal dan de eerste regel weg.
+    #
+    # ⚠ DE AUGUSTUSREGEL MAG WEG, en hoort dat eigenlijk ook. Hij loste een krapte
+    # op die door 6×/dag ontstond; op 3×/dag zit je ELKE maand op ~78%, augustus
+    # incluis. Laat je hem staan, dan zakt de kaart één maand per jaar zonder
+    # aanleiding terug naar 1×/dag. Geen haast: de regel slaapt van september t/m
+    # juli. Beslisregel — kijk rond 20 september naar de Ankr-teller: staat die op
+    # ~55-60% (twee derde maand op 78%-tempo), dan klopt de rekensom en kan hij weg;
+    # staat hij hoger, dan verbruikt er iets anders mee en wil je de noodrem houden.
+    #
+    # ⚠⚠ HAAL ZE DAN ALLEBEI AAN: schrap de eerste regel ÉN zet '1-7,9-12' in de
+    # tweede terug naar '*'. Doe je alleen het eerste, dan draait de kaart in
+    # augustus HELEMAAL NIET meer — en dat merk je pas een maand later.
+    #   resultaat:  - cron: '0 */8 * * *'
     - cron: '0 5 * 8 *'            # augustus: 1×/dag, 05:00 UTC (07:00 NL)
     - cron: '0 */8 * 1-7,9-12 *'   # rest van het jaar: 3×/dag (00/08/16 UTC)
   workflow_dispatch:
