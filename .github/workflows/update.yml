@@ -2,7 +2,18 @@ name: Update map data
 
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    # Ankr-quotum: op 17-08 stond de teller op 80% bij 6 runs/dag → ~0,83% per run,
+    # dus ~120 runs/maand. Bij 6×/dag (186/maand) loop je halverwege de maand leeg.
+    # Het MAANDVELD van cron schakelt hieronder vanzelf om, dus er is niets te
+    # onthouden: augustus 1×/dag (quotum al grotendeels op), daarna 3×/dag = 93
+    # runs/maand ≈ 78% met marge.
+    # LET OP: '0 */7 * * *' is GEEN cyclus van 7 uur — cron vuurt dan op 0/7/14/21
+    # en dus 4× per dag (~103% van het quotum). Een 7-uurscyclus bestaat niet in
+    # cron, want 24 is geen veelvoud van 7.
+    # ⚠ Dit herhaalt zich ELK jaar in augustus. Is het quotum tegen die tijd ruimer
+    # (of de bron een andere), haal dan de eerste regel weg.
+    - cron: '0 5 * 8 *'            # augustus: 1×/dag, 05:00 UTC (07:00 NL)
+    - cron: '0 */8 * 1-7,9-12 *'   # rest van het jaar: 3×/dag (00/08/16 UTC)
   workflow_dispatch:
 
 permissions:

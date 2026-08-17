@@ -81,7 +81,11 @@ have a specific reason to touch them.
 
 - `fetch_data.py` pulls on-chain data → `data.json`, `history.json`, `snapshots/`, and other JSON
   files read by the app.
-- `.github/workflows/update.yml` — runs every **4 hours** (cron `0 */4 * * *`) + manual dispatch.
+- `.github/workflows/update.yml` — **two cron entries that switch on the month field**: daily at
+  05:00 UTC during August, every 8 hours the rest of the year, + manual dispatch. Throttled down
+  from every 4 hours in Aug 2026 because the Ankr RPC quota (~120 runs/month at ~9k calls per run)
+  ran out mid-month. The comment in the workflow carries the arithmetic — read it before changing
+  the cadence, and note that `*/7` is not a 7-hour cycle.
   It commits the refreshed data with messages titled `Update map data …`. Frequent data-only
   commits on `main` are normal and automated — not hand edits.
 - `.github/workflows/weekly_report.yml` — Mondays 09:00 UTC; generates The Vendetta Gazette
