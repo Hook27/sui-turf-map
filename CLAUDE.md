@@ -80,7 +80,11 @@ have a specific reason to touch them.
 ## Data & workflows
 
 - `fetch_data.py` pulls on-chain data → `data.json`, `history.json`, `snapshots/`, and other JSON
-  files read by the app.
+  files read by the app. It also writes **`field_cache.json`**, which the frontend does *not* read:
+  it remembers the dynamic-field object ids for each player's cash/weapon balance. Those ids never
+  change, and looking them up cost one RPC call per player (~4,900 per run). Together with reusing
+  the coordinate→turf-id mapping from the previous `data.json`, that cut a run from ~7,000 calls to
+  ~1,700. Both caches are self-healing: an id that fails to read is dropped and re-discovered.
 - `.github/workflows/update.yml` — **two cron entries that switch on the month field**: daily at
   05:00 UTC during August, every 8 hours the rest of the year, + manual dispatch. Throttled down
   from every 4 hours in Aug 2026 because the Ankr RPC quota (~120 runs/month at ~9k calls per run)

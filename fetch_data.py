@@ -81,6 +81,60 @@ def signed(v, neg):
     v = int(v)
     return -abs(v) if neg in (True, "true") else v
 
+# ── Opzoek-caches: wat NOOIT verandert hoeven we niet elke run op te halen ────
+# Een dynamic-field object-id ligt vast zodra het veld bestaat (Sui leidt het af
+# uit parent + sleutel). Twee stappen deden dat werk toch elke run opnieuw en
+# kostten samen ~5.300 van de ~7.000 calls per run:
+#   1. STAP 2.5 vroeg per speler op welk object zijn cash/wapen-veld is
+#      (4.891 calls, één per speler).
+#   2. STAP 3 loste elke tabel-entry op naar het turf-id (452 calls), terwijl
+#      diezelfde coördinaat→turf-id-koppeling al in de vorige data.json staat.
+# Beide worden nu hergebruikt; alleen wat nieuw of stuk is wordt opgehaald.
+FIELD_CACHE_FILE = "field_cache.json"
+
+def load_json_file(path, default):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception:
+        return default
+
+def load_field_cache():
+    """{pid: {"cash": oid, "weapon": oid}} — leeg bij een eerste of kapotte run."""
+    c = load_json_file(FIELD_CACHE_FILE, {})
+    fields = c.get("resource_fields") if isinstance(c, dict) else None
+    return fields if isinstance(fields, dict) else {}
+
+def save_field_cache(fields, keep_pids):
+    """Bewaar alleen spelers die nog in het register staan, zodat het bestand
+    niet eindeloos groeit met verdwenen accounts."""
+    keep = set(keep_pids)
+    trimmed = {p: v for p, v in fields.items() if p in keep}
+    with open(FIELD_CACHE_FILE, "w", encoding="utf-8") as fh:
+        json.dump({"version": 1, "resource_fields": trimmed}, fh, separators=(",", ":"))
+    return len(trimmed)
+
+def prev_tile_index():
+    """(x, y) → turf-id uit de vorige data.json. Die mapping is onveranderlijk:
+    een turf-object blijft bij zijn coördinaat, alleen de eigenaar wisselt.
+    Live geverifieerd 2026-08-17 op (299,-133)."""
+    prev = load_json_file("data.json", {})
+    out = {}
+    for t in (prev.get("tiles") or []):
+        oid = t.get("oid")
+        if oid and isinstance(t.get("x"), int) and isinstance(t.get("y"), int):
+            out[(t["x"], t["y"])] = oid
+    return out
+
+def coord_of(name):
+    """Coördinaat uit de dynamic-field-sleutel; None als de vorm afwijkt (dan
+    valt de aanroeper terug op de gewone, dure route)."""
+    try:
+        v = (name or {}).get("value") or {}
+        return (signed(v["x"], v.get("x_neg")), signed(v["y"], v.get("y_neg")))
+    except Exception:
+        return None
+
 def find_id(obj):
     if isinstance(obj, str) and obj.startswith("0x") and len(obj) == 66:
         return obj
@@ -200,8 +254,13 @@ for _hq_pid, _hq_prof in profiles.items():
 # We collect those IDs, then batch-fetch the actual field objects with multiGet.
 print("Step 2.5/4: Fetching cash/weapons balances...")
 profile_pids = list(profiles.keys())
-resource_field_oids = []  # list of (pid, field_name, objectId)
-for i, pid in enumerate(profile_pids):
+field_cache = load_field_cache()
+# Alleen spelers die we nog niet kennen kosten een opzoek-call. Bij een gevulde
+# cache zijn dat er nul tot een handvol (nieuwe accounts).
+unknown = [pid for pid in profile_pids if pid not in field_cache]
+print(f"  Field cache: {len(field_cache)} known · {len(unknown)} to discover")
+for i, pid in enumerate(unknown):
+    entry = {}
     try:
         res = rpc("suix_getDynamicFields", [pid, None, 10])
         for item in (res.get("data") or []):
@@ -209,13 +268,19 @@ for i, pid in enumerate(profile_pids):
             if name.get("type") == "0x1::string::String" and name.get("value") in ("cash", "weapon"):
                 oid = item.get("objectId")
                 if oid:
-                    resource_field_oids.append((pid, name["value"], oid))
+                    entry[name["value"]] = oid
     except Exception:
-        pass
+        continue          # niet cachen wat we niet konden lezen — volgende run opnieuw
+    field_cache[pid] = entry
     if i % 100 == 0 and i > 0:
-        print(f"  {i}/{len(profile_pids)} players scanned for resource fields")
+        print(f"  {i}/{len(unknown)} new players scanned for resource fields")
     time.sleep(DELAY)
-print(f"  Resource fields found: {len(resource_field_oids)} across {len({x[0] for x in resource_field_oids})} players")
+
+resource_field_oids = []  # list of (pid, field_name, objectId)
+for pid in profile_pids:
+    for field_name, oid in (field_cache.get(pid) or {}).items():
+        resource_field_oids.append((pid, field_name, oid))
+print(f"  Resource fields: {len(resource_field_oids)} across {len({x[0] for x in resource_field_oids})} players")
 
 # Phase 2: batch-fetch all resource field objects
 pid_cash   = {}
@@ -229,6 +294,10 @@ for i in range(0, len(resource_field_oids), BATCH):
             continue
         for j, obj in enumerate(objs):
             if not obj or obj.get("error"):
+                # een gecacht id dat niet meer leest → weggooien, zodat de
+                # volgende run hem opnieuw opzoekt in plaats van hem stil over
+                # te slaan
+                field_cache.pop(batch[j][0], None)
                 continue
             pid, field_name, _ = batch[j]
             fields = ((obj.get("data") or {}).get("content") or {}).get("fields", {})
@@ -243,6 +312,7 @@ for i in range(0, len(resource_field_oids), BATCH):
         pass
     time.sleep(DELAY)
 print(f"  Cash: {len(pid_cash)} players · Weapons: {len(pid_weapon)} players")
+print(f"  Field cache saved: {save_field_cache(field_cache, profile_pids)} players")
 
 # ── STEP 3: TurfSystem ────────────────────────────────────────────────────────
 print("Step 3/4: Loading TurfSystem...")
@@ -253,21 +323,39 @@ if not turf_table_id:
     print("ERROR: TurfSystem Table ID not found"); sys.exit(1)
 print(f"  Table ID: {turf_table_id}")
 
-dyn_ids = []
+# De sleutel van elke tabel-entry IS de coördinaat, en die koppeling naar het
+# turf-id staat al in de vorige data.json. Bekende coördinaten hoeven dus niet
+# opnieuw opgelost te worden; alleen nieuw geclaimde tiles kosten nog een call.
+# Zelfherstellend: mocht een gecacht turf-id ooit niet meer lezen, dan valt die
+# tile uit de nieuwe data.json — waardoor hij de vólgende run niet meer in
+# `known_tiles` zit en gewoon opnieuw wordt opgelost. Eén run missen, daarna weg.
+# De coördinaten in de uitvoer komen sowieso uit het tile-object zelf (stap 4),
+# niet uit deze cache.
+known_tiles = prev_tile_index()
+dyn_ids = []          # alleen de entries die we NIET uit de vorige run kennen
+tile_ids = []
+entries = 0
+reused = 0
 cursor = None
 page = 0
 while True:
     res = rpc("suix_getDynamicFields", [turf_table_id, cursor, 50])
     for item in res["data"]:
-        if item.get("objectId"): dyn_ids.append(item["objectId"])
+        oid = item.get("objectId")
+        if not oid: continue
+        entries += 1
+        cached = known_tiles.get(coord_of(item.get("name")))
+        if cached:
+            tile_ids.append(cached); reused += 1
+        else:
+            dyn_ids.append(oid)
     page += 1
-    if page % 20 == 0: print(f"  Page {page}: {len(dyn_ids)} tile entries")
+    if page % 20 == 0: print(f"  Page {page}: {entries} tile entries ({reused} from cache)")
     if not res["hasNextPage"]: break
     cursor = res["nextCursor"]
     time.sleep(DELAY_PAGE)
-print(f"  TurfSystem done: {len(dyn_ids)} entries")
+print(f"  TurfSystem done: {entries} entries · {reused} reused · {len(dyn_ids)} to resolve")
 
-tile_ids = []
 for i in range(0, len(dyn_ids), BATCH):
     objs = rpc("sui_multiGetObjects", [dyn_ids[i:i+BATCH], {"showContent": True}])
     if not isinstance(objs, list): continue
