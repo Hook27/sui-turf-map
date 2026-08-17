@@ -8,3 +8,7 @@ CLAUDE.local.md
 # On-chain bot — local only, never pushed to GitHub (contains ops code for the
 # autonomous player; keys live in the Sui CLI keystore, never here)
 bot/
+
+# Python bytecode - gegenereerd, hoort niet in versiebeheer
+__pycache__/
+*.pyc
