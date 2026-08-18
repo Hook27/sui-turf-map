@@ -85,11 +85,11 @@ have a specific reason to touch them.
   change, and looking them up cost one RPC call per player (~4,900 per run). Together with reusing
   the coordinate→turf-id mapping from the previous `data.json`, that cut a run from ~7,000 calls to
   ~1,700. Both caches are self-healing: an id that fails to read is dropped and re-discovered.
-- `.github/workflows/update.yml` — **two cron entries that switch on the month field**: daily at
-  05:00 UTC during August, every 8 hours the rest of the year, + manual dispatch. Throttled down
-  from every 4 hours in Aug 2026 because the Ankr RPC quota (~120 runs/month at ~9k calls per run)
-  ran out mid-month. The comment in the workflow carries the arithmetic — read it before changing
-  the cadence, and note that `*/7` is not a 7-hour cycle.
+- `.github/workflows/update.yml` — **every 8 hours** (`0 */8 * * *`) + manual dispatch. Was every
+  4 hours until Aug 2026, when the Ankr freemium quota (~1.1M requests/month) ran out mid-month at
+  ~8,700 calls per run. After the caching work a run costs ~4,000, so 3×/day sits at roughly a third
+  of the quota. The comment in the workflow carries the arithmetic — read it before changing the
+  cadence, and note that `*/7` is not a 7-hour cycle.
   It commits the refreshed data with messages titled `Update map data …`. Frequent data-only
   commits on `main` are normal and automated — not hand edits.
 - `.github/workflows/weekly_report.yml` — Mondays 09:00 UTC; generates The Vendetta Gazette
