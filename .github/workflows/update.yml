@@ -2,12 +2,15 @@ name: Update map data
 
 on:
   schedule:
-    # 3×/dag (00/08/16 UTC). Onderbouwing, allemaal gemeten en niet geschat:
+    # 6×/dag (elke 4 uur). Onderbouwing, allemaal GEMETEN aan de Ankr-teller:
     #   Ankr freemium ≈ 1,1 mln requests/maand (reset op de 1e). Een run kostte
-    #   ~8.700 calls, dus 6×/dag (186 runs) liep halverwege augustus 2026 leeg.
-    #   Sinds de caches in fetch_data.py (field_cache.json + hergebruik van de
-    #   coördinaat→turf-id-mapping) kost een run ~4.000 → 3×/dag ≈ 93 runs/maand
-    #   ≈ 33% van het quotum, met ruimte zat.
+    #   ~8.700 calls, dus 6×/dag (186 runs ≈ 155%) liep halverwege augustus 2026
+    #   leeg. Sinds de caches in fetch_data.py (field_cache.json + hergebruik van
+    #   de coördinaat→turf-id-mapping) kost een run nog ~2.100 — gemeten 19-08 aan
+    #   een schoon 24-uursvenster met precies 3 runs: 6.403 / 3. Daarmee kost
+    #   6×/dag ≈ 186 runs ≈ 390k requests ≈ 35% van het quotum.
+    #   Meet het opnieuw met een venster dat ALLEEN runs van dezelfde soort bevat;
+    #   uit een gemengd venster aftrekken gaf een fors te hoge uitkomst.
     #
     # Er stond hier tijdelijk een tweede regel die via het MAANDVELD in augustus
     # naar 1×/dag terugschakelde; die noodgreep is op 18-08-2026 opgeruimd toen de
@@ -19,7 +22,7 @@ on:
     # LET OP: '0 */7 * * *' is GEEN cyclus van 7 uur — cron vuurt dan op 0/7/14/21
     # en dus 4× per dag. Een 7-uurscyclus bestaat niet in cron, want 24 is geen
     # veelvoud van 7.
-    - cron: '0 */8 * * *'
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 
 permissions:
