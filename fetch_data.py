@@ -39,9 +39,19 @@ DELAY_PAGE = 0.15
 # ── RPC ────────────────────────────────────────────────────────────────────────
 rpc_index = 0
 
-def rpc(method, params, retries=5):
+# Hoeveel 429's we op HETZELFDE endpoint accepteren voordat we doorrouleren.
+# Een korte burst is tijdelijk — even wachten helpt. Een LEEG MAANDQUOTUM geeft
+# exact dezelfde 429, maar die gaat niet meer over: dan is blijven kloppen fataal
+# (5 pogingen à 2/4/8/16/32s per call × ~2.100 calls = de run haalt het einde
+# nooit). Na dit aantal stappen we door naar het volgende endpoint. `rpc_index`
+# is globaal, dus de rest van de run begint meteen daar — en omdat de teller
+# rondloopt, komt een endpoint dat alleen even druk was vanzelf weer aan de beurt.
+RATE_LIMIT_TRIES = 2
+
+def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
     global rpc_index
     last_err = None
+    ep_429 = 0            # opeenvolgende 429's op het endpoint waar we nu staan
     for attempt in range(retries):
         url = RPC_ENDPOINTS[rpc_index % len(RPC_ENDPOINTS)]
         payload = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
@@ -61,18 +71,29 @@ def rpc(method, params, retries=5):
             last_err = e
             host = url.split("/")[2]  # log the host only — a keyed URL must not leak into CI logs
             if e.code == 429:
-                # genuine rate limit: back off on the same endpoint first
-                wait = 2 ** (attempt + 1)
-                print(f"  Rate limited (429) on {host}, waiting {wait}s...")
-                time.sleep(wait)
+                ep_429 += 1
+                if ep_429 < RATE_LIMIT_TRIES:
+                    # korte drukte: even wachten op hetzelfde endpoint
+                    wait = 2 ** ep_429
+                    print(f"  Rate limited (429) on {host}, waiting {wait}s...")
+                    time.sleep(wait)
+                    continue
+                # blijft 429 → behandelen als "dit endpoint is op" (quotum) en
+                # doorrouleren, in plaats van hier de hele run op te wachten
+                print(f"  Rate limited (429) on {host} after {ep_429} tries, rotating endpoint...")
+                rpc_index += 1
+                ep_429 = 0
+                time.sleep(1)
                 continue
             # 403 = endpoint blocks this client (e.g. datacenter IPs) — rotate immediately
             print(f"  HTTP {e.code} on {host}, rotating endpoint...")
             rpc_index += 1
+            ep_429 = 0
             time.sleep(3)
         except Exception as e:
             last_err = e
             rpc_index += 1
+            ep_429 = 0
             time.sleep(3)
     # never fall through to an implicit None — fail loudly with the real cause
     raise RuntimeError(f"rpc {method} failed after {retries} attempts") from last_err
