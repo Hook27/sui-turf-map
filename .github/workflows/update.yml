@@ -22,7 +22,16 @@ on:
     # LET OP: '0 */7 * * *' is GEEN cyclus van 7 uur — cron vuurt dan op 0/7/14/21
     # en dus 4× per dag. Een 7-uurscyclus bestaat niet in cron, want 24 is geen
     # veelvoud van 7.
-    - cron: '0 */4 * * *'
+    #
+    # De MINUUT is bewust 22 en niet 0 (gewijzigd 27-08-2026). GitHub plant
+    # geplande workflows op best effort en :00 is de drukste minuut van het
+    # platform. Gemeten over 25-27 aug: ELKE run startte 37-66 min te laat, met
+    # uitschieters van 108 en 196 min, en in de nacht van 26 op 27 aug werden TWEE
+    # slots (00:00 en 04:00 UTC) helemaal overgeslagen — de kaart stond toen 9,5 uur
+    # stil. Geen enkele run was mislukt; het is puur de inplanning. Zie je dit
+    # terugkomen, kijk dan naar de STARTTIJDEN (gh run list), niet naar fetch_data.py:
+    # cron en Ankr waren beide in orde.
+    - cron: '22 */4 * * *'
   workflow_dispatch:
 
 permissions:
