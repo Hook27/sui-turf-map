@@ -80,9 +80,15 @@ jobs:
           last=$(printf '%s' "$json" | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['commit']['committer']['date'])")
           age=$(( $(date -u +%s) - $(date -u -d "$last" +%s) ))
           echo "data.json is $((age / 60)) min oud (laatste commit $last)"
-          # 3 uur: ruim onder de cadans van 4 uur, dus een normale ronde wordt nooit
-          # geblokkeerd — alleen een dubbele trigger binnen hetzelfde venster.
-          if [ "$age" -lt 10800 ]; then
+          # 1 uur. Deze poort is er ALLEEN voor een dubbele trigger op hetzelfde slot:
+          # de Pi-cron en een alsnog uitgevoerde schedule-run liggen hooguit een uur uit
+          # elkaar (GitHub's vertraging was 37-66 min).
+          # Stond eerst op 3 uur, met de redenering 'ruim onder de cadans van 4 uur'. Dat
+          # gaat mis zodra er een run BUITEN het ritme is geweest: op 28-08 zette een
+          # handmatige run om 11:27 de klok opnieuw, waarna de cron van 14:22 werd
+          # geweigerd op 175 min < 180 — en de kaart 7 uur oud werd. Liever een keer een
+          # dubbele fetch (~2.100 calls) dan een gemiste ronde: de bots lezen deze data.
+          if [ "$age" -lt 3600 ]; then
             echo "nog vers — deze run stopt hier (dubbele trigger)"
             echo "run=false" >> "$GITHUB_OUTPUT"
           else
