@@ -31,7 +31,20 @@ on:
     # stil. Geen enkele run was mislukt; het is puur de inplanning. Zie je dit
     # terugkomen, kijk dan naar de STARTTIJDEN (gh run list), niet naar fetch_data.py:
     # cron en Ankr waren beide in orde.
-    - cron: '22 */4 * * *'
+    #
+    # TERUGGEBRACHT VAN 6× NAAR 2×/DAG (29-08-2026). Sinds de Pi-cron de workflow
+    # via workflow_dispatch aantrekt, is dit blok nog uitsluitend VANGNET voor het
+    # geval de Pi stilvalt. Zes schedule-slots naast zes Pi-slots leverden twee
+    # kwalen op: ruis in de runlijst, en — belangrijker — echte dubbele fetches.
+    # De versheidspoort hieronder grijpt namelijk alleen als de late schedule-run
+    # BINNEN een uur na de Pi-run binnenkomt. Gemeten 28/29-08: #902 kwam 111 min
+    # te laat en #905 148 min, allebei ruim buiten het uur, dus allebei een
+    # volledige tweede fetch (~2.100 calls elk). Met 2×/dag is dat hoogstens twee
+    # keer per dag in plaats van zes.
+    # Valt de Pi uit, dan ververst de kaart nog steeds 2× per dag; dat is de prijs
+    # van het vangnet en bewust geaccepteerd (de bots lezen deze data, maar die
+    # liggen bij een Pi-storing tóch stil).
+    - cron: '22 */12 * * *'
   workflow_dispatch:
     inputs:
       src:
