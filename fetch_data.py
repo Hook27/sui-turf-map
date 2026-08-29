@@ -18,11 +18,24 @@ SCALE            = 18446744073709551616  # 2^64 fixed-point scale used for resou
 
 # fullnode.mainnet.sui.io removed (Mysten public JSON-RPC shut down July 2026);
 # blockvision.org/v1/ removed (404 since 2026-07). All three below verified 2026-07-16.
-# publicnode last: it 403-blocks GitHub Actions runner IPs (rpc() rotates past it).
+#
+# ORDER MATTERS — measured 2026-08-29 by walking the whole TurfSystem table on
+# each endpoint (455 pages of 50):
+#   blockvision  22.711 entries  complete, works from GitHub Actions  → first
+#   publicnode   22.711 entries  complete, but 403s Actions runner IPs → second
+#                                (works locally; rpc() rotates past it in CI)
+#   suiet         6.231 entries  INCOMPLETE — 27% of the table, and it does not
+#                                say so: it walks to the end of the id space and
+#                                reports hasNextPage=false. On the same run it
+#                                served 89 of 4.873 players. Kept only as a last
+#                                resort; walk_complete() below catches its
+#                                truncation before the data is used.
+# Until 2026-08-29 suiet was FIRST, which is how run #907 turned an Ankr 401
+# into a silently quarter-sized world.
 RPC_ENDPOINTS = [
-    "https://mainnet.suiet.app",
     "https://sui-mainnet-endpoint.blockvision.org",
     "https://sui-rpc.publicnode.com",
+    "https://mainnet.suiet.app",
 ]
 # Optional keyed endpoint (e.g. Ankr) — set the SUI_RPC_URL secret in GitHub
 # Actions (or the env var locally) and it becomes the primary; the free
@@ -35,6 +48,10 @@ if _keyed:
 BATCH      = 50
 DELAY      = 0.1
 DELAY_PAGE = 0.15
+
+# Ondergrens voor "dit ziet er compleet uit", gebruikt door walk_complete() en
+# door de SANITY GATE onderaan. FETCH_SANITY_RATIO=0 zet beide uit.
+_sanity_ratio = float(os.environ.get("FETCH_SANITY_RATIO", "0.9"))
 
 # ── RPC ────────────────────────────────────────────────────────────────────────
 rpc_index = 0
@@ -147,6 +164,26 @@ def prev_tile_index():
             out[(t["x"], t["y"])] = oid
     return out
 
+# ── WALK-VOLLEDIGHEID ─────────────────────────────────────────────────────────
+# Een endpoint kan een dynamic-field-tabel STIL onvolledig serveren: geen fout,
+# geen 429, gewoon hasNextPage=false na een fractie van de entries. Gemeten
+# 2026-08-29 op mainnet.suiet.app: 6.231 van 22.711 turfs en 89 van 4.873
+# spelers, in één en dezelfde run. De SANITY GATE onderaan ving dat op, maar pas
+# nadat de hele run was uitgelopen — vier minuten en duizenden calls later, met
+# een melding die niet vertelt wélk endpoint tekortschoot.
+# Deze controle staat direct achter de walk en noemt het endpoint bij naam.
+def walk_complete(what, got, prev_key):
+    prev = len(load_json_file("data.json", {}).get(prev_key) or [])
+    if _sanity_ratio <= 0 or not prev:
+        return          # eerste run, of controle uitgezet
+    if got < prev * _sanity_ratio:
+        host = RPC_ENDPOINTS[rpc_index % len(RPC_ENDPOINTS)].split("/")[2]
+        print(f"WALK INCOMPLETE: {what} {got} vs {prev} in the previous run "
+              f"(<{_sanity_ratio:.0%}) — endpoint in use is {host}. That node is "
+              f"serving a partial table without saying so; refusing to build a "
+              f"world from it. Nothing written.")
+        sys.exit(1)
+
 def coord_of(name):
     """Coördinaat uit de dynamic-field-sleutel; None als de vorm afwijkt (dan
     valt de aanroeper terug op de gewone, dure route)."""
@@ -191,6 +228,7 @@ while True:
     cursor = res["nextCursor"]
     time.sleep(DELAY_PAGE)
 print(f"  Registry done: {len(wrap_ids)} wrappers")
+walk_complete("registry wrappers", len(wrap_ids), "players")
 
 real_pids = []
 for i in range(0, len(wrap_ids), BATCH):
@@ -376,6 +414,7 @@ while True:
     cursor = res["nextCursor"]
     time.sleep(DELAY_PAGE)
 print(f"  TurfSystem done: {entries} entries · {reused} reused · {len(dyn_ids)} to resolve")
+walk_complete("turf table entries", entries, "tiles")
 
 for i in range(0, len(dyn_ids), BATCH):
     objs = rpc("sui_multiGetObjects", [dyn_ids[i:i+BATCH], {"showContent": True}])
@@ -518,7 +557,6 @@ output = {
 # (seen 2026-07-16: 17k tiles instead of 22k committed). Refuse to persist a
 # snapshot that lost >10% of tiles or players vs the newest existing snapshot:
 # better a red CI run than a wrong map. Override: FETCH_SANITY_RATIO=0 disables.
-_sanity_ratio = float(os.environ.get("FETCH_SANITY_RATIO", "0.9"))
 _prev_snaps = sorted(glob.glob(f"{SNAPSHOTS_DIR}/data_*.json"))
 if _sanity_ratio > 0 and _prev_snaps:
     with open(_prev_snaps[-1], encoding="utf-8") as _f:
