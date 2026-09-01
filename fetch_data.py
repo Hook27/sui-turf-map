@@ -71,21 +71,69 @@ _sanity_ratio = float(os.environ.get("FETCH_SANITY_RATIO", "0.9"))
 # ── RPC ────────────────────────────────────────────────────────────────────────
 rpc_index = 0
 
-# Hoeveel 429's we op HETZELFDE endpoint accepteren voordat we doorrouleren.
-# Een korte burst is tijdelijk — even wachten helpt. Een LEEG MAANDQUOTUM geeft
-# exact dezelfde 429, maar die gaat niet meer over: dan is blijven kloppen fataal
-# (5 pogingen à 2/4/8/16/32s per call × ~2.100 calls = de run haalt het einde
-# nooit). Na dit aantal stappen we door naar het volgende endpoint. `rpc_index`
-# is globaal, dus de rest van de run begint meteen daar — en omdat de teller
-# rondloopt, komt een endpoint dat alleen even druk was vanzelf weer aan de beurt.
+# Hoeveel 429's we op HETZELFDE endpoint accepteren voordat we het even laten
+# rusten. Een korte burst is tijdelijk — even wachten helpt. Een LEEG MAANDQUOTUM
+# geeft exact dezelfde 429, maar die gaat niet meer over: dan is blijven kloppen
+# fataal (5 pogingen à 2/4/8/16/32s per call × ~2.100 calls = de run haalt het
+# einde nooit). Bewust LAAG gehouden: sinds endpoints tijdelijk geparkeerd worden
+# (zie hieronder) is opzijstappen goedkoop, en lang wachten juist niet.
 RATE_LIMIT_TRIES = 2
+
+# ── ENDPOINT-WACHTKAMER ───────────────────────────────────────────────────────
+# Tot 01-09-2026 was doorrouleren een ENKELE REIS: `rpc_index` schoof op bij een
+# fout en schoof nooit terug, dus één slechte seconde in stap 1 verhuisde de hele
+# run naar het volgende endpoint. Dat werd zichtbaar toen blockvision primair werd:
+# runs #931 en #932 rotEerden allebei tijdens het spelersregister na twee 429's op
+# rij, waarna alle ~2.100 resterende calls op de BETAALDE Ankr-sleutel liepen —
+# precies wat de omzetting moest voorkomen. Uit de logs bleek blockvision geen muur
+# maar een knijper: losse 429's die na twee seconden vanzelf overgaan.
+# Nu krijgt een endpoint dat blijft knijpen een TIME-OUT in plaats van een
+# verbanning. Na afloop staat het weer vooraan, dus de run keert vanzelf terug naar
+# de gratis primaire endpoint. De straf verdubbelt bij herhaling (een endpoint dat
+# echt plat ligt wordt vanzelf met rust gelaten) en wordt gewist zodra er weer een
+# call slaagt.
+# De basisduur moet KORT zijn ten opzichte van een run (~10 min): elke seconde
+# time-out is een seconde waarin de betaalde sleutel het werk doet. Bij 15s en
+# ~3 calls/seconde kost een vlaag ~45 calls in plaats van de ~2.100 van vóór deze
+# wachtkamer. Het verdubbelen vangt het andere uiterste af: ligt een endpoint echt
+# plat, dan is het na vijf strafrondes ruim tien minuten met rust gelaten.
+EP_PAUSE_BASE = 15      # eerste time-out in seconden
+EP_PAUSE_MAX  = 600     # plafond; daarboven heeft nog langer wachten geen zin
+
+_ep_pause_until = {}    # endpoint-index -> unix-tijd waarop het weer mag
+_ep_pause_len   = {}    # endpoint-index -> huidige strafduur (verdubbelt)
+
+def _ep_host(i):
+    # alleen de host loggen — een keyed URL mag niet in de CI-log belanden
+    return RPC_ENDPOINTS[i].split("/")[2]
+
+def _ep_pause(i, why):
+    d = min((_ep_pause_len.get(i, 0) * 2) or EP_PAUSE_BASE, EP_PAUSE_MAX)
+    _ep_pause_len[i]   = d
+    _ep_pause_until[i] = time.time() + d
+    print(f"  {_ep_host(i)} {why} — {d}s in de wachtkamer, volgend endpoint...")
+
+def _ep_pick():
+    """Het eerste endpoint dat niet in de wachtkamer zit. Staat alles in de
+    wachtkamer, wacht dan tot de eerste vrijkomt (hooguit 30s per poging)."""
+    now = time.time()
+    for i in range(len(RPC_ENDPOINTS)):
+        if _ep_pause_until.get(i, 0) <= now:
+            return i
+    i = min(range(len(RPC_ENDPOINTS)), key=lambda k: _ep_pause_until.get(k, 0))
+    wait = min(max(_ep_pause_until[i] - now, 0), 30)
+    print(f"  alle endpoints in de wachtkamer — {wait:.0f}s wachten op {_ep_host(i)}...")
+    time.sleep(wait)
+    return i
 
 def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
     global rpc_index
     last_err = None
     ep_429 = 0            # opeenvolgende 429's op het endpoint waar we nu staan
     for attempt in range(retries):
-        url = RPC_ENDPOINTS[rpc_index % len(RPC_ENDPOINTS)]
+        rpc_index = _ep_pick()       # ook de bron voor de host in foutmeldingen
+        url  = RPC_ENDPOINTS[rpc_index]
+        host = _ep_host(rpc_index)
         payload = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
         # NB: a User-Agent is required — these providers 403 python-urllib's
         # default UA (verified 2026-07-16: 403 with default, 200 with this).
@@ -98,10 +146,10 @@ def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
                 data = json.loads(resp.read())
                 if "error" in data:
                     raise ValueError(data["error"])
+                _ep_pause_len.pop(rpc_index, None)   # hersteld → strafteller terug op nul
                 return data["result"]
         except urllib.error.HTTPError as e:
             last_err = e
-            host = url.split("/")[2]  # log the host only — a keyed URL must not leak into CI logs
             if e.code == 429:
                 ep_429 += 1
                 if ep_429 < RATE_LIMIT_TRIES:
@@ -110,23 +158,16 @@ def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
                     print(f"  Rate limited (429) on {host}, waiting {wait}s...")
                     time.sleep(wait)
                     continue
-                # blijft 429 → behandelen als "dit endpoint is op" (quotum) en
-                # doorrouleren, in plaats van hier de hele run op te wachten
-                print(f"  Rate limited (429) on {host} after {ep_429} tries, rotating endpoint...")
-                rpc_index += 1
+                _ep_pause(rpc_index, f"blijft 429 geven na {ep_429} pogingen")
                 ep_429 = 0
-                time.sleep(1)
                 continue
-            # 403 = endpoint blocks this client (e.g. datacenter IPs) — rotate immediately
-            print(f"  HTTP {e.code} on {host}, rotating endpoint...")
-            rpc_index += 1
+            # 403 = endpoint blocks this client (e.g. datacenter IPs)
+            _ep_pause(rpc_index, f"gaf HTTP {e.code}")
             ep_429 = 0
-            time.sleep(3)
         except Exception as e:
             last_err = e
-            rpc_index += 1
+            _ep_pause(rpc_index, f"faalde ({type(e).__name__})")
             ep_429 = 0
-            time.sleep(3)
     # never fall through to an implicit None — fail loudly with the real cause
     raise RuntimeError(f"rpc {method} failed after {retries} attempts") from last_err
 
@@ -192,7 +233,7 @@ def walk_complete(what, got, prev_key):
     if _sanity_ratio <= 0 or not prev:
         return          # eerste run, of controle uitgezet
     if got < prev * _sanity_ratio:
-        host = RPC_ENDPOINTS[rpc_index % len(RPC_ENDPOINTS)].split("/")[2]
+        host = _ep_host(rpc_index)
         print(f"WALK INCOMPLETE: {what} {got} vs {prev} in the previous run "
               f"(<{_sanity_ratio:.0%}) — endpoint in use is {host}. That node is "
               f"serving a partial table without saying so; refusing to build a "
