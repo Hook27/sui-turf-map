@@ -22,6 +22,8 @@ SCALE            = 18446744073709551616  # 2^64 fixed-point scale used for resou
 # ORDER MATTERS — measured 2026-08-29 by walking the whole TurfSystem table on
 # each endpoint (455 pages of 50):
 #   blockvision  22.711 entries  complete, works from GitHub Actions  → first
+#                                (sinds 01-09 ook de PRIMAIRE endpoint, vóór de
+#                                betaalde Ankr-sleutel — zie het blok hieronder)
 #   publicnode   22.711 entries  complete, but 403s Actions runner IPs → second
 #                                (works locally; rpc() rotates past it in CI)
 #   suiet         6.231 entries  INCOMPLETE — 27% of the table, and it does not
@@ -38,12 +40,25 @@ RPC_ENDPOINTS = [
     "https://mainnet.suiet.app",
 ]
 # Optional keyed endpoint (e.g. Ankr) — set the SUI_RPC_URL secret in GitHub
-# Actions (or the env var locally) and it becomes the primary; the free
-# endpoints above remain as fallback. NEVER hardcode a keyed URL here: the
-# repo is public.
+# Actions (or the env var locally). NEVER hardcode a keyed URL here: the repo
+# is public.
+#
+# SINDS 01-09-2026 STAAT DE BETAALDE SLEUTEL NIET MEER VOORAAN, maar als tweede,
+# achter blockvision. Aanleiding: het opwaarderen van het Ankr-account met $10 op
+# 29-08 (om een uitgeput freemium-quotum te deblokkeren) zette dat account
+# PERMANENT over van Freemium naar Premium PAYG. De gratis maandpot komt niet
+# terug — op 01-09 werd gewoon uit het saldo geput, 200 credits per call. De kaart
+# kostte daarmee ~2,6M credits/dag ≈ $8/maand.
+# Blockvision serveert dezelfde volledige tabel (22.711 entries, gemeten 29-08,
+# tot op de eind-cursor gelijk aan Ankr) en alle vijf de methodes die dit script
+# gebruikt geven daar identieke antwoorden (getest 01-09). Dus: blockvision doet
+# het werk, Ankr is de BETAALDE ACHTERVANG die pas aan de beurt komt als
+# blockvision faalt of blijft knijpen.
+# Blijkt blockvision toch te wankel, dan zet SUI_RPC_KEYED_FIRST=1 de sleutel
+# terug op plek 1 — een env-var in de workflow, geen codewijziging.
 _keyed = os.environ.get("SUI_RPC_URL", "").strip()
 if _keyed:
-    RPC_ENDPOINTS.insert(0, _keyed)
+    RPC_ENDPOINTS.insert(0 if os.environ.get("SUI_RPC_KEYED_FIRST") == "1" else 1, _keyed)
 
 BATCH      = 50
 DELAY      = 0.1
