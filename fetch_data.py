@@ -92,15 +92,21 @@ RATE_LIMIT_TRIES = 2
 # de gratis primaire endpoint. De straf verdubbelt bij herhaling (een endpoint dat
 # echt plat ligt wordt vanzelf met rust gelaten) en wordt gewist zodra er weer een
 # call slaagt.
-# De basisduur moet KORT zijn ten opzichte van een run (~10 min): elke seconde
-# time-out is een seconde waarin de betaalde sleutel het werk doet. Bij 15s en
-# ~3 calls/seconde kost een vlaag ~45 calls in plaats van de ~2.100 van vóór deze
-# wachtkamer. Het verdubbelen vangt het andere uiterste af: ligt een endpoint echt
-# plat, dan is het na vijf strafrondes ruim tien minuten met rust gelaten.
-EP_PAUSE_BASE = 15      # eerste time-out in seconden
-EP_PAUSE_MAX  = 600     # plafond; daarboven heeft nog langer wachten geen zin
+# De strafduur telt in CALLS, niet in seconden (gewijzigd 04-09-2026). Met een
+# time-out van 15 SECONDEN bleef 61-70% van het werk op de betaalde sleutel liggen
+# (gemeten 2 en 3 sep: 1.495 resp. 1.313 Ankr-calls per run van ~2.140). De reden
+# is dat de twee endpoints niet even hard lopen: op blockvision worstelt het script
+# zich door 2-secondenwachtjes na elke 429, terwijl Ankr op volle snelheid draait.
+# Vijftien seconden op Ankr leverde daardoor ~57 calls op, waar dezelfde vijftien
+# seconden op blockvision er een stuk minder doen — een straf in tijd is dus een
+# veel zwaardere straf dan hij lijkt. In calls geteld is hij eerlijk en meteen
+# voorspelbaar: precies zoveel calls gaan naar de achtervang, ongeacht het tempo.
+EP_PAUSE_BASE = 25      # eerste time-out, in calls
+EP_PAUSE_MAX  = 400     # plafond: ligt een endpoint echt plat, dan proberen we het
+                        # nog hooguit een handvol keer per run opnieuw
 
-_ep_pause_until = {}    # endpoint-index -> unix-tijd waarop het weer mag
+_call_no = 0            # doorlopende teller van alle uitgaande calls
+_ep_pause_until = {}    # endpoint-index -> callnummer waarop het weer mag
 _ep_pause_len   = {}    # endpoint-index -> huidige strafduur (verdubbelt)
 
 def _ep_host(i):
@@ -110,27 +116,27 @@ def _ep_host(i):
 def _ep_pause(i, why):
     d = min((_ep_pause_len.get(i, 0) * 2) or EP_PAUSE_BASE, EP_PAUSE_MAX)
     _ep_pause_len[i]   = d
-    _ep_pause_until[i] = time.time() + d
-    print(f"  {_ep_host(i)} {why} — {d}s in de wachtkamer, volgend endpoint...")
+    _ep_pause_until[i] = _call_no + d
+    print(f"  {_ep_host(i)} {why} — {d} calls in de wachtkamer, volgend endpoint...")
 
 def _ep_pick():
     """Het eerste endpoint dat niet in de wachtkamer zit. Staat alles in de
-    wachtkamer, wacht dan tot de eerste vrijkomt (hooguit 30s per poging)."""
-    now = time.time()
+    wachtkamer, neem dan degene die het eerst vrijkomt — de teller loopt alleen
+    door als we calls doen, dus hier valt niets uit te zitten."""
     for i in range(len(RPC_ENDPOINTS)):
-        if _ep_pause_until.get(i, 0) <= now:
+        if _ep_pause_until.get(i, 0) <= _call_no:
             return i
     i = min(range(len(RPC_ENDPOINTS)), key=lambda k: _ep_pause_until.get(k, 0))
-    wait = min(max(_ep_pause_until[i] - now, 0), 30)
-    print(f"  alle endpoints in de wachtkamer — {wait:.0f}s wachten op {_ep_host(i)}...")
-    time.sleep(wait)
+    print(f"  alle endpoints in de wachtkamer — toch maar {_ep_host(i)} proberen...")
+    time.sleep(2)
     return i
 
 def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
-    global rpc_index
+    global rpc_index, _call_no
     last_err = None
     ep_429 = 0            # opeenvolgende 429's op het endpoint waar we nu staan
     for attempt in range(retries):
+        _call_no += 1                # de klok van de wachtkamer tikt op calls
         rpc_index = _ep_pick()       # ook de bron voor de host in foutmeldingen
         url  = RPC_ENDPOINTS[rpc_index]
         host = _ep_host(rpc_index)
