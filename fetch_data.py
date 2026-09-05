@@ -131,36 +131,6 @@ def _ep_pick():
     time.sleep(2)
     return i
 
-# ── ADAPTIEF TEMPO ────────────────────────────────────────────────────────────
-# De wachtkamer hierboven verdeelt het werk als een endpoint knijpt, maar hij zorgt
-# er niet voor dat het minder gaat knijpen. Gemeten 4/5 sep op blockvision: ~200
-# 429's per run, en per beurt maar 19-30 calls voordat de volgende straf viel. We
-# zaten dus structureel boven zijn limiet en reageerden met wachten en uitwijken in
-# plaats van met langzamer aankloppen. Dat kostte twee dingen tegelijk: ~1.100 calls
-# per run op de betaalde sleutel, en ruim zes minuten looptijd aan pure wachttijd
-# (207 × 2s).
-# Daarom houdt elk endpoint nu zijn eigen tempo bij: er komt wat bij na een 429 en
-# er gaat langzaam wat af zolang het goed gaat. Zo zakt het script vanzelf naar het
-# tempo dat dit endpoint wél aankan, en blijft het daar hangen. De vertraging geldt
-# PER ENDPOINT, dus op de betaalde achtervang blijft hij nul en gaat het vol gas.
-EP_DELAY_STEP  = 0.05   # erbij na elke 429 — snel omhoog
-EP_DELAY_DECAY = 0.999  # eraf per geslaagde call — langzaam omlaag, anders slingert het
-EP_DELAY_MAX   = 2.0    # verder terugschakelen heeft geen zin; dan is de wachtkamer beter
-
-_ep_delay = {}          # endpoint-index -> seconden pauze vóór elke call
-
-def _ep_slow_down(i):
-    was = _ep_delay.get(i, 0.0)
-    now = min(was + EP_DELAY_STEP, EP_DELAY_MAX)
-    _ep_delay[i] = now
-    if int(now * 10) > int(was * 10):      # alleen bij een nieuwe tiende melden
-        print(f"  {_ep_host(i)}: tempo terug naar 1 call per {now:.2f}s")
-
-def _ep_speed_up(i):
-    d = _ep_delay.get(i, 0.0)
-    if d:
-        _ep_delay[i] = d * EP_DELAY_DECAY
-
 def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
     global rpc_index, _call_no
     last_err = None
@@ -170,9 +140,6 @@ def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
         rpc_index = _ep_pick()       # ook de bron voor de host in foutmeldingen
         url  = RPC_ENDPOINTS[rpc_index]
         host = _ep_host(rpc_index)
-        pace = _ep_delay.get(rpc_index, 0.0)
-        if pace:
-            time.sleep(pace)         # op het tempo dat dit endpoint verdraagt
         payload = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
         # NB: a User-Agent is required — these providers 403 python-urllib's
         # default UA (verified 2026-07-16: 403 with default, 200 with this).
@@ -186,12 +153,10 @@ def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
                 if "error" in data:
                     raise ValueError(data["error"])
                 _ep_pause_len.pop(rpc_index, None)   # hersteld → strafteller terug op nul
-                _ep_speed_up(rpc_index)              # gaat goed → tempo mag weer omhoog
                 return data["result"]
         except urllib.error.HTTPError as e:
             last_err = e
             if e.code == 429:
-                _ep_slow_down(rpc_index)     # te hard van stapel — tempo omlaag
                 ep_429 += 1
                 if ep_429 < RATE_LIMIT_TRIES:
                     # korte drukte: even wachten op hetzelfde endpoint
