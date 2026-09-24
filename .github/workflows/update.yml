@@ -44,7 +44,16 @@ on:
     # Valt de Pi uit, dan ververst de kaart nog steeds 2× per dag; dat is de prijs
     # van het vangnet en bewust geaccepteerd (de bots lezen deze data, maar die
     # liggen bij een Pi-storing tóch stil).
-    - cron: '22 */12 * * *'
+    #
+    # TERUGGEBRACHT NAAR 1×/DAG (24-09-2026). Het spel is tot stilstand gekomen —
+    # niemand speelt meer, de kaart verandert nauwelijks nog. De Pi-cron vuurt nu
+    # één keer per dag om 04:22 UTC (was elke 4 uur). Dit vangnet staat twaalf uur
+    # verderop, op 16:22 UTC: valt de Pi-run van de ochtend weg, dan vangt dit blok
+    # hem dezelfde dag nog op (GitHub levert hem gemeten 4-7 uur te laat, dus ergens
+    # in de avond). Let op de koppeling met de poort hieronder: de schedule-drempel
+    # is mee omhoog gegaan naar 20 uur, anders zou dit vangnet elke dag een tweede
+    # volledige fetch doen.
+    - cron: '22 16 * * *'
   workflow_dispatch:
     inputs:
       src:
@@ -111,8 +120,16 @@ jobs:
           # #922 kwam erdoor op 74 min. 2 van de 7 fetchten zonder dat er iets mis was.
           # Op 3,5 uur komt een schedule-run alleen nog door als de Pi echt een slot van
           # 4 uur heeft gemist, en dat is precies waarvoor hij er staat.
+          #
+          # schedule nu 20 uur (gewijzigd 24-09-2026, cadans naar 1×/dag). Bij een
+          # dagelijkse Pi-run is data.json 's avonds altijd ouder dan 3,5 uur — die oude
+          # drempel zou het vangnet dus élke dag laten fetchen. Rekensom: de Pi-run van
+          # 04:22 commit rond 04:50; het vangnet van 16:22 komt 4-7 uur te laat binnen en
+          # ziet dan data van 16-19 uur oud → overslaan. Heeft de Pi de ochtend gemist,
+          # dan is de data ~40 uur oud → fetchen. 20 uur ligt met marge tussen beide.
+          # De pi-cron houdt zijn uur: die vangt alleen een dubbele trigger af.
           if [ "$EVENT" = "schedule" ]; then
-            max_age=12600   # 3,5 uur
+            max_age=72000   # 20 uur
           else
             max_age=3600    # 1 uur
           fi

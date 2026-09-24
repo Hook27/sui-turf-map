@@ -110,8 +110,15 @@ function openReport(){
   const start   = new Date(weeklyReport.period_start);
   const end     = new Date(weeklyReport.period_end);
   const fmt     = d => d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-  meta.textContent = `${fmt(start)} – ${fmt(end)} · ${weeklyReport.stats?.hq_captures??0} HQ raids · Generated ${new Date(weeklyReport.generated).toLocaleDateString('en-GB')}`;
-  content.innerHTML = sanitizeReportHTML(weeklyReport.html || '<p>No content.</p>');
+  meta.textContent = `${fmt(start)} – ${fmt(end)} · ${weeklyReport.stats?.hq_captures??0} HQ raids · Generated ${new Date(weeklyReport.generated).toLocaleDateString('en-GB')} · Final edition`;
+  // The weekly report was suspended on 24-09-2026: the game has come to a standstill,
+  // so weekly_report.json no longer updates. Say so, rather than let the last issue
+  // pass for this week's. Remove this notice if weekly_report.yml is ever resumed.
+  const notice = '<div style="border:1px dashed currentColor;padding:6px 10px;margin:0 0 12px;'
+    + 'font-size:11px;opacity:.85">This is the final edition. <em>The Vendetta Gazette</em> '
+    + 'was suspended on 24 September 2026 — the game has come to a standstill, so there is '
+    + 'no longer a week to report on.</div>';
+  content.innerHTML = notice + sanitizeReportHTML(weeklyReport.html || '<p>No content.</p>');
   document.getElementById('report-modal').classList.add('open');
 }
 

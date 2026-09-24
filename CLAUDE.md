@@ -85,16 +85,21 @@ have a specific reason to touch them.
   change, and looking them up cost one RPC call per player (~4,900 per run). Together with reusing
   the coordinate→turf-id mapping from the previous `data.json`, that cut a run from ~7,000 calls to
   ~1,700. Both caches are self-healing: an id that fails to read is dropped and re-discovered.
-- `.github/workflows/update.yml` — **every 4 hours** (`0 */4 * * *`) + manual dispatch. It was
-  throttled down for a few days in Aug 2026 when the Ankr freemium quota (~1.1M requests/month) ran
-  out mid-month at ~8,700 calls per run; after the caching work a run costs **~2,100** (measured
-  19-08 on a clean 24h window), so 6×/day sits at ~35% of the quota. The comment in the workflow
-  carries the arithmetic — read it before changing the cadence, and note that `*/7` is not a 7-hour
-  cycle.
+- `.github/workflows/update.yml` — **once a day** since 24-09-2026, because the game has come to
+  a standstill. The run is driven by a cron on the maintainer's Pi that fires a `workflow_dispatch`
+  at **04:22 UTC**; the workflow's own `schedule` (`22 16 * * *`) is only a safety net for a missed
+  Pi run. A freshness gate in the workflow skips a run whose `data.json` is still fresh — 1 hour
+  for the Pi trigger, 20 hours for the schedule — so the net does not turn into a second daily
+  fetch. Change the Pi cron, the schedule and that gate together; the comments in the workflow
+  carry the arithmetic. A run costs ~2,100 RPC calls and takes ~20-30 min; it reads from
+  blockvision first and falls back to the paid Ankr key (`SUI_RPC_URL`) only when blockvision
+  throttles.
   It commits the refreshed data with messages titled `Update map data …`. Frequent data-only
   commits on `main` are normal and automated — not hand edits.
-- `.github/workflows/weekly_report.yml` — Mondays 09:00 UTC; generates The Vendetta Gazette
-  (`generate_report.py`, uses the `ANTHROPIC_API_KEY` secret).
+- `.github/workflows/weekly_report.yml` — **suspended since 24-09-2026** (schedule commented out,
+  manual dispatch still works). It generated The Vendetta Gazette (`generate_report.py`, uses the
+  `ANTHROPIC_API_KEY` secret). The last edition is 21-09-2026 and `modules/intel.js` labels it as
+  the final one; remove that notice if the report is ever resumed.
 
 Both workflows push with the built-in `GITHUB_TOKEN` (`permissions: contents: write`); no personal
 access token is involved in the automatic pipeline.

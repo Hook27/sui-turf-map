@@ -1,8 +1,12 @@
 name: Generate weekly report
 
 on:
-  schedule:
-    - cron: '0 9 * * 1'   # Every Monday at 09:00 UTC
+  # SUSPENDED 24-09-2026 — the game has come to a standstill, so there is no week
+  # left to report on. The last edition is the one of 21-09-2026; the site labels
+  # it as the final one (modules/intel.js). Manual dispatch still works if you ever
+  # want one more issue. To resume: restore the two lines below.
+  # schedule:
+  #   - cron: '0 9 * * 1'   # Every Monday at 09:00 UTC
   workflow_dispatch:
 
 permissions:
