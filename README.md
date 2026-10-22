@@ -43,8 +43,10 @@ The workflow runs automatically every 6 hours. The map loads instantly from `dat
 
 | File | Purpose |
 |---|---|
-| `index.html` | The map — loads `data.json`, no RPC calls |
+| `index.html` | The map — loads `data.json`; a few features (live turf lookup, Battle Analyzer) query Sui GraphQL directly |
 | `fetch_data.py` | Data fetcher — runs on GitHub Actions |
+| `sui_graphql.py` | Sui GraphQL transport used by `fetch_data.py` (stdlib only; JSON-RPC left the full nodes in Oct 2026) |
+| `tests/` | Offline tests (fake GraphQL chain + recorded fixtures) |
 | `data.json` | Generated data file — served by GitHub Pages |
 | `.github/workflows/update.yml` | Scheduled workflow — runs every 6 hours |
 
@@ -53,6 +55,6 @@ The workflow runs automatically every 6 hours. The map loads instantly from `dat
 To test locally before publishing:
 
 ```bash
-python fetch_data.py        # generates data.json (~10 min)
+python fetch_data.py        # generates data.json (~10 min, public GraphQL endpoint, no key needed)
 python -m http.server 8080  # serves on http://localhost:8080
 ```

@@ -43,8 +43,8 @@ Additional local maintainer notes (on-chain identifiers, hard rules, current foc
 | `ghost.js` | Ghost Turfs overlay (`drawGhostTiles`) |
 | `intel.js` | Soft Targets modal + The Vendetta Gazette (weekly report) |
 | `profile.js` | "My Profile" modal (own players, wallet address) |
-| `analyzer.js` | Battle Analyzer — decode a fight from a SuiVision URL or last battle |
-| `realtime.js` | Live on-chain garrison fetch (object IDs, 60s cache) for live garrison sections |
+| `analyzer.js` | Battle Analyzer — decode a fight from a SuiVision URL or last battle (Sui GraphQL) |
+| `realtime.js` | Live on-chain reads over Sui GraphQL (turf/player objects, 60s cache, free-turf lookup by coordinate) |
 | `boot.js` | Init entry point: `resizeCanvas`, `loadHistory`, `loadLatest`, `loadWeeklyReport`, `loadPlayerHistory` |
 
 ### Key cross-module couplings
@@ -64,7 +64,7 @@ These are easy to break because everything is global-scope and calls by name:
 ## Versioning convention
 
 Bump the app version on **every** change to the map. The version lives in `index.html`
-(`#ver` badge, around line 825). *(Current: v4.19.)*
+(`#ver` badge, around line 825). *(Current: v4.21.)*
 
 - **Minor change** (the common case): increment the patch after the dot, e.g. `v4.16` → `v4.17`.
 - **Major change** (rare — not really expected anymore): increment before the dot and reset the
@@ -80,20 +80,34 @@ have a specific reason to touch them.
 ## Data & workflows
 
 - `fetch_data.py` pulls on-chain data → `data.json`, `history.json`, `snapshots/`, and other JSON
-  files read by the app. It also writes **`field_cache.json`**, which the frontend does *not* read:
-  it remembers the dynamic-field object ids for each player's cash/weapon balance. Those ids never
-  change, and looking them up cost one RPC call per player (~4,900 per run). Together with reusing
-  the coordinate→turf-id mapping from the previous `data.json`, that cut a run from ~7,000 calls to
-  ~1,700. Both caches are self-healing: an id that fails to read is dropped and re-discovered.
+  files read by the app. **Transport: Sui GraphQL**, through the stdlib-only `sui_graphql.py`
+  (Sui JSON-RPC left the full nodes in mid-October 2026). Endpoints: Mysten's public
+  `graphql.mainnet.sui.io` first (keyless), then Ankr's premium GraphQL, which `sui_graphql.py`
+  derives from the `SUI_RPC_URL` secret (the key is the last path segment; override with
+  `SUI_GRAPHQL_URL`, swap the order with `SUI_GRAPHQL_KEYED_FIRST=1`). The Ankr URL carries the
+  key, so only hosts are ever logged. GraphQL object `json` is *flat* — a VecMap is
+  `{"contents": [{"key", "value"}]}`, no `{type, fields}` wrappers — and its limits are 50 per
+  page and a 5000-byte request payload (so 50 ids per `multiGetObjects`, no more). A transient
+  failure is retried once on the same endpoint before that endpoint is parked; with one endpoint
+  nothing is parked. A failed event walk no longer disappears into a log line: it becomes a
+  `::warning` annotation plus an end-of-run summary (the run still succeeds, so the rest of the
+  data is committed).
+  It also writes **`field_cache.json`**, which the frontend does *not* read: it remembers the
+  dynamic-field object ids for each player's cash/weapon balance. Those ids never change, so only
+  new players cost a lookup. The cache is self-healing: an id that fails to read is dropped and
+  re-discovered. The turf-table walk now returns the turf ids inline, so the old reuse of the
+  coordinate→turf-id mapping from the previous `data.json` is gone.
 - `.github/workflows/update.yml` — **once a day** since 24-09-2026, because the game has come to
   a standstill. The run is driven by a cron on the maintainer's Pi that fires a `workflow_dispatch`
   at **04:22 UTC**; the workflow's own `schedule` (`22 16 * * *`) is only a safety net for a missed
   Pi run. A freshness gate in the workflow skips a run whose `data.json` is still fresh — 1 hour
   for the Pi trigger, 20 hours for the schedule — so the net does not turn into a second daily
   fetch. Change the Pi cron, the schedule and that gate together; the comments in the workflow
-  carry the arithmetic. A run costs ~2,100 RPC calls and takes ~20-30 min; it reads from
-  blockvision first and falls back to the paid Ankr key (`SUI_RPC_URL`) only when blockvision
-  throttles.
+  carry the arithmetic. A run costs ~2,000 GraphQL calls and takes ~17 min (measured locally,
+  22-10-2026; the final log line prints both); it reads from Mysten's public endpoint first and
+  falls back to the paid Ankr key (`SUI_RPC_URL`) only when that endpoint fails or keeps
+  throttling. Ankr's credit cost per GraphQL call is not measured yet — check the Ankr dashboard
+  after the first days.
   It commits the refreshed data with messages titled `Update map data …`. Frequent data-only
   commits on `main` are normal and automated — not hand edits.
 - `.github/workflows/weekly_report.yml` — **suspended since 24-09-2026** (schedule commented out,
@@ -105,6 +119,17 @@ Both workflows push with the built-in `GITHUB_TOKEN` (`permissions: contents: wr
 access token is involved in the automatic pipeline.
 
 ## Local development
+
+Tests (offline: a fake GraphQL chain serves recorded fixtures; Python needs only the stdlib):
+
+```
+python -m unittest discover -s tests
+node --test tests/js/browser_modules.test.mjs
+```
+
+`python tests/record_fixtures.py` re-records `tests/fixtures/world.json` from the live chain;
+`node tests/js/live_check.mjs` smoke-tests the browser modules against the real endpoint.
+On a Windows console set `PYTHONUTF8=1` before `python fetch_data.py` (its log lines contain `→`).
 
 Static site — serve the folder and open in a browser:
 
