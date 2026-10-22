@@ -25,6 +25,7 @@ SCALE            = 18446744073709551616  # 2^64 fixed-point scale used for resou
 # SUI_GRAPHQL_KEYED_FIRST=1 swaps the order. The object json is FLAT (no {type,fields}
 # wrappers): a VecMap is {"contents": [{"key","value"}]}.
 import sui_graphql as sg
+_t0 = time.time()
 from sui_graphql import vecmap as extract_vecmap, resource_amount
 
 BATCH      = 50
@@ -1330,6 +1331,7 @@ with open(ACTIVITY_FILE, "w", encoding="utf-8") as f:
 
 print(f"  player_activity.json updated ({len(activity_days)} players with activity data)")
 
+print(f"\n{sg._call_no} GraphQL calls in {(time.time() - _t0) / 60:.1f} min")
 if WARNINGS:
     print(f"\nDone, with {len(WARNINGS)} warning(s) — these event files may be behind:")
     for w in WARNINGS:

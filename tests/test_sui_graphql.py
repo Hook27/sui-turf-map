@@ -97,7 +97,8 @@ class TestTransport(unittest.TestCase):
         out = io.StringIO()
         with mock.patch.object(sg, "_http_post", post), contextlib.redirect_stdout(out):
             self.assertEqual(sg.gql("query A{x}"), {"ok": 1})
-        self.assertEqual(seen, [sg.MYSTEN_GRAPHQL, sg.ANKR_GRAPHQL + KEY])
+        # one retry on the same endpoint first, then it is parked and the second endpoint takes over
+        self.assertEqual(seen, [sg.MYSTEN_GRAPHQL, sg.MYSTEN_GRAPHQL, sg.ANKR_GRAPHQL + KEY])
         self.assertNotIn(KEY, out.getvalue())
         self.assertIn("graphql.mainnet.sui.io", out.getvalue())   # host only
 
@@ -120,6 +121,49 @@ class TestTransport(unittest.TestCase):
             calls.clear()
             sg.gql("query A{x}")
             self.assertEqual(calls, [sg.ANKR_GRAPHQL + KEY])
+
+    def test_a_one_off_graphql_error_is_retried_on_the_same_endpoint(self):
+        seen = []
+
+        def post(url, body):
+            seen.append(url)
+            if len(seen) == 1:
+                return {"errors": [{"message": "Failed to fetch object contents"}], "data": None}
+            return {"data": {"ok": 1}}
+
+        waits = []
+        with mock.patch.object(sg, "_http_post", post), mock.patch.object(sg, "sleep", waits.append),                 contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(sg.gql("query A{x}"), {"ok": 1})
+        self.assertEqual(seen, [sg.MYSTEN_GRAPHQL] * 2)       # no failover, no penalty
+        self.assertEqual(waits, [2])
+        self.assertEqual(sg._ep_pause_until, {})
+
+    def test_auth_errors_park_the_endpoint_at_once(self):
+        seen = []
+
+        def post(url, body):
+            seen.append(url)
+            if url == sg.MYSTEN_GRAPHQL:
+                raise urllib.error.HTTPError(url, 403, "forbidden", {}, None)
+            return {"data": {"ok": 1}}
+
+        with mock.patch.object(sg, "_http_post", post), contextlib.redirect_stdout(io.StringIO()):
+            sg.gql("query A{x}")
+        self.assertEqual(seen, [sg.MYSTEN_GRAPHQL, sg.ANKR_GRAPHQL + KEY])
+
+    def test_a_single_endpoint_is_never_parked(self):
+        calls, waits = [], []
+
+        def post(url, body):
+            calls.append(url)
+            raise urllib.error.HTTPError(url, 503, "down", {}, None)
+
+        with mock.patch.object(sg, "ENDPOINTS", [sg.MYSTEN_GRAPHQL]), mock.patch.object(sg, "_http_post", post),                 mock.patch.object(sg, "sleep", waits.append), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(RuntimeError):
+                sg.gql("query A{x}")
+        self.assertEqual(len(calls), 8)
+        self.assertEqual(sg._ep_pause_until, {})
+        self.assertTrue(all(w == 2 for w in waits))             # short fixed waits, no 2 s "waiting room" per call
 
     def test_gives_up_loudly_after_all_attempts(self):
         def post(url, body):

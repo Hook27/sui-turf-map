@@ -48,8 +48,13 @@ ENDPOINTS = build_endpoints()
 
 # ── Transport with endpoint "waiting room" (same idea as the old rpc()) ─────────
 # A struggling endpoint gets a time-out measured in CALLS, not seconds; the penalty
-# doubles on repetition and is cleared by the next success.
+# doubles on repetition and is cleared by the next success. Any transient failure (429,
+# 5xx, a GraphQL `errors` entry such as Mysten's occasional "Failed to fetch object
+# contents", a timeout) first gets ONE short wait and a retry on the same endpoint; only a
+# repeat parks it. 401/403/404 mean "this endpoint will not serve us" and park at once.
+# With a single endpoint there is nowhere to fail over to, so nothing is ever parked.
 RATE_LIMIT_TRIES = 2
+PARK_AT_ONCE = (401, 403, 404)
 EP_PAUSE_BASE = 25
 EP_PAUSE_MAX  = 400
 
@@ -66,6 +71,9 @@ def ep_host(i):
 
 
 def _ep_pause(i, why):
+    if len(ENDPOINTS) < 2:
+        print(f"  {ep_host(i)} {why} — enige endpoint, opnieuw proberen...")
+        return
     d = min((_ep_pause_len.get(i, 0) * 2) or EP_PAUSE_BASE, EP_PAUSE_MAX)
     _ep_pause_len[i] = d
     _ep_pause_until[i] = _call_no + d
@@ -100,7 +108,21 @@ def gql(query, variables=None, retries=8):
     body = json.dumps({"query": query, "variables": variables or {}},
                       separators=(",", ":")).encode()
     last_err = None
-    ep_429 = 0
+    ep_tries = 0          # opeenvolgende mislukte pogingen op het endpoint waar we nu staan
+
+    def transient(why):
+        """True = wacht even en probeer hetzelfde endpoint nog eens; False = geparkeerd."""
+        nonlocal ep_tries
+        ep_tries += 1
+        if ep_tries < RATE_LIMIT_TRIES:
+            wait = 2 ** ep_tries
+            print(f"  {why} on {ep_host(rpc_index)}, waiting {wait}s...")
+            sleep(wait)
+            return True
+        _ep_pause(rpc_index, f"blijft falen ({why}) na {ep_tries} pogingen")
+        ep_tries = 0
+        return False
+
     for _ in range(retries):
         _call_no += 1
         rpc_index = _ep_pick()
@@ -114,22 +136,14 @@ def gql(query, variables=None, retries=8):
             return out["data"]
         except urllib.error.HTTPError as e:
             last_err = e
-            if e.code == 429:
-                ep_429 += 1
-                if ep_429 < RATE_LIMIT_TRIES:
-                    wait = 2 ** ep_429
-                    print(f"  Rate limited (429) on {ep_host(rpc_index)}, waiting {wait}s...")
-                    sleep(wait)
-                    continue
-                _ep_pause(rpc_index, f"blijft 429 geven na {ep_429} pogingen")
-                ep_429 = 0
-                continue
-            _ep_pause(rpc_index, f"gaf HTTP {e.code}")
-            ep_429 = 0
+            if e.code in PARK_AT_ONCE:
+                _ep_pause(rpc_index, f"gaf HTTP {e.code}")
+                ep_tries = 0
+            else:
+                transient("Rate limited (429)" if e.code == 429 else f"HTTP {e.code}")
         except Exception as e:
             last_err = e
-            _ep_pause(rpc_index, f"faalde ({type(e).__name__}: {str(e)[:80]})")
-            ep_429 = 0
+            transient(f"{type(e).__name__}: {str(e)[:80]}")
     raise RuntimeError(f"graphql query failed after {retries} attempts") from last_err
 
 

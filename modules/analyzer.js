@@ -1,18 +1,42 @@
 // ── MODULE: analyzer.js ── Vendetta World Map v4.00 ──────────────────────────
 
 // ── BATTLE ANALYZER ───────────────────────────────────────────────────────────
-const BA_RPC = 'https://sui-rpc.publicnode.com'; // fullnode.mainnet.sui.io shut down July 2026
+const BA_GQL = 'https://graphql.mainnet.sui.io/graphql'; // JSON-RPC left the full nodes in Oct 2026
 const BA_SIM_EVENT = '0x63081c5dd824a49289b6557d9f9bcf8613fe801e89dbad728616348a58b4b40a::ibattle::SimulationResultEvent';
 let _baCountdownInterval = null;
 
-async function baRpc(method, params) {
-  const r = await fetch(BA_RPC, {
+async function baGql(query, variables) {
+  const r = await fetch(BA_GQL, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({jsonrpc:'2.0',id:1,method,params})
+    body: JSON.stringify({query, variables: variables || {}})
   });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
   const d = await r.json();
-  if (d.error) throw new Error(d.error.message);
-  return d.result;
+  if (d.errors && d.errors.length) throw new Error(d.errors[0].message || 'GraphQL error');
+  if (!d.data) throw new Error('GraphQL: no data');
+  return d.data;
+}
+
+// One transaction's events (as {type, parsedJson}, the shape the analyzer reads) and its time.
+const BA_Q_TX = 'query($d:String!){transaction(digest:$d){effects{timestamp events{nodes{contents{type{repr} json}}}}}}';
+async function baGetTx(digest) {
+  const d = await baGql(BA_Q_TX, {d: digest});
+  if (!d.transaction) throw new Error('Transaction not found');
+  const eff = d.transaction.effects || {};
+  const events = ((eff.events && eff.events.nodes) || []).map(n => ({
+    type: (n.contents && n.contents.type && n.contents.type.repr) || '',
+    parsedJson: (n.contents && n.contents.json) || {}
+  }));
+  const ms = eff.timestamp ? Date.parse(eff.timestamp) : NaN;
+  return {events, timestampMs: isNaN(ms) ? null : ms};
+}
+
+// The newest battle (SimulationResultEvent) sent by this wallet, or null.
+const BA_Q_LAST = 'query($t:String!,$s:SuiAddress!){events(last:1,filter:{type:$t,sender:$s}){nodes{transaction{digest}}}}';
+async function baLastBattleDigest(addr) {
+  const d = await baGql(BA_Q_LAST, {t: BA_SIM_EVENT, s: addr});
+  const n = d.events && d.events.nodes;
+  return (n && n.length && n[0].transaction && n[0].transaction.digest) || null;
 }
 
 function baUnitClass(name) {
@@ -82,8 +106,8 @@ async function baAnalyzeDigest(digest) {
   const inner=document.getElementById('ba-result');
   inner.innerHTML=`<div style="padding:16px;text-align:center;font-size:11px;color:${_isDay()?'#806030':'#555'};font-family:var(--font-mono)">Fetching transaction…</div>`;
   try {
-    const tx=await baRpc('sui_getTransactionBlock',[digest,{showEvents:true}]);
-    const events=tx.events||[];
+    const tx=await baGetTx(digest);
+    const events=tx.events;
     const simEv=events.find(e=>e.type===BA_SIM_EVENT);
     if(!simEv){
       const found=events.map(e=>e.type.split('::').pop()).join(', ')||'none';
@@ -101,7 +125,7 @@ async function baAnalyzeDigest(digest) {
     const surv=baCountUnits(survivors);
     const total=surv.H+surv.B+surv.E;
     const defLabel=isFree?`Free turf (${baColoredComp(orig.H,orig.B,orig.E)})`:defenderName;
-    const tsMs=tx.timestampMs?parseInt(tx.timestampMs):null;
+    const tsMs=tx.timestampMs;
     const timeLabel=tsMs?new Date(tsMs).toLocaleString(undefined,{dateStyle:'short',timeStyle:'medium'}):'—';
     const deadlineMs=tsMs?tsMs+6*60*1000:null;
 
@@ -205,13 +229,7 @@ async function baAnalyzeLastBattle(){
   btn.disabled=true;
   document.getElementById('ba-result').innerHTML=`<div style="padding:16px;text-align:center;font-size:11px;color:${_isDay()?'#806030':'#555'};font-family:var(--font-mono)">Fetching last battle…</div>`;
   try {
-    let cursor=null,digest=null;
-    for(let page=0;page<5&&!digest;page++){
-      const result=await baRpc('suix_queryEvents',[{Sender:addr},cursor,20,true]);
-      for(const ev of (result.data||[])){if(ev.type===BA_SIM_EVENT){digest=ev.id?.txDigest;break;}}
-      if(!result.hasNextPage) break;
-      cursor=result.nextCursor;
-    }
+    const digest=await baLastBattleDigest(addr);
     if(!digest){
       document.getElementById('ba-result').innerHTML='<div style="padding:10px;color:#ff8483;font-size:11px;font-family:var(--font-mono)">No SimulationResultEvent found for this wallet.</div>';
     } else {

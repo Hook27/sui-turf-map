@@ -158,6 +158,8 @@ jobs:
 
       - name: Fetch blockchain data
         env:
+          # Ankr key (the last path segment of this URL). sui_graphql.py derives the Ankr GraphQL
+          # URL from it and uses it as the backup behind Mysten's public GraphQL endpoint.
           SUI_RPC_URL: ${{ secrets.SUI_RPC_URL }}
         run: python fetch_data.py
 
