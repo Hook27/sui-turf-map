@@ -5,7 +5,7 @@ Saves versioned snapshots and maintains history.json.
 Max 150 snapshots (≈30 days at 4x/day, plus room for manual snapshots).
 """
 
-import json, time, sys, os, glob, urllib.request, urllib.error
+import json, time, sys, os, glob
 from datetime import datetime, timezone
 
 # ── CONSTANTS ──────────────────────────────────────────────────────────────────
@@ -16,49 +16,16 @@ MAX_SNAPSHOTS    = 150  # keep last 150 snapshots (~30 days at 4x/day, with room
 SNAPSHOTS_DIR    = "snapshots"
 SCALE            = 18446744073709551616  # 2^64 fixed-point scale used for resources and raid values
 
-# fullnode.mainnet.sui.io removed (Mysten public JSON-RPC shut down July 2026);
-# blockvision.org/v1/ removed (404 since 2026-07). All three below verified 2026-07-16.
-#
-# ORDER MATTERS — measured 2026-08-29 by walking the whole TurfSystem table on
-# each endpoint (455 pages of 50):
-#   blockvision  22.711 entries  complete, works from GitHub Actions  → first
-#                                (sinds 01-09 ook de PRIMAIRE endpoint, vóór de
-#                                betaalde Ankr-sleutel — zie het blok hieronder)
-#   publicnode   22.711 entries  complete, but 403s Actions runner IPs → second
-#                                (works locally; rpc() rotates past it in CI)
-#   suiet         6.231 entries  INCOMPLETE — 27% of the table, and it does not
-#                                say so: it walks to the end of the id space and
-#                                reports hasNextPage=false. On the same run it
-#                                served 89 of 4.873 players. Kept only as a last
-#                                resort; walk_complete() below catches its
-#                                truncation before the data is used.
-# Until 2026-08-29 suiet was FIRST, which is how run #907 turned an Ankr 401
-# into a silently quarter-sized world.
-RPC_ENDPOINTS = [
-    "https://sui-mainnet-endpoint.blockvision.org",
-    "https://sui-rpc.publicnode.com",
-    "https://mainnet.suiet.app",
-]
-# Optional keyed endpoint (e.g. Ankr) — set the SUI_RPC_URL secret in GitHub
-# Actions (or the env var locally). NEVER hardcode a keyed URL here: the repo
-# is public.
-#
-# SINDS 01-09-2026 STAAT DE BETAALDE SLEUTEL NIET MEER VOORAAN, maar als tweede,
-# achter blockvision. Aanleiding: het opwaarderen van het Ankr-account met $10 op
-# 29-08 (om een uitgeput freemium-quotum te deblokkeren) zette dat account
-# PERMANENT over van Freemium naar Premium PAYG. De gratis maandpot komt niet
-# terug — op 01-09 werd gewoon uit het saldo geput, 200 credits per call. De kaart
-# kostte daarmee ~2,6M credits/dag ≈ $8/maand.
-# Blockvision serveert dezelfde volledige tabel (22.711 entries, gemeten 29-08,
-# tot op de eind-cursor gelijk aan Ankr) en alle vijf de methodes die dit script
-# gebruikt geven daar identieke antwoorden (getest 01-09). Dus: blockvision doet
-# het werk, Ankr is de BETAALDE ACHTERVANG die pas aan de beurt komt als
-# blockvision faalt of blijft knijpen.
-# Blijkt blockvision toch te wankel, dan zet SUI_RPC_KEYED_FIRST=1 de sleutel
-# terug op plek 1 — een env-var in de workflow, geen codewijziging.
-_keyed = os.environ.get("SUI_RPC_URL", "").strip()
-if _keyed:
-    RPC_ENDPOINTS.insert(0 if os.environ.get("SUI_RPC_KEYED_FIRST") == "1" else 1, _keyed)
+# ── TRANSPORT ──────────────────────────────────────────────────────────────────
+# Sui GraphQL via sui_graphql.py (stdlib only). JSON-RPC is gone from the full-node
+# software since mid-October 2026; the old endpoint list (blockvision, publicnode,
+# suiet, Ankr JSON-RPC) and the rpc() wrapper were removed with it.
+# Endpoints: Mysten's public GraphQL first (keyless), the paid Ankr GraphQL behind it
+# (derived from the SUI_RPC_URL secret — NEVER hardcode a keyed URL, the repo is public).
+# SUI_GRAPHQL_KEYED_FIRST=1 swaps the order. The object json is FLAT (no {type,fields}
+# wrappers): a VecMap is {"contents": [{"key","value"}]}.
+import sui_graphql as sg
+from sui_graphql import vecmap as extract_vecmap, resource_amount
 
 BATCH      = 50
 DELAY      = 0.1
@@ -68,114 +35,16 @@ DELAY_PAGE = 0.15
 # door de SANITY GATE onderaan. FETCH_SANITY_RATIO=0 zet beide uit.
 _sanity_ratio = float(os.environ.get("FETCH_SANITY_RATIO", "0.9"))
 
-# ── RPC ────────────────────────────────────────────────────────────────────────
-rpc_index = 0
+# Een mislukte event-walk liet het bestand stil achterlopen (hq_destroyed.json stond
+# weken op 30-06 terwijl er on-chain events bestonden). Zulke fouten worden nu
+# verzameld, als GitHub-annotatie getoond en onderaan samengevat; de run slaagt
+# nog wel, zodat de rest van de data gewoon wordt gecommit.
+WARNINGS = []
 
-# Hoeveel 429's we op HETZELFDE endpoint accepteren voordat we het even laten
-# rusten. Een korte burst is tijdelijk — even wachten helpt. Een LEEG MAANDQUOTUM
-# geeft exact dezelfde 429, maar die gaat niet meer over: dan is blijven kloppen
-# fataal (5 pogingen à 2/4/8/16/32s per call × ~2.100 calls = de run haalt het
-# einde nooit). Bewust LAAG gehouden: sinds endpoints tijdelijk geparkeerd worden
-# (zie hieronder) is opzijstappen goedkoop, en lang wachten juist niet.
-RATE_LIMIT_TRIES = 2
-
-# ── ENDPOINT-WACHTKAMER ───────────────────────────────────────────────────────
-# Tot 01-09-2026 was doorrouleren een ENKELE REIS: `rpc_index` schoof op bij een
-# fout en schoof nooit terug, dus één slechte seconde in stap 1 verhuisde de hele
-# run naar het volgende endpoint. Dat werd zichtbaar toen blockvision primair werd:
-# runs #931 en #932 rotEerden allebei tijdens het spelersregister na twee 429's op
-# rij, waarna alle ~2.100 resterende calls op de BETAALDE Ankr-sleutel liepen —
-# precies wat de omzetting moest voorkomen. Uit de logs bleek blockvision geen muur
-# maar een knijper: losse 429's die na twee seconden vanzelf overgaan.
-# Nu krijgt een endpoint dat blijft knijpen een TIME-OUT in plaats van een
-# verbanning. Na afloop staat het weer vooraan, dus de run keert vanzelf terug naar
-# de gratis primaire endpoint. De straf verdubbelt bij herhaling (een endpoint dat
-# echt plat ligt wordt vanzelf met rust gelaten) en wordt gewist zodra er weer een
-# call slaagt.
-# De strafduur telt in CALLS, niet in seconden (gewijzigd 04-09-2026). Met een
-# time-out van 15 SECONDEN bleef 61-70% van het werk op de betaalde sleutel liggen
-# (gemeten 2 en 3 sep: 1.495 resp. 1.313 Ankr-calls per run van ~2.140). De reden
-# is dat de twee endpoints niet even hard lopen: op blockvision worstelt het script
-# zich door 2-secondenwachtjes na elke 429, terwijl Ankr op volle snelheid draait.
-# Vijftien seconden op Ankr leverde daardoor ~57 calls op, waar dezelfde vijftien
-# seconden op blockvision er een stuk minder doen — een straf in tijd is dus een
-# veel zwaardere straf dan hij lijkt. In calls geteld is hij eerlijk en meteen
-# voorspelbaar: precies zoveel calls gaan naar de achtervang, ongeacht het tempo.
-EP_PAUSE_BASE = 25      # eerste time-out, in calls
-EP_PAUSE_MAX  = 400     # plafond: ligt een endpoint echt plat, dan proberen we het
-                        # nog hooguit een handvol keer per run opnieuw
-
-_call_no = 0            # doorlopende teller van alle uitgaande calls
-_ep_pause_until = {}    # endpoint-index -> callnummer waarop het weer mag
-_ep_pause_len   = {}    # endpoint-index -> huidige strafduur (verdubbelt)
-
-def _ep_host(i):
-    # alleen de host loggen — een keyed URL mag niet in de CI-log belanden
-    return RPC_ENDPOINTS[i].split("/")[2]
-
-def _ep_pause(i, why):
-    d = min((_ep_pause_len.get(i, 0) * 2) or EP_PAUSE_BASE, EP_PAUSE_MAX)
-    _ep_pause_len[i]   = d
-    _ep_pause_until[i] = _call_no + d
-    print(f"  {_ep_host(i)} {why} — {d} calls in de wachtkamer, volgend endpoint...")
-
-def _ep_pick():
-    """Het eerste endpoint dat niet in de wachtkamer zit. Staat alles in de
-    wachtkamer, neem dan degene die het eerst vrijkomt — de teller loopt alleen
-    door als we calls doen, dus hier valt niets uit te zitten."""
-    for i in range(len(RPC_ENDPOINTS)):
-        if _ep_pause_until.get(i, 0) <= _call_no:
-            return i
-    i = min(range(len(RPC_ENDPOINTS)), key=lambda k: _ep_pause_until.get(k, 0))
-    print(f"  alle endpoints in de wachtkamer — toch maar {_ep_host(i)} proberen...")
-    time.sleep(2)
-    return i
-
-def rpc(method, params, retries=8):   # 8 = 2 pogingen × 4 endpoints
-    global rpc_index, _call_no
-    last_err = None
-    ep_429 = 0            # opeenvolgende 429's op het endpoint waar we nu staan
-    for attempt in range(retries):
-        _call_no += 1                # de klok van de wachtkamer tikt op calls
-        rpc_index = _ep_pick()       # ook de bron voor de host in foutmeldingen
-        url  = RPC_ENDPOINTS[rpc_index]
-        host = _ep_host(rpc_index)
-        payload = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
-        # NB: a User-Agent is required — these providers 403 python-urllib's
-        # default UA (verified 2026-07-16: 403 with default, 200 with this).
-        req = urllib.request.Request(url, data=payload, headers={
-            "Content-Type": "application/json",
-            "User-Agent": "vwm-fetch/1.0 (+https://vwm.cryptofolio.nl)",
-        })
-        try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                data = json.loads(resp.read())
-                if "error" in data:
-                    raise ValueError(data["error"])
-                _ep_pause_len.pop(rpc_index, None)   # hersteld → strafteller terug op nul
-                return data["result"]
-        except urllib.error.HTTPError as e:
-            last_err = e
-            if e.code == 429:
-                ep_429 += 1
-                if ep_429 < RATE_LIMIT_TRIES:
-                    # korte drukte: even wachten op hetzelfde endpoint
-                    wait = 2 ** ep_429
-                    print(f"  Rate limited (429) on {host}, waiting {wait}s...")
-                    time.sleep(wait)
-                    continue
-                _ep_pause(rpc_index, f"blijft 429 geven na {ep_429} pogingen")
-                ep_429 = 0
-                continue
-            # 403 = endpoint blocks this client (e.g. datacenter IPs)
-            _ep_pause(rpc_index, f"gaf HTTP {e.code}")
-            ep_429 = 0
-        except Exception as e:
-            last_err = e
-            _ep_pause(rpc_index, f"faalde ({type(e).__name__})")
-            ep_429 = 0
-    # never fall through to an implicit None — fail loudly with the real cause
-    raise RuntimeError(f"rpc {method} failed after {retries} attempts") from last_err
+def warn(msg):
+    WARNINGS.append(msg)
+    print(f"  Warning: {msg}")
+    print(f"::warning title=fetch_data::{msg}")
 
 def signed(v, neg):
     v = int(v)
@@ -214,18 +83,6 @@ def save_field_cache(fields, keep_pids):
         json.dump({"version": 1, "resource_fields": trimmed}, fh, separators=(",", ":"))
     return len(trimmed)
 
-def prev_tile_index():
-    """(x, y) → turf-id uit de vorige data.json. Die mapping is onveranderlijk:
-    een turf-object blijft bij zijn coördinaat, alleen de eigenaar wisselt.
-    Live geverifieerd 2026-08-17 op (299,-133)."""
-    prev = load_json_file("data.json", {})
-    out = {}
-    for t in (prev.get("tiles") or []):
-        oid = t.get("oid")
-        if oid and isinstance(t.get("x"), int) and isinstance(t.get("y"), int):
-            out[(t["x"], t["y"])] = oid
-    return out
-
 # ── WALK-VOLLEDIGHEID ─────────────────────────────────────────────────────────
 # Een endpoint kan een dynamic-field-tabel STIL onvolledig serveren: geen fout,
 # geen 429, gewoon hasNextPage=false na een fractie van de entries. Gemeten
@@ -239,7 +96,7 @@ def walk_complete(what, got, prev_key):
     if _sanity_ratio <= 0 or not prev:
         return          # eerste run, of controle uitgezet
     if got < prev * _sanity_ratio:
-        host = _ep_host(rpc_index)
+        host = sg.ep_host(sg.rpc_index)
         print(f"WALK INCOMPLETE: {what} {got} vs {prev} in the previous run "
               f"(<{_sanity_ratio:.0%}) — endpoint in use is {host}. That node is "
               f"serving a partial table without saying so; refusing to build a "
@@ -250,7 +107,7 @@ def coord_of(name):
     """Coördinaat uit de dynamic-field-sleutel; None als de vorm afwijkt (dan
     valt de aanroeper terug op de gewone, dure route)."""
     try:
-        v = (name or {}).get("value") or {}
+        v = name or {}
         return (signed(v["x"], v.get("x_neg")), signed(v["y"], v.get("y_neg")))
     except Exception:
         return None
@@ -268,78 +125,49 @@ def find_id(obj):
     return None
 
 # ── STEP 1: PlayersRegistry ────────────────────────────────────────────────────
+# De registry is een TableVec<u64 -> ID>: elke dynamic field wijst rechtstreeks naar
+# het profiel-id (GraphQL levert die waarde inline mee), dus er is geen aparte
+# resolve-ronde meer nodig zoals bij JSON-RPC (daar waren het wrapper-objecten).
 print("Step 1/4: Loading PlayersRegistry...")
-reg = rpc("sui_getObject", [PLAYERS_REGISTRY, {"showContent": True}])
-reg_fields = reg["data"]["content"]["fields"]
-tv = reg_fields["players"]
+reg = sg.get_object(PLAYERS_REGISTRY)
+if not reg or not isinstance(reg.get("json"), dict):
+    print("ERROR: PlayersRegistry not readable"); sys.exit(1)
+tv = reg["json"].get("players")
 tv_id = find_id(tv)
 if not tv_id:
     print("ERROR: TableVec ID not found"); sys.exit(1)
 print(f"  TableVec ID: {tv_id}")
 
-wrap_ids = []
+real_pids = []
 cursor = None
 page = 0
 while True:
-    res = rpc("suix_getDynamicFields", [tv_id, cursor, 50])
-    for item in res["data"]:
-        if item.get("objectId"): wrap_ids.append(item["objectId"])
-    page += 1
-    if page % 20 == 0: print(f"  Page {page}: {len(wrap_ids)} wrappers")
-    if not res["hasNextPage"]: break
-    cursor = res["nextCursor"]
-    time.sleep(DELAY_PAGE)
-print(f"  Registry done: {len(wrap_ids)} wrappers")
-walk_complete("registry wrappers", len(wrap_ids), "players")
-
-real_pids = []
-for i in range(0, len(wrap_ids), BATCH):
-    objs = rpc("sui_multiGetObjects", [wrap_ids[i:i+BATCH], {"showContent":True,"showType":True}])
-    if not isinstance(objs, list): continue
-    for obj in objs:
-        if not obj or obj.get("error"): continue
-        if "Player" in (obj.get("data") or {}).get("type", ""):
-            real_pids.append(obj["data"]["objectId"]); continue
-        val = ((obj.get("data") or {}).get("content") or {}).get("fields", {}).get("value")
+    items, has_next, cursor = sg.dynamic_fields_page(tv_id, cursor)
+    for item in items:
+        val = item["value"]
         if isinstance(val, str) and val.startswith("0x"): real_pids.append(val)
         elif isinstance(val, dict):
             pid = find_id(val)
             if pid: real_pids.append(pid)
-    if i % 2000 == 0 and i > 0: print(f"  {i}/{len(wrap_ids)} resolved → {len(real_pids)} IDs")
-    time.sleep(DELAY)
-
-if not real_pids:
-    print("  Fallback: using wrapper IDs directly")
-    real_pids = wrap_ids
-print(f"  Profile IDs: {len(real_pids)}")
+    page += 1
+    if page % 20 == 0: print(f"  Page {page}: {len(real_pids)} profile ids")
+    if not has_next: break
+    time.sleep(DELAY_PAGE)
+real_pids = list(dict.fromkeys(real_pids))
+print(f"  Registry done: {len(real_pids)} profile IDs")
+walk_complete("registry entries", len(real_pids), "players")
 
 # ── STEP 2: Player profiles ────────────────────────────────────────────────────
-def extract_vecmap(raw):
-    """Extract a Sui VecMap fields dict to a flat Python dict {key: int}."""
-    result = {}
-    if not isinstance(raw, dict):
-        return result
-    contents = raw.get("fields", {}).get("contents", [])
-    for entry in contents:
-        ef = entry.get("fields", {}) if isinstance(entry, dict) else {}
-        k = ef.get("key")
-        v = ef.get("value")
-        if k:
-            result[k] = int(v) if v is not None else 0
-    return result
-
 print("Step 2/4: Loading player profiles...")
 profiles = {}
 
 for i in range(0, len(real_pids), BATCH):
-    objs = rpc("sui_multiGetObjects", [real_pids[i:i+BATCH], {"showContent":True,"showType":True}])
-    if not isinstance(objs, list): continue
+    objs = sg.multi_get(real_pids[i:i+BATCH])
     for obj in objs:
-        if not obj or obj.get("error"): continue
-        if "Player" not in (obj.get("data") or {}).get("type", ""): continue
-        f = ((obj.get("data") or {}).get("content") or {}).get("fields")
+        if not obj or "Player" not in obj["type"]: continue
+        f = obj["json"]
         if not f: continue
-        pid = obj["data"]["objectId"]
+        pid = obj["address"]
         timers = extract_vecmap(f.get("timers"))
         perks  = extract_vecmap(f.get("perks"))
         profiles[pid] = {
@@ -370,9 +198,9 @@ for _hq_pid, _hq_prof in profiles.items():
         hq_owners.setdefault(_hq_tile, set()).add(_hq_pid)
 
 # ── STEP 2.5: Cash/Weapons balances ──────────────────────────────────────────
-# Phase 1: discover dynamic-field object IDs for "cash" and "weapon" per player.
-# suix_getDynamicFields returns field metadata (incl objectId) per parent object.
-# We collect those IDs, then batch-fetch the actual field objects with multiGet.
+# Phase 1: discover dynamic-field object IDs for "cash" and "weapon" per player
+# (one GraphQL call that looks up both by key; only for players not in the cache).
+# Phase 2 batch-fetches the actual field objects with multiGetObjects.
 print("Step 2.5/4: Fetching cash/weapons balances...")
 profile_pids = list(profiles.keys())
 field_cache = load_field_cache()
@@ -381,15 +209,8 @@ field_cache = load_field_cache()
 unknown = [pid for pid in profile_pids if pid not in field_cache]
 print(f"  Field cache: {len(field_cache)} known · {len(unknown)} to discover")
 for i, pid in enumerate(unknown):
-    entry = {}
     try:
-        res = rpc("suix_getDynamicFields", [pid, None, 10])
-        for item in (res.get("data") or []):
-            name = item.get("name") or {}
-            if name.get("type") == "0x1::string::String" and name.get("value") in ("cash", "weapon"):
-                oid = item.get("objectId")
-                if oid:
-                    entry[name["value"]] = oid
+        entry = sg.resource_field_ids(pid)
     except Exception:
         continue          # niet cachen wat we niet konden lezen — volgende run opnieuw
     field_cache[pid] = entry
@@ -410,21 +231,16 @@ for i in range(0, len(resource_field_oids), BATCH):
     batch = resource_field_oids[i:i+BATCH]
     oids  = [x[2] for x in batch]
     try:
-        objs = rpc("sui_multiGetObjects", [oids, {"showContent": True}])
-        if not isinstance(objs, list):
-            continue
+        objs = sg.multi_get(oids, with_type=False)
         for j, obj in enumerate(objs):
-            if not obj or obj.get("error"):
+            if not obj:
                 # een gecacht id dat niet meer leest → weggooien, zodat de
                 # volgende run hem opnieuw opzoekt in plaats van hem stil over
                 # te slaan
                 field_cache.pop(batch[j][0], None)
                 continue
             pid, field_name, _ = batch[j]
-            fields = ((obj.get("data") or {}).get("content") or {}).get("fields", {})
-            inner  = fields.get("value")
-            amount = inner.get("fields", {}).get("amount", 0) if isinstance(inner, dict) else 0
-            scaled = round(int(amount or 0) / SCALE, 2)
+            scaled = round(resource_amount(obj["json"]) / SCALE, 2)
             if field_name == "cash":
                 pid_cash[pid] = scaled
             else:
@@ -437,59 +253,38 @@ print(f"  Field cache saved: {save_field_cache(field_cache, profile_pids)} playe
 
 # ── STEP 3: TurfSystem ────────────────────────────────────────────────────────
 print("Step 3/4: Loading TurfSystem...")
-ts = rpc("sui_getObject", [TURF_SYSTEM, {"showContent": True}])
-cf = ts["data"]["content"]["fields"].get("coordinates_turfs", {})
+ts = sg.get_object(TURF_SYSTEM)
+if not ts or not isinstance(ts.get("json"), dict):
+    print("ERROR: TurfSystem not readable"); sys.exit(1)
+cf = ts["json"].get("coordinates_turfs", {})
 turf_table_id = find_id(cf)
 if not turf_table_id:
     print("ERROR: TurfSystem Table ID not found"); sys.exit(1)
 print(f"  Table ID: {turf_table_id}")
 
-# De sleutel van elke tabel-entry IS de coördinaat, en die koppeling naar het
-# turf-id staat al in de vorige data.json. Bekende coördinaten hoeven dus niet
-# opnieuw opgelost te worden; alleen nieuw geclaimde tiles kosten nog een call.
-# Zelfherstellend: mocht een gecacht turf-id ooit niet meer lezen, dan valt die
-# tile uit de nieuwe data.json — waardoor hij de vólgende run niet meer in
-# `known_tiles` zit en gewoon opnieuw wordt opgelost. Eén run missen, daarna weg.
-# De coördinaten in de uitvoer komen sowieso uit het tile-object zelf (stap 4),
-# niet uit deze cache.
-known_tiles = prev_tile_index()
-dyn_ids = []          # alleen de entries die we NIET uit de vorige run kennen
+# De sleutel van elke tabel-entry IS de coördinaat en de waarde IS het turf-id; die
+# komt bij GraphQL inline mee, dus (anders dan bij JSON-RPC) is er geen tweede
+# resolve-ronde en geen koppeling met de vorige data.json meer nodig. De coördinaten
+# in de uitvoer komen sowieso uit het tile-object zelf (stap 4), niet uit de sleutel.
 tile_ids = []
 entries = 0
-reused = 0
 cursor = None
 page = 0
 while True:
-    res = rpc("suix_getDynamicFields", [turf_table_id, cursor, 50])
-    for item in res["data"]:
-        oid = item.get("objectId")
-        if not oid: continue
+    items, has_next, cursor = sg.dynamic_fields_page(turf_table_id, cursor)
+    for item in items:
+        val = item["value"]
+        tid = val if isinstance(val, str) and val.startswith("0x") else find_id(val)
+        if not tid: continue
         entries += 1
-        cached = known_tiles.get(coord_of(item.get("name")))
-        if cached:
-            tile_ids.append(cached); reused += 1
-        else:
-            dyn_ids.append(oid)
+        tile_ids.append(tid)
     page += 1
-    if page % 20 == 0: print(f"  Page {page}: {entries} tile entries ({reused} from cache)")
-    if not res["hasNextPage"]: break
-    cursor = res["nextCursor"]
+    if page % 20 == 0: print(f"  Page {page}: {entries} tile entries")
+    if not has_next: break
     time.sleep(DELAY_PAGE)
-print(f"  TurfSystem done: {entries} entries · {reused} reused · {len(dyn_ids)} to resolve")
+print(f"  TurfSystem done: {entries} entries")
 walk_complete("turf table entries", entries, "tiles")
-
-for i in range(0, len(dyn_ids), BATCH):
-    objs = rpc("sui_multiGetObjects", [dyn_ids[i:i+BATCH], {"showContent": True}])
-    if not isinstance(objs, list): continue
-    for obj in objs:
-        if not obj or obj.get("error"): continue
-        val = ((obj.get("data") or {}).get("content") or {}).get("fields", {}).get("value")
-        if isinstance(val, str) and val.startswith("0x"): tile_ids.append(val)
-        elif isinstance(val, dict):
-            tid = find_id(val)
-            if tid: tile_ids.append(tid)
-    if i % 2000 == 0 and i > 0: print(f"  {i}/{len(dyn_ids)} resolved → {len(tile_ids)} tile IDs")
-    time.sleep(DELAY)
+tile_ids = list(dict.fromkeys(tile_ids))
 print(f"  Tile IDs: {len(tile_ids)}")
 
 # ── STEP 4: Tile data ─────────────────────────────────────────────────────────
@@ -499,27 +294,26 @@ raw_tiles = []
 unclaimed = 0
 
 for i in range(0, len(tile_ids), BATCH):
-    objs = rpc("sui_multiGetObjects", [tile_ids[i:i+BATCH], {"showContent": True}])
-    if not isinstance(objs, list): time.sleep(0.5); continue
+    objs = sg.multi_get(tile_ids[i:i+BATCH], with_type=False)
     for obj in objs:
-        if not obj or obj.get("error"): continue
-        f = ((obj.get("data") or {}).get("content") or {}).get("fields")
+        if not obj: continue
+        f = obj["json"]
         if not f: continue
         x = signed(f.get("x", 0), f.get("x_neg", False))
         y = signed(f.get("y", 0), f.get("y_neg", False))
         pid = f.get("owner_id")
-        tile_id = obj["data"]["objectId"]
+        tile_id = obj["address"]
         if not pid or pid == NULL_ID:
             unclaimed += 1; continue
         # ── GARRISON (v2.6) ──────────────────────────────────────────────────
-        # garrison is a VecMap<String, u64> stored as:
-        # garrison.fields.contents = [{fields:{key:"enforcer",value:"12"}},...]
+        # garrison is a VecMap<String, u64>, flat in GraphQL json:
+        # garrison.contents = [{key:"enforcer",value:"12"},...]
         g_h = g_b = g_e = 0
         gar = f.get("garrison")
         if isinstance(gar, dict):
-            contents = gar.get("fields", {}).get("contents", [])
+            contents = gar.get("contents", [])
             for entry in contents:
-                ef = entry.get("fields", {}) if isinstance(entry, dict) else {}
+                ef = entry if isinstance(entry, dict) else {}
                 k = (ef.get("key") or "").lower()
                 v = int(ef.get("value", 0) or 0)
                 if k == "henchman":   g_h = v
@@ -1019,8 +813,7 @@ if needs_backfill:
     backfilled_cap = 0
     for r in needs_backfill:
         try:
-            tx = rpc("sui_getTransactionBlock", [r["digest"], {"showEvents": True}])
-            for ev in (tx.get("events") or []):
+            for ev in sg.tx_events(r["digest"]):
                 ev_type = ev.get("type", "")
                 # XP from SimulationResultEvent
                 if ev_type == RAID_SEARCH_TYPE and r.get("xp", 0) == 0:
@@ -1091,13 +884,7 @@ for event_type in RAID_EVENT_TYPES:
     found  = 0
     try:
         while pages < 10:  # max 10 pages × 50 = 500 events
-            params = [
-                {"MoveEventType": event_type},
-                cursor,
-                50,
-                True,  # descending — newest first
-            ]
-            result = rpc("suix_queryEvents", params)
+            result = sg.query_events(event_type, cursor)   # newest first
             events = result.get("data", [])
             if not events and pages == 0:
                 break  # event type not found, skip
@@ -1135,7 +922,7 @@ for event_type in RAID_EVENT_TYPES:
         print(f"  {event_type.split('::')[-1]}: {pages} page(s), {found} new")
 
     except Exception as e:
-        print(f"  Warning: {event_type.split('::')[-1]} failed: {e}")
+        warn(f"{event_type.split('::')[-1]} failed: {e}")
         continue
 
 new_raids = list(new_raids_by_digest.values())
@@ -1166,7 +953,7 @@ new_ota_by_digest = {}
 cap_cursor        = None
 try:
     for _ in range(10):  # up to 500 CaptureEvents
-        result = rpc("suix_queryEvents", [{"MoveEventType": CAPTURE_EVENT_TYPE}, cap_cursor, 50, True])
+        result = sg.query_events(CAPTURE_EVENT_TYPE, cap_cursor)
         for ev in (result.get("data") or []):
             parsed = ev.get("parsedJson") or {}
             tx     = ev.get("id", {}).get("txDigest", "")
@@ -1219,7 +1006,7 @@ try:
         print("  No new plain capture events found")
 
 except Exception as e:
-    print(f"  Warning: CaptureEvent processing failed: {e}")
+    warn(f"CaptureEvent processing failed: {e}")
 
 if not new_raids and not any(r.get("xp", 0) > 0 for r in existing_raids):
     print("  No new raid events found")
@@ -1259,8 +1046,7 @@ fta_pages  = 0
 fta_found  = 0
 try:
     while fta_pages < 10:
-        params = [{"MoveEventType": SIM_EVENT_TYPE}, fta_cursor, 50, True]
-        result = rpc("suix_queryEvents", params)
+        result = sg.query_events(SIM_EVENT_TYPE, fta_cursor)
         events = result.get("data", [])
         if not events and fta_pages == 0:
             break
@@ -1299,7 +1085,7 @@ try:
         time.sleep(DELAY)
     print(f"  SimulationResultEvent (free turf): {fta_pages} page(s), {fta_found} new")
 except Exception as e:
-    print(f"  Warning: free turf attack fetch failed: {e}")
+    warn(f"free turf attack fetch failed: {e}")
 
 new_fta = list(new_fta_by_digest.values())
 if new_fta:
@@ -1345,8 +1131,7 @@ if needs_check:
         if not digest:
             continue
         try:
-            tx = rpc("sui_getTransactionBlock", [digest, {"showEvents": True}])
-            tx_events = tx.get("events") or []
+            tx_events = sg.tx_events(digest)
             has_capture = any(CAPTURE_EVENT_TYPE in e.get("type","") for e in tx_events)
             if not has_capture:
                 h["is_repelled"] = True
@@ -1368,8 +1153,7 @@ try:
     pages  = 0
     found  = 0
     while pages < 10:
-        params = [{"MoveEventType": HQ_DESTROYED_EVENT}, cursor, 50, True]
-        result = rpc("suix_queryEvents", params)
+        result = sg.query_events(HQ_DESTROYED_EVENT, cursor)
         events = result.get("data", [])
         if not events and pages == 0:
             print("  HeadquarterDestroyedEvent: no events found")
@@ -1381,8 +1165,7 @@ try:
                 continue
             # Fetch full TX to check for CaptureEvent in same TX
             try:
-                tx = rpc("sui_getTransactionBlock", [digest, {"showEvents": True}])
-                tx_events = tx.get("events") or []
+                tx_events = sg.tx_events(digest)
                 has_capture = any(CAPTURE_EVENT_TYPE in e.get("type","") for e in tx_events)
                 if has_capture:
                     # attack_type 3 — real capture, skip
@@ -1412,7 +1195,7 @@ try:
         time.sleep(DELAY)
     print(f"  HeadquarterDestroyedEvent: {pages} page(s), {found} new (capture-filtered)")
 except Exception as e:
-    print(f"  Warning: HeadquarterDestroyedEvent failed: {e}")
+    warn(f"HeadquarterDestroyedEvent failed: {e}")
 
 if new_hqd or existing_hqd:
     all_hqd = existing_hqd + new_hqd
@@ -1468,8 +1251,7 @@ for event_type in ACTIVITY_EVENT_TYPES:
     stop   = False
     try:
         while pages < 8 and not stop:
-            params = [{"MoveEventType": event_type}, cursor, 50, True]
-            result = rpc("suix_queryEvents", params)
+            result = sg.query_events(event_type, cursor)
             events = result.get("data", [])
             if not events and pages == 0:
                 print(f"  {etype_short}: no events found")
@@ -1499,7 +1281,7 @@ for event_type in ACTIVITY_EVENT_TYPES:
             time.sleep(DELAY)
         print(f"  {etype_short}: {pages} page(s), {found} updates")
     except Exception as e:
-        print(f"  Warning: {etype_short} failed: {e}")
+        warn(f"{etype_short} failed: {e}")
         continue
 
 # Merge raid timestamps — most recent raid as attacker per player
@@ -1548,4 +1330,9 @@ with open(ACTIVITY_FILE, "w", encoding="utf-8") as f:
 
 print(f"  player_activity.json updated ({len(activity_days)} players with activity data)")
 
-print(f"\nDone!")
+if WARNINGS:
+    print(f"\nDone, with {len(WARNINGS)} warning(s) — these event files may be behind:")
+    for w in WARNINGS:
+        print(f"  - {w}")
+else:
+    print(f"\nDone!")
