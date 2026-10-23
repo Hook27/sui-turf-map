@@ -12,3 +12,7 @@ bot/
 # Python bytecode - gegenereerd, hoort niet in versiebeheer
 __pycache__/
 *.pyc
+
+# Testlogs die de Tests-workflow schrijft (en die je lokaal kunt nabootsen)
+python-tests.log
+js-tests.log

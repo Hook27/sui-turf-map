@@ -127,12 +127,31 @@ have a specific reason to touch them.
   after the first days.
   It commits the refreshed data with messages titled `Update map data …`. Frequent data-only
   commits on `main` are normal and automated — not hand edits.
+  **Run page summary:** at the end of `fetch_data.py` (after the "GraphQL calls in … min" line) it appends a short
+  markdown table to `$GITHUB_STEP_SUMMARY`, which GitHub shows at the top of the run page: GraphQL calls, duration,
+  players, owned tiles, days in `player_history_daily_v2.json`, and the `WARNINGS` list. It does nothing without
+  that variable (local runs) and is wrapped so that it can never fail a run; `update.yml` needs no step for it.
+  **Failure notice:** the `notify` job (`needs: [gate, fetch]`, `if: always() && (gate or fetch result == 'failure')`)
+  runs `tools/ci_notify.py`, which opens a GitHub issue titled "Daily map update failed" with the run URL, or
+  comments on the one that is already open (matched on the exact title, no labels: a missing label makes
+  `gh issue create --label` fail). It is skipped when `fetch` was merely skipped by the freshness gate or the run
+  was cancelled. Job-level `permissions` REPLACE the top-level `contents: write`, so `notify` has only
+  `contents: read` + `issues: write` and `fetch` keeps `contents: write`. The job is `continue-on-error` and the script
+  always exits 0, so the notice can never mask or worsen the failure it reports. It needs Issues enabled on the repo.
+  Close the issue when the map is fresh again; the next failure opens a new one. The workflow cannot be run locally:
+  the logic is tested offline against a fake `gh` (`tests/test_ci_notify.py`), the wiring only shows on a real failure.
 - `.github/workflows/tests.yml` — runs the offline tests on every pull request (and by hand from the Actions tab):
   the Python suite, the JS suite, a `node --check` of every `modules/*.js` and a `py_compile` of every Python file.
   It runs in two environments (a matrix): Linux / Python 3.12 / Node 22, like the daily data run, and Windows /
   Python 3.13 / Node 24, like the maintainer's PC; the check names on a PR are `tests (<label>)`.
   Read-only (`contents: read`), no secrets, no network. It deliberately does not run on pushes to `main`: the daily
   data run pushes there itself. The bot in `bot/` is not in the repo, so its tests are not covered.
+  **Run page summary:** the Python and JS test commands pipe their output through `tee` into `python-tests.log` /
+  `js-tests.log` (JS with `--test-reporter=tap`, so the format is the same on Node 22 and 24), and a last step with
+  `if: always()` runs `tools/ci_summary.py` to write counts and, for each failure, the `FAIL:`/`ERROR:` or `not ok`
+  block with expected/actual to `$GITHUB_STEP_SUMMARY`. The `| tee` only works because the job's
+  `defaults.run.shell: bash` gives `bash -eo pipefail`; without an explicit `shell: bash` GitHub uses plain
+  `bash -e` and `tee` would hide a failing test, so keep that line. The summary step is `continue-on-error`.
 - `.github/workflows/weekly_report.yml` — **suspended since 24-09-2026** (schedule commented out,
   manual dispatch still works). It generated The Vendetta Gazette (`generate_report.py`, uses the
   `ANTHROPIC_API_KEY` secret). The last edition is 21-09-2026 and `modules/intel.js` labels it as
@@ -149,6 +168,11 @@ Tests (offline: a fake GraphQL chain serves recorded fixtures; Python needs only
 python -m unittest discover -s tests
 node --test tests/js/browser_modules.test.mjs tests/js/daily_history.test.mjs
 ```
+
+`tools/` holds the small stdlib-only scripts the workflows call (`ci_summary.py` for the Tests run page,
+`ci_notify.py` for the failure issue); each has its own unit tests in `tests/`, covered by the Python command
+above. `tests/test_fetch_data.py` clears `GITHUB_STEP_SUMMARY` for its e2e runs (on Actions it points at the real
+run page); tests that want a summary pass `summary=<tmp file>` to `run_fetch`.
 
 `python tests/record_fixtures.py` re-records `tests/fixtures/world.json` from the live chain;
 `node tests/js/live_check.mjs` smoke-tests the browser modules against the real endpoint.

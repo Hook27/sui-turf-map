@@ -175,3 +175,57 @@ jobs:
           git add data.json history.json snapshots/ hq_captures.json player_history.json raids.json player_activity.json player_history_daily_v2.json hq_destroyed.json free_turf_attacks.json owned_turf_attacks.json field_cache.json hq_checked.json
           git status
           git diff --staged --quiet || (git commit -m "Update map data $(date -u +'%Y-%m-%d %H:%M UTC')" && git pull --rebase && git push)
+
+  # ── Melding bij falen ─────────────────────────────────────────────────────
+  # Een rode run was tot nu toe alleen te zien als je zelf naar de Actions-pagina keek; de kaart
+  # kon dagen stilstaan zonder dat iemand het merkte. Deze job opent dan een GitHub-issue
+  # ("Daily map update failed", GitHub mailt je daarover) met een link naar de run. Staat er al
+  # een open issue met die titel, dan komt er alleen een opmerking bij: geen stapel issues bij
+  # een storing die meerdere dagen duurt. Sluit het issue als de kaart weer vers is.
+  #
+  # Waarom een EIGEN job en geen stap in `fetch`? Een stap na een gefaalde stap wordt
+  # overgeslagen, en een job die door zijn `timeout-minutes` wordt afgekapt kan ook geen
+  # laatste stap meer draaien. Een aparte job draait wel, en hij vangt ook een falende `gate`.
+  notify:
+    needs: [gate, fetch]
+    # `always()` is nodig: zonder dat slaat GitHub een job over zodra een job waarvan hij
+    # afhangt faalde, en juist dan willen we draaien. De rest van de voorwaarde is bewust
+    # strak: alleen bij echt FALEN van gate of fetch. Is fetch overgeslagen omdat de gate
+    # zei "data is nog vers" (result = skipped), dan is er niets mis en blijft het stil.
+    # Een handmatig geannuleerde run (result = cancelled) is ook geen storing.
+    if: always() && (needs.gate.result == 'failure' || needs.fetch.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Deze job draait alleen als de run al rood is. Zou hij zelf ook falen (bijvoorbeeld
+    # omdat Issues is uitgeschakeld), dan verandert er niets aan de uitkomst van de run;
+    # de oorspronkelijke fout blijft de enige reden voor het rood.
+    continue-on-error: true
+    # MINSTE RECHTEN. Rechten op jobniveau VERVANGEN de `contents: write` bovenaan dit bestand
+    # (ze worden niet opgeteld). Deze job krijgt dus alleen wat hij nodig heeft: issues
+    # schrijven, en de repository lezen om tools/ binnen te halen. De `fetch`-job heeft
+    # geen eigen blok en houdt daardoor ongewijzigd `contents: write` om data te committen.
+    permissions:
+      contents: read
+      issues: write
+    env:
+      # `gh` (de GitHub-opdrachtregel, voorgeïnstalleerd op de runner) leest zijn login uit
+      # GH_TOKEN en de repository uit GH_REPO. Met GH_REPO is er geen volledige checkout nodig.
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout the notify script only
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: tools      # alleen tools/ hoeft erin; de data en snapshots niet
+          persist-credentials: false  # het token hoeft niet in .git te blijven staan
+
+      # Het zoeken naar een open issue en het openen of aanvullen ervan zit in
+      # tools/ci_notify.py, met tests tegen een nagebootste `gh` (tests/test_ci_notify.py).
+      # De uitkomsten van de jobs gaan via `env` naar het script, niet rechtstreeks in het commando.
+      - name: Open or update the failure issue
+        env:
+          GATE_RESULT: ${{ needs.gate.result }}
+          FETCH_RESULT: ${{ needs.fetch.result }}
+          EVENT_NAME: ${{ github.event_name }}
+          SRC: ${{ github.event.inputs.src }}
+        run: python3 tools/ci_notify.py
