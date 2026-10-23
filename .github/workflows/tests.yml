@@ -77,18 +77,31 @@ jobs:
       # fetch_data.py draait hier volledig tegen een nagebootste keten met opgeslagen
       # testdata: geen netwerk, geen sleutel. PYTHONUTF8 omdat de logregels pijltjes (→) bevatten
       # (op Windows is de standaardtekenset anders, daar zou dat zonder deze regel breken).
+      #
+      # `2>&1 | tee python-tests.log`: de uitvoer gaat naar de log zoals altijd, EN naar een
+      # bestand dat de samenvattingsstap onderaan inleest. unittest schrijft naar stderr, vandaar
+      # `2>&1` (stderr naar stdout) vóór de pijp. LET OP: een pijp geeft normaal de exitcode van het
+      # LAATSTE commando terug (tee, dat altijd slaagt), waardoor een falende test onzichtbaar
+      # zou worden. `defaults.run.shell: bash` hierboven start bash met `-eo pipefail`: dan telt
+      # de exitcode van het eerste commando die faalt, en wordt de stap dus gewoon rood.
+      # (Zonder expliciete `shell: bash` gebruikt GitHub alleen `bash -e`, zonder pipefail.)
       - name: Python tests (fetch_data.py against a fake chain)
+        id: py                  # met een id kan de samenvattingsstap `steps.py.outcome` lezen
         env:
           PYTHONUTF8: '1'
-        run: python -m unittest discover -s tests
+        run: python -m unittest discover -s tests 2>&1 | tee python-tests.log
 
+      # `--test-reporter=tap`: de uitvoer heeft zo op Node 22 en 24 en bij elke terminal dezelfde
+      # vorm (zonder deze vlag hangt de standaardreporter af van of de uitvoer naar een scherm gaat).
       - name: JS tests (browser modules)
-        run: node --test tests/js/browser_modules.test.mjs tests/js/daily_history.test.mjs
+        id: js
+        run: node --test --test-reporter=tap tests/js/browser_modules.test.mjs tests/js/daily_history.test.mjs 2>&1 | tee js-tests.log
 
       # De tests hierboven laden maar een paar modules; een typefout in bijvoorbeeld canvas.js
       # zou ze allemaal laten slagen. Een syntaxcontrole van ELK bestand vangt dat wel.
       # Alle fouten worden getoond (niet alleen de eerste), daarna pas faalt de stap.
       - name: Syntax check of every browser module
+        id: syntax
         run: |
           fail=0
           for f in modules/*.js; do
@@ -97,4 +110,34 @@ jobs:
           exit $fail
 
       - name: Compile every Python file
+        id: compile
         run: git ls-files '*.py' | xargs python -m py_compile
+
+      # SAMENVATTING OP DE RUN-PAGINA. Alles wat een stap naar het bestand $GITHUB_STEP_SUMMARY
+      # schrijft, rendert GitHub als markdown bovenaan de run-pagina (Actions → de run). Zo zie je
+      # in één blik hoeveel tests slaagden en bij een fout welke test, met verwacht/werkelijk,
+      # zonder door de log te zoeken. Het parsen zit in tools/ci_summary.py, met eigen tests.
+      #
+      # `if: always()`: standaard slaat GitHub alle stappen na een gefaalde stap over. Juist bij
+      # falen wil je de samenvatting, dus deze stap draait altijd (ook bij annuleren). De
+      # `outcome` van een stap (success / failure / skipped / cancelled) komt uit de stap-id's
+      # hierboven; het script gebruikt die naast de log, zodat een stap die faalde zonder iets
+      # leesbaars in de log nooit groen in de tabel staat.
+      # `continue-on-error`: een fout in het samenvatten zelf mag de job nooit rood maken.
+      # Waarden gaan via `env` en niet rechtstreeks in het commando: zo kan een label met een
+      # aanhalingsteken of `$(...)` nooit als shellcode worden uitgevoerd.
+      - name: Summary on the run page
+        if: always()
+        continue-on-error: true
+        env:
+          LABEL: ${{ matrix.label }}
+          PY_OUTCOME: ${{ steps.py.outcome }}
+          JS_OUTCOME: ${{ steps.js.outcome }}
+          SYNTAX_OUTCOME: ${{ steps.syntax.outcome }}
+          COMPILE_OUTCOME: ${{ steps.compile.outcome }}
+        run: |
+          python tools/ci_summary.py --label "$LABEL" \
+            --python-log python-tests.log --python-outcome "$PY_OUTCOME" \
+            --js-log js-tests.log --js-outcome "$JS_OUTCOME" \
+            --step "Syntax check of every browser module=$SYNTAX_OUTCOME" \
+            --step "Compile every Python file=$COMPILE_OUTCOME"

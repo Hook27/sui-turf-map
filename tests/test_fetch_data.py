@@ -25,8 +25,26 @@ CAPTURE = GAME_EV + "CaptureEvent"
 HQD = GAME_EV + "HeadquarterDestroyedEvent"
 
 
-def run_fetch(world, files=None, fail=None):
-    """Run fetch_data.py in a fresh temp dir. Returns (dir, stdout, exit_code, chain)."""
+_SUMMARY_VAR = "GITHUB_STEP_SUMMARY"
+_saved_summary_var = None
+
+
+def setUpModule():
+    # On GitHub Actions this variable points at the run page of the Tests job itself. Every e2e
+    # run below would append its own "Map data update" table to it. Take it away for the whole
+    # module; only the tests that want a summary set it again, to a temp file.
+    global _saved_summary_var
+    _saved_summary_var = os.environ.pop(_SUMMARY_VAR, None)
+
+
+def tearDownModule():
+    if _saved_summary_var is not None:
+        os.environ[_SUMMARY_VAR] = _saved_summary_var
+
+
+def run_fetch(world, files=None, fail=None, summary=None):
+    """Run fetch_data.py in a fresh temp dir. Returns (dir, stdout, exit_code, chain).
+    `summary` is the path to put in $GITHUB_STEP_SUMMARY for this run (default: variable unset)."""
     sg.rpc_index = 0
     sg._call_no = 0
     sg._ep_pause_until.clear()
@@ -41,7 +59,10 @@ def run_fetch(world, files=None, fail=None):
     os.chdir(d)
     try:
         with mock.patch.object(sg, "_http_post", chain.post), mock.patch.object(sg, "sleep", lambda s: None), \
-                mock.patch("time.sleep", lambda s: None), contextlib.redirect_stdout(out):
+                mock.patch("time.sleep", lambda s: None), contextlib.redirect_stdout(out), \
+                mock.patch.dict(os.environ, {_SUMMARY_VAR: summary} if summary else {}):
+            if not summary:
+                os.environ.pop(_SUMMARY_VAR, None)
             try:
                 runpy.run_path(os.path.join(REPO, "fetch_data.py"), run_name="__main__")
             except SystemExit as e:
@@ -459,6 +480,74 @@ class TestDailyHistory(FetchBase):
         self.assertIn("daily history not updated", out)
         self.assertEqual(load(d, self.LEGACY), legacy)                      # the old data is untouched
         self.assertFalse(self.exists(d, self.V2))
+
+
+class TestRunSummary(FetchBase):
+    """The markdown that fetch_data.py appends to $GITHUB_STEP_SUMMARY (the run page on GitHub)."""
+
+    def summary_file(self):
+        return os.path.join(tempfile.mkdtemp(prefix="vwm_summary_"), "summary.md")
+
+    @staticmethod
+    def read(path):
+        with open(path, encoding="utf-8") as fh:
+            return fh.read()
+
+    def test_a_clean_run_writes_the_numbers(self):
+        path = self.summary_file()
+        d, out, code, chain = run_fetch(self.world(), summary=path)
+        self.assertEqual(code, 0)
+        md = self.read(path)
+        data = load(d, "data.json")
+        calls = int(out.split(" GraphQL calls in ")[0].split()[-1])
+        self.assertIn("### Map data update", md)
+        self.assertIn(f"| GraphQL calls | {calls:,} |", md)
+        self.assertIn(f"| Players | {len(data['players']):,} |", md)
+        self.assertIn(f"| Tiles (owned) | {data['total_tiles']:,} |", md)
+        self.assertIn("| Days in player_history_daily_v2.json | 1 |", md)
+        self.assertIn("| Duration | ", md)
+        self.assertIn("✅ No warnings.", md)
+        self.assertNotIn("warning(s)", md)
+
+    def test_warnings_are_listed(self):
+        path = self.summary_file()
+        err = urllib.error.HTTPError("u", 500, "down", {}, None)
+        d, out, code, chain = run_fetch(self.world(), fail={"Ev": err}, summary=path)
+        self.assertEqual(code, 0)
+        md = self.read(path)
+        self.assertIn("warning(s)**: these event files may be behind", md)
+        self.assertNotIn("No warnings", md)
+        first = out.split("::warning title=fetch_data::")[1].splitlines()[0]
+        self.assertIn(first, md)                                   # the same text the log shows
+
+    def test_the_summary_is_appended_not_overwritten(self):
+        path = self.summary_file()
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("earlier step\n")
+        run_fetch(self.world(), summary=path)
+        self.assertTrue(self.read(path).startswith("earlier step\n### Map data update"))
+
+    def test_a_failed_daily_history_shows_na_instead_of_crashing(self):
+        path = self.summary_file()
+        with mock.patch("daily_history.update", side_effect=RuntimeError("disk full")):
+            d, out, code, _ = run_fetch(self.world(), summary=path)
+        self.assertEqual(code, 0)
+        self.assertIn("n/a (update failed)", self.read(path))
+
+    def test_without_the_variable_nothing_is_written(self):
+        d, out, code, _ = run_fetch(self.world())
+        self.assertEqual(code, 0)
+        self.assertNotIn("run summary", out)
+        self.assertNotIn("### Map data update", out)
+        self.assertFalse([f for f in os.listdir(d) if f.endswith(".md")])
+
+    def test_an_unwritable_path_does_not_fail_the_run(self):
+        # a directory cannot be opened for appending, on any operating system
+        d, out, code, _ = run_fetch(self.world(), summary=tempfile.mkdtemp(prefix="vwm_summary_"))
+        self.assertEqual(code, 0)
+        self.assertIn("(run summary not written:", out)
+        self.assertTrue(os.path.exists(os.path.join(d, "data.json")))        # the data is all there
+        self.assertIn("Done!", out)
 
 
 class TestFailureModes(FetchBase):

@@ -756,6 +756,7 @@ today_str = now_utc.strftime("%Y-%m-%d")
 # Today's snapshot: {pid: tile_count} for all current players
 today_counts = {p["pid"]: p["tiles"] for p in player_list}
 
+dh = None
 try:
     dh = daily_history.update(DAILY_HISTORY_V2, DAILY_HISTORY_LEGACY, today_str, today_counts, now_utc.isoformat())
     for w in dh["warnings"]:
@@ -1364,10 +1365,41 @@ with open(ACTIVITY_FILE, "w", encoding="utf-8") as f:
 
 print(f"  player_activity.json updated ({len(activity_days)} players with activity data)")
 
-print(f"\n{sg._call_no} GraphQL calls in {(time.time() - _t0) / 60:.1f} min")
+_minutes = (time.time() - _t0) / 60
+print(f"\n{sg._call_no} GraphQL calls in {_minutes:.1f} min")
 if WARNINGS:
     print(f"\nDone, with {len(WARNINGS)} warning(s) — these event files may be behind:")
     for w in WARNINGS:
         print(f"  - {w}")
 else:
     print(f"\nDone!")
+
+# ── RUN SUMMARY ────────────────────────────────────────────────────────────────
+# On GitHub Actions every step gets a file whose path is in $GITHUB_STEP_SUMMARY; what is
+# appended to it shows up as markdown at the top of the run page, so a glance tells whether
+# the daily run was healthy without opening the log. Without the variable (a local run)
+# nothing happens. This is a courtesy: whatever goes wrong here is swallowed, because it
+# must never fail a run that fetched the data (the commit step comes after this one).
+_summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+if _summary_path:
+    try:
+        _lines = [
+            "### Map data update", "",
+            "| | |", "|---|---:|",
+            f"| GraphQL calls | {sg._call_no:,} |",
+            f"| Duration | {_minutes:.1f} min |",
+            f"| Players | {len(player_list):,} |",
+            f"| Tiles (owned) | {len(compact_tiles):,} |",
+            f"| Days in {DAILY_HISTORY_V2} | {dh['days'] if dh else 'n/a (update failed)'} |",
+            "",
+        ]
+        if WARNINGS:
+            _lines += [f"**⚠️ {len(WARNINGS)} warning(s)**: these event files may be behind.", "", "````"]
+            _lines += [str(w) for w in WARNINGS]
+            _lines += ["````", ""]
+        else:
+            _lines += ["✅ No warnings.", ""]
+        with open(_summary_path, "a", encoding="utf-8", newline="\n") as _fh:
+            _fh.write("\n".join(_lines))
+    except Exception as e:
+        print(f"  (run summary not written: {e!r})")
