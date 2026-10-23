@@ -741,34 +741,31 @@ ph_size = os.path.getsize("player_history.json") / 1024
 print(f"  player_history.json written ({ph_size:.0f} KB, {len(ph_players)} players tracked)")
 
 # ── DAILY HISTORY ─────────────────────────────────────────────────────────────
-# Keeps one entry per day with tile counts per player.
-# Grows indefinitely but stays compact (~5-10 KB/month).
-# Format: {"days": [{"date": "YYYY-MM-DD", "players": {"pid": count}}, ...]}
-DAILY_HISTORY_FILE = "player_history_daily.json"
+# One entry per day with the tile count of every player, stored as DELTAS in
+# player_history_daily_v2.json (see daily_history.py): the first day in full, then per day
+# only the players whose count changed. The old player_history_daily.json stored every
+# player every day (~346 KB/day, 72 MB by Oct 2026, over GitHub's 100 MB file limit by
+# January 2027, and downloaded in full on every page load). It is converted once, verified
+# lossless, and removed by update(); until then the frontend falls back to it.
+import daily_history
+
+DAILY_HISTORY_V2 = "player_history_daily_v2.json"
+DAILY_HISTORY_LEGACY = "player_history_daily.json"
 today_str = now_utc.strftime("%Y-%m-%d")
 
-try:
-    daily = json.loads(open(DAILY_HISTORY_FILE, encoding="utf-8").read())
-except Exception:
-    daily = {"days": []}
-
-# Build today's snapshot: {pid: tile_count} for all current players
+# Today's snapshot: {pid: tile_count} for all current players
 today_counts = {p["pid"]: p["tiles"] for p in player_list}
 
-# Replace or append today's entry
-days = daily.get("days", [])
-if days and days[-1]["date"] == today_str:
-    days[-1]["players"] = today_counts  # update existing entry for today
-else:
-    days.append({"date": today_str, "players": today_counts})
-
-daily = {"updated": now_utc.isoformat(), "days": days}
-
-with open(DAILY_HISTORY_FILE, "w", encoding="utf-8") as f:
-    json.dump(daily, f, separators=(",", ":"), ensure_ascii=False)
-
-dh_size = os.path.getsize(DAILY_HISTORY_FILE) / 1024
-print(f"  player_history_daily.json updated ({len(days)} days, {dh_size:.0f} KB)")
+try:
+    dh = daily_history.update(DAILY_HISTORY_V2, DAILY_HISTORY_LEGACY, today_str, today_counts, now_utc.isoformat())
+    for w in dh["warnings"]:
+        warn(f"daily history: {w}")
+    print(f"  {DAILY_HISTORY_V2} {dh['how']} ({dh['days']} days, {dh['bytes'] / 1024:.0f} KB)"
+          + ("; legacy file converted and removed" if dh["legacy_removed"] else ""))
+except Exception as e:
+    # The run must still succeed so the rest of the data is committed; the legacy file (if any)
+    # is untouched because update() only removes it after the new file reads back correctly.
+    warn(f"daily history not updated: {e!r}")
 
 # ── RAID TRACKING ──────────────────────────────────────────────────────────────
 # Fetches recent RaidBattleEvent events from the SUI blockchain.
