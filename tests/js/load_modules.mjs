@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REPO = path.resolve(HERE, '..', '..');
 
-export function loadModules(fetchImpl) {
+export function loadModules(fetchImpl, files = ['realtime.js', 'analyzer.js']) {
   const noop = () => {};
   const el = { addEventListener: noop, style: {}, classList: { add: noop, remove: noop } };
   const ctx = vm.createContext({
@@ -18,7 +18,7 @@ export function loadModules(fetchImpl) {
     document: { getElementById: () => el, addEventListener: noop },
     window: {},
   });
-  for (const f of ['realtime.js', 'analyzer.js']) {
+  for (const f of files) {
     const file = path.join(REPO, 'modules', f);
     vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
   }

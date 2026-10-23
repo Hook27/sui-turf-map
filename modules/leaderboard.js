@@ -66,8 +66,9 @@ function renderLeaderboard(){
   // Build previous tile counts using correct data structures:
   // playerHistory: {snapshots: [label,...], players: {pid: [count per snapshot]}}
   //   snapshots[0] = newest, snapshots[N-1] = oldest
-  // playerHistoryDaily: {days: [{date, players: {pid: count}}]}
-  //   days[0] = oldest, days[N-1] = newest
+  // playerHistoryDaily: the raw daily file, legacy {days: [{date, players: {pid: count}}]} or
+  //   v2 {format: 2, base, changes} — read it only through daily-history.js (dh* functions).
+  //   Oldest first in both.
 
   let prevCounts = null;
 
@@ -87,29 +88,20 @@ function renderLeaderboard(){
       if(counts[bestIdx] != null) prev[pid] = counts[bestIdx];
     }
     if(Object.keys(prev).length) prevCounts = prev;
-  } else if(_lbPeriod==='7d' && playerHistoryDaily?.days?.length > 1){
-    // days are oldest first — find entry closest to 7 days ago
-    const days = playerHistoryDaily.days;
+  } else if(_lbPeriod==='7d' && dhDayCount(playerHistoryDaily) > 1){
+    // the latest day that is not after 7 days ago (daily-history.js reads both file formats)
     const target = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
-    let best = days[0];
-    for(const d of days){
-      if(d.date <= target) best = d;
-      else break;
-    }
-    if(best?.players) prevCounts = best.players;
+    prevCounts = dhCountsAt(playerHistoryDaily, target);
   }
 
   // Build current snapshot from players array (already loaded)
   const top50 = players.slice(0, 50);
 
   // Find previous rank for trend arrow
-  let prevRanked = [];
-  if(prevCounts){
-    prevRanked = Object.entries(prevCounts)
-      .sort((a,b)=>b[1]-a[1])
-      .map(([pid],i)=>({pid,rank:i+1}));
-  }
-  const prevRankMap = new Map(prevRanked.map(r=>[r.pid,r.rank]));
+  // (ties are ranked by today's order, not by the key order of the stored object — see dhRankMap)
+  const prevRankMap = prevCounts
+    ? dhRankMap(prevCounts, new Map(players.map((p,i)=>[p.pid,i])))
+    : new Map();
 
   document.getElementById('lb-subtitle').textContent =
     `Rank & tile trend vs ${_lbPeriod==='24h'?'24 hours':'7 days'} ago · top 50`;
@@ -275,10 +267,8 @@ async function loadPlayerHistory(){
     const r = await fetch('player_history.json?t='+Date.now());
     if(r.ok) playerHistory = await r.json();
   }catch(e){ /* no history data available */ }
-  try{
-    const r2 = await fetch('player_history_daily.json?t='+Date.now());
-    if(r2.ok) playerHistoryDaily = await r2.json();
-  }catch(e){}
+  // v2 (delta format) first, the legacy full file as the fallback; never throws
+  playerHistoryDaily = await loadDailyHistory();
   try{
     const r3 = await fetch('player_activity.json?t='+Date.now());
     if(r3.ok) playerActivity = await r3.json();

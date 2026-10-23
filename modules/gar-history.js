@@ -16,13 +16,12 @@ function renderGarrisonHistory(){
   let labels  = playerHistory?.snapshots || [];
 
   // Try daily history — use if it covers more days
-  const dailyDays = playerHistoryDaily?.days || [];
-  if(dailyDays.length > counts.length){
-    const dailyCounts = dailyDays.map(d => d.players?.[garrisonPid] ?? null).filter(v=>v!=null);
-    const dailyLabels = dailyDays.filter(d => d.players?.[garrisonPid] != null).map(d => d.date);
-    if(dailyCounts.length >= counts.length){
-      counts = dailyCounts;
-      labels  = dailyLabels;
+  // (dhDayCount/dhSeries read both the legacy and the v2 daily file — see daily-history.js)
+  if(dhDayCount(playerHistoryDaily) > counts.length){
+    const daily = dhSeries(playerHistoryDaily, garrisonPid);
+    if(daily.counts.length >= counts.length){
+      counts = daily.counts;
+      labels  = daily.labels;
     }
   }
 
