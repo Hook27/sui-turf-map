@@ -129,6 +129,8 @@ have a specific reason to touch them.
   commits on `main` are normal and automated — not hand edits.
 - `.github/workflows/tests.yml` — runs the offline tests on every pull request (and by hand from the Actions tab):
   the Python suite, the JS suite, a `node --check` of every `modules/*.js` and a `py_compile` of every Python file.
+  It runs in two environments (a matrix): Linux / Python 3.12 / Node 22, like the daily data run, and Windows /
+  Python 3.13 / Node 24, like the maintainer's PC; the check names on a PR are `tests (<label>)`.
   Read-only (`contents: read`), no secrets, no network. It deliberately does not run on pushes to `main`: the daily
   data run pushes there itself. The bot in `bot/` is not in the repo, so its tests are not covered.
 - `.github/workflows/weekly_report.yml` — **suspended since 24-09-2026** (schedule commented out,
