@@ -160,6 +160,14 @@ have a specific reason to touch them.
 Both workflows push with the built-in `GITHUB_TOKEN` (`permissions: contents: write`); no personal
 access token is involved in the automatic pipeline.
 
+**Branch protection on `main`** (since 23-10-2026): a repository ruleset named "VWM rules" (Settings → Rules →
+Rulesets) with exactly two rules, *Restrict deletions* and *Block force pushes*, an empty bypass list, enforcement
+Active. Nothing more: the daily data run pushes straight to `main` (`git pull --rebase && git push`, a plain
+fast-forward push), so a pull-request requirement, required checks or *Restrict updates* (which blocks every push)
+would stop the map from updating. Whether `GITHUB_TOKEN` can be given a bypass on a personal repository is untested.
+The repo is on the Free plan, so protection only exists because this repo is public. If the data run's push step ever
+fails, check the log for a "protected branch" rejection; setting the ruleset to Disabled rules it out.
+
 ## Local development
 
 Tests (offline: a fake GraphQL chain serves recorded fixtures; Python needs only the stdlib):
