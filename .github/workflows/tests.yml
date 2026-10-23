@@ -1,0 +1,65 @@
+name: Tests
+
+# WANNEER draait dit? Bij elke pull request, en met de hand (Actions → Tests → Run workflow).
+# Bewust NIET bij een push naar main: de dagelijkse data-run pusht daar zelf naartoe, en dan
+# zou dit elke dag onnodig draaien. (Een push met de ingebouwde GITHUB_TOKEN start sowieso
+# geen andere workflow; dat is een vangrail van GitHub tegen eindeloze lussen.)
+on:
+  pull_request:
+  workflow_dispatch:
+
+# WAT mag hij? Alleen lezen. Deze workflow hoeft niets te schrijven, dus krijgt hij dat
+# recht ook niet (het principe van de minste rechten). Vergelijk met update.yml, die
+# `contents: write` nodig heeft om de data te committen.
+permissions:
+  contents: read
+
+# Een nieuwe push naar dezelfde PR annuleert de nog lopende run ervan: alleen de nieuwste
+# stand telt. (Bij update.yml staat dit juist op false: een afgekapte fetch laat een
+# half bijgewerkt cachebestand achter. Hier is afkappen onschuldig.)
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest      # een schone Linux-machine; er blijft niets van de vorige run over
+    timeout-minutes: 15         # vangnet: een vastgelopen run kost geen uren
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # fetch_data.py draait hier volledig tegen een nagebootste keten met opgeslagen
+      # testdata: geen netwerk, geen sleutel. PYTHONUTF8 omdat de logregels pijltjes (→) bevatten.
+      - name: Python tests (fetch_data.py against a fake chain)
+        env:
+          PYTHONUTF8: '1'
+        run: python -m unittest discover -s tests
+
+      - name: JS tests (browser modules)
+        run: node --test tests/js/browser_modules.test.mjs tests/js/daily_history.test.mjs
+
+      # De tests hierboven laden maar een paar modules; een typefout in bijvoorbeeld canvas.js
+      # zou ze allemaal laten slagen. Een syntaxcontrole van ELK bestand vangt dat wel.
+      # Alle fouten worden getoond (niet alleen de eerste), daarna pas faalt de stap.
+      - name: Syntax check of every browser module
+        run: |
+          fail=0
+          for f in modules/*.js; do
+            node --check "$f" || fail=1
+          done
+          exit $fail
+
+      - name: Compile every Python file
+        run: git ls-files '*.py' | xargs python -m py_compile
