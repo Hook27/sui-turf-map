@@ -37,6 +37,7 @@ Additional local maintainer notes (on-chain identifiers, hard rules, current foc
 | `garrison.js` | Garrison modal: tabs Navigate, History, Attacks, Attack, Recall; sorting & selection |
 | `wallet.js` | Wallet connect (Slush/Suiet) + recall execution |
 | `ui-helpers.js` | Ruler, toolbar dropdowns (Navigate/Intel/More), compact/Top 10, zoom indicator, Nav modal |
+| `daily-history.js` | Reader of the long-term daily tile history, legacy and v2 delta file (`dhCountsAt`, `dhSeries`, `dhRankMap`, `loadDailyHistory`); loaded before `leaderboard.js` |
 | `leaderboard.js` | Leaderboard (24h / 7d / cash periods) + mini-profile popup |
 | `gar-history.js` | Garrison History tab (chart) + Attacks tab |
 | `sim.js` | Monte Carlo battle simulator / attack adviser (`_atkSim`, `_armyArray`) |
@@ -131,7 +132,7 @@ Tests (offline: a fake GraphQL chain serves recorded fixtures; Python needs only
 
 ```
 python -m unittest discover -s tests
-node --test tests/js/browser_modules.test.mjs
+node --test tests/js/browser_modules.test.mjs tests/js/daily_history.test.mjs
 ```
 
 `python tests/record_fixtures.py` re-records `tests/fixtures/world.json` from the live chain;
