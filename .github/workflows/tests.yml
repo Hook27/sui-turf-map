@@ -23,8 +23,42 @@ concurrency:
 
 jobs:
   tests:
-    runs-on: ubuntu-latest      # een schone Linux-machine; er blijft niets van de vorige run over
+    # De naam van elke variant komt uit de matrix. Dat is ook de naam die je op de PR ziet,
+    # en later (bij "vereiste checks") de naam waarop je een regel zet.
+    name: tests (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15         # vangnet: een vastgelopen run kost geen uren
+
+    # DE MATRIX: dezelfde job, meerdere keren, elk met andere waarden. We draaien de tests
+    # in de TWEE omgevingen waar deze code echt leeft, niet in alle denkbare combinaties:
+    #   - Linux, Python 3.12, Node 22: zo draait de dagelijkse data-run (update.yml) in
+    #     productie. fetch_data.py loopt daar dus elke dag op Linux; dat is de omgeving die
+    #     ertoe doet, ook al ontwikkel je op Windows.
+    #   - Windows, Python 3.13, Node 24: jouw eigen pc. Hier worden de tests geschreven en
+    #     lokaal gedraaid.
+    # Met `include` geef je elke combinatie met de hand op. Zonder `include` maakt GitHub
+    # het volledige kruisproduct: 2 besturingssystemen × 2 Python × 2 Node = 8 jobs, de
+    # meeste daarvan zonder dat iemand ze nodig heeft.
+    strategy:
+      fail-fast: false          # faalt de ene variant, laat de andere dan gewoon afmaken:
+                                # je wilt zien OF het aan het besturingssysteem ligt
+      matrix:
+        include:
+          - label: Linux, Python 3.12, Node 22 (like the data run)
+            os: ubuntu-latest
+            python: '3.12'
+            node: '22'
+          - label: Windows, Python 3.13, Node 24 (like this PC)
+            os: windows-latest
+            python: '3.13'
+            node: '24'
+
+    # De standaardshell verschilt per systeem: op Linux is dat bash, op Windows PowerShell.
+    # De lus en de pijp (|) in de stappen hieronder zijn bash. Met één regel hier draaien ze
+    # op beide systemen hetzelfde (Windows-runners hebben Git Bash).
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout repository
@@ -33,15 +67,16 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node }}
 
       # fetch_data.py draait hier volledig tegen een nagebootste keten met opgeslagen
-      # testdata: geen netwerk, geen sleutel. PYTHONUTF8 omdat de logregels pijltjes (→) bevatten.
+      # testdata: geen netwerk, geen sleutel. PYTHONUTF8 omdat de logregels pijltjes (→) bevatten
+      # (op Windows is de standaardtekenset anders, daar zou dat zonder deze regel breken).
       - name: Python tests (fetch_data.py against a fake chain)
         env:
           PYTHONUTF8: '1'
