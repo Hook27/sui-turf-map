@@ -200,6 +200,14 @@ class TestFreshRun(FetchBase):
         self.assertTrue(want)
         self.assertEqual({k: parse_ts(v) for k, v in raw.items()}, want)
 
+    def test_hq_captures_are_remembered(self):
+        hq = {e["digest"] for e in self.world0["events"][HQD]}
+        cached = load(self.dir, "hq_checked.json")
+        self.assertEqual(cached["version"], 1)
+        self.assertEqual(set(cached["captures"]), hq)           # all fixture HQ events are real captures
+        self.assertEqual(cached["captures"], sorted(cached["captures"]))
+        self.assertEqual(self.chain.count("Tx"), len(hq))       # looked up exactly once each
+
     def test_call_budget_is_small(self):
         # 60 players: registry (3 pages) + profiles (2) + 60 field lookups + ... no wrapper-resolve round
         self.assertEqual(self.chain.count("Res"), 60)
@@ -291,11 +299,93 @@ class TestSeededRun(FetchBase):
         xp = int(((sim[0]["parsedJson"].get("raided_resources")) or {}).get("xp", 0) or 0) if sim else 0
         self.assertEqual(r["xp"], xp / SCALE)
 
+    def test_cache_holds_captures_only(self):
+        cached = set(load(self.dir, "hq_checked.json")["captures"])
+        self.assertIn(self.cap_digest, cached)                  # re-checked seed entry: a capture
+        self.assertFalse(cached & set(self.repelled))           # repelled attacks live in hq_destroyed.json
+        others = {e["digest"] for e in self.hq_events} - set(self.repelled)
+        self.assertEqual(cached, others)
+
     def test_free_turf_attack_recorded(self):
         fta = {r["digest"]: r for r in load(self.dir, "free_turf_attacks.json")}
         r = fta[self.free_digest]
         self.assertTrue(r["won"])
         self.assertEqual(r["army"], {"Henchman": 2, "Enforcer": 1})
+
+
+class TestHqCaptureCache(FetchBase):
+    def hq_digests(self):
+        return [e["digest"] for e in self.world0["events"][HQD]]
+
+    def test_second_run_makes_no_hq_lookups(self):
+        first_dir, _, _, first = run_fetch(self.world())
+        cache = load(first_dir, "hq_checked.json")
+        hqd = load(first_dir, "hq_destroyed.json") if os.path.exists(os.path.join(first_dir, "hq_destroyed.json")) else []
+        files = {"hq_checked.json": cache}
+        if hqd:
+            files["hq_destroyed.json"] = hqd
+        d, out, code, chain = run_fetch(self.world(), files=files)
+        self.assertEqual(code, 0)
+        self.assertEqual(chain.count("Tx"), 0)
+        self.assertIn(f"{len(self.hq_digests())} known captures skipped", out)
+        self.assertEqual(load(d, "hq_checked.json"), cache)     # unchanged: not rewritten
+
+    def test_a_missing_or_corrupt_cache_only_costs_the_lookups_again(self):
+        for name, content in (("missing", None), ("corrupt", "{broken"), ("wrong shape", '{"captures": 5}')):
+            with self.subTest(name):
+                d = tempfile.mkdtemp(prefix="vwm_e2e_")
+                if content is not None:
+                    with open(os.path.join(d, "hq_checked.json"), "w") as fh:
+                        fh.write(content)
+                chain = FakeChain(self.world())
+                cwd = os.getcwd()
+                os.chdir(d)
+                try:
+                    with mock.patch.object(sg, "_http_post", chain.post), mock.patch.object(sg, "sleep", lambda s: None),                             mock.patch("time.sleep", lambda s: None), contextlib.redirect_stdout(io.StringIO()):
+                        runpy.run_path(os.path.join(REPO, "fetch_data.py"), run_name="__main__")
+                finally:
+                    os.chdir(cwd)
+                self.assertEqual(chain.count("Tx"), len(self.hq_digests()))
+                self.assertEqual(set(load(d, "hq_checked.json")["captures"]), set(self.hq_digests()))
+
+    def test_failed_lookups_are_not_remembered(self):
+        err = urllib.error.HTTPError("u", 500, "down", {}, None)
+        d, out, code, chain = run_fetch(self.world(), fail={"Tx": err})
+        self.assertEqual(code, 0)
+        self.assertFalse(os.path.exists(os.path.join(d, "hq_checked.json")))   # nothing learned, nothing written
+
+    def test_cache_is_trimmed_to_the_scan_window(self):
+        stale = "0x" + "9" * 64
+        keep = self.hq_digests()[0]
+        d, out, code, chain = run_fetch(self.world(), files={"hq_checked.json": {"version": 1, "captures": [stale, keep]}})
+        got = set(load(d, "hq_checked.json")["captures"])
+        self.assertNotIn(stale, got)                            # outside the window: never asked again
+        self.assertEqual(got, set(self.hq_digests()))
+        self.assertEqual(chain.count("Tx"), len(self.hq_digests()) - 1)   # only the uncached ones were looked up
+
+    def test_cached_capture_is_not_mistaken_for_a_repelled_attack(self):
+        w = self.world()
+        victim = self.hq_digests()[0]
+        w["tx_events"][victim] = [x for x in w["tx_events"][victim] if "CaptureEvent" not in x["type"]]
+        # as long as the cache says "capture", it is skipped (a transaction never changes, so the
+        # cache is authoritative) ...
+        d, out, code, chain = run_fetch(w, files={"hq_checked.json": {"version": 1, "captures": [victim]}})
+        self.assertNotIn(victim, {h["digest"] for h in load(d, "hq_destroyed.json")} if os.path.exists(os.path.join(d, "hq_destroyed.json")) else set())
+        # ... and without the cache the same transaction is found to be repelled and stored
+        d2, out2, code2, chain2 = run_fetch(w)
+        self.assertIn(victim, {h["digest"] for h in load(d2, "hq_destroyed.json")})
+        self.assertNotIn(victim, load(d2, "hq_checked.json")["captures"])
+
+    def test_seeded_entry_known_as_capture_is_dropped_without_a_lookup(self):
+        victim = self.hq_digests()[0]
+        kept = {"digest": "keepme", "attacker_pid": "0x1", "attacker_name": "x", "defender_pid": "0x2",
+                "defender_name": "y", "timestamp": "2026-07-01T00:00:00+00:00", "is_repelled": True}
+        seed = [kept, {"digest": victim, "attacker_pid": "0x1", "attacker_name": "x", "defender_pid": "0x2",
+                       "defender_name": "y", "timestamp": "2026-08-01T00:00:00+00:00"}]  # no is_repelled → normally re-checked
+        d, out, code, chain = run_fetch(self.world(), files={
+            "hq_destroyed.json": seed, "hq_checked.json": {"version": 1, "captures": self.hq_digests()}})
+        self.assertEqual(chain.count("Tx"), 0)
+        self.assertEqual(load(d, "hq_destroyed.json"), [kept])   # the capture is gone, the repelled entry stays
 
 
 class TestFailureModes(FetchBase):

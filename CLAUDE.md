@@ -97,14 +97,21 @@ have a specific reason to touch them.
   new players cost a lookup. The cache is self-healing: an id that fails to read is dropped and
   re-discovered. The turf-table walk now returns the turf ids inline, so the old reuse of the
   coordinate→turf-id mapping from the previous `data.json` is gone.
+  **`hq_checked.json`** (also not read by the frontend) lists the HQ-destroyed transactions that
+  were checked and turned out to be real captures (they carry a `CaptureEvent` and never enter
+  `hq_destroyed.json`). A transaction never changes, so each is looked up once; without this the
+  ~480 captures in the scan window cost a call each, every run. Failed lookups are never
+  remembered, a missing or corrupt file only costs those calls again, and after a complete scan
+  the file is trimmed to the scan window.
 - `.github/workflows/update.yml` — **once a day** since 24-09-2026, because the game has come to
   a standstill. The run is driven by a cron on the maintainer's Pi that fires a `workflow_dispatch`
   at **04:22 UTC**; the workflow's own `schedule` (`22 16 * * *`) is only a safety net for a missed
   Pi run. A freshness gate in the workflow skips a run whose `data.json` is still fresh — 1 hour
   for the Pi trigger, 20 hours for the schedule — so the net does not turn into a second daily
   fetch. Change the Pi cron, the schedule and that gate together; the comments in the workflow
-  carry the arithmetic. A run costs ~2,000 GraphQL calls and takes ~17 min (measured locally,
-  22-10-2026; the final log line prints both); it reads from Mysten's public endpoint first and
+  carry the arithmetic. A run costs ~2,000 GraphQL calls and takes ~10 min on GitHub's runner
+  (22-10-2026; the final log line prints both). The first run after `hq_checked.json` was
+  introduced still pays the ~480 HQ lookups once; later runs are ~1,500 calls; it reads from Mysten's public endpoint first and
   falls back to the paid Ankr key (`SUI_RPC_URL`) only when that endpoint fails or keeps
   throttling. Ankr's credit cost per GraphQL call is not measured yet — check the Ankr dashboard
   after the first days.
