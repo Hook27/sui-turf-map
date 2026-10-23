@@ -127,6 +127,10 @@ have a specific reason to touch them.
   after the first days.
   It commits the refreshed data with messages titled `Update map data …`. Frequent data-only
   commits on `main` are normal and automated — not hand edits.
+- `.github/workflows/tests.yml` — runs the offline tests on every pull request (and by hand from the Actions tab):
+  the Python suite, the JS suite, a `node --check` of every `modules/*.js` and a `py_compile` of every Python file.
+  Read-only (`contents: read`), no secrets, no network. It deliberately does not run on pushes to `main`: the daily
+  data run pushes there itself. The bot in `bot/` is not in the repo, so its tests are not covered.
 - `.github/workflows/weekly_report.yml` — **suspended since 24-09-2026** (schedule commented out,
   manual dispatch still works). It generated The Vendetta Gazette (`generate_report.py`, uses the
   `ANTHROPIC_API_KEY` secret). The last edition is 21-09-2026 and `modules/intel.js` labels it as
