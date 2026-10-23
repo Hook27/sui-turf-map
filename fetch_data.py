@@ -1116,6 +1116,21 @@ HQ_DESTROYED_EVENT = "0xe660c11d5cddf961e2f153e2e9c89517bdbb2dfa64b9d3aae711672a
 # CAPTURE_EVENT_TYPE defined near RAID_EVENT_TYPES above
 MAX_HQD = 200
 
+# Welke transacties al gecontroleerd zijn en een CaptureEvent bleken te bevatten. Zo'n
+# uitkomst verandert nooit meer (een transactie krijgt achteraf geen event bij), maar
+# een echte capture komt niet in hq_destroyed.json en werd dus elke run opnieuw
+# opgezocht: ~480 calls per run, een kwart van de run. Alleen CAPTURES staan hier;
+# afgeslagen aanvallen staan al in hq_destroyed.json. Een mislukte opzoeking wordt
+# nooit onthouden, en een ontbrekend of kapot bestand kost hooguit eenmalig die calls.
+HQ_CHECKED_FILE = "hq_checked.json"
+_hq_cache = load_json_file(HQ_CHECKED_FILE, {})
+_hq_list = _hq_cache.get("captures") if isinstance(_hq_cache, dict) else None
+hq_cache_loaded = {d for d in _hq_list if isinstance(d, str)} if isinstance(_hq_list, list) else set()
+hq_captured = set(hq_cache_loaded)
+hq_window_seen = set()      # digests die deze run in het scanvenster voorbijkwamen
+hq_scan_ok = False
+hq_skipped = 0
+
 try:
     existing_hqd = json.loads(open(HQ_DESTROYED_FILE, encoding="utf-8").read())
 except Exception:
@@ -1131,9 +1146,13 @@ if needs_check:
         digest = h.get("digest","")
         if not digest:
             continue
+        if digest in hq_captured:
+            continue                # al eerder als echte capture herkend → weggooien
         try:
             tx_events = sg.tx_events(digest)
             has_capture = any(CAPTURE_EVENT_TYPE in e.get("type","") for e in tx_events)
+            if has_capture:
+                hq_captured.add(digest)
             if not has_capture:
                 h["is_repelled"] = True
                 cleaned.append(h)
@@ -1162,14 +1181,21 @@ try:
         stop = False
         for ev in events:
             digest = ev.get("id", {}).get("txDigest", "")
-            if not digest or digest in known_hqd_digests:
+            if not digest:
+                continue
+            hq_window_seen.add(digest)
+            if digest in known_hqd_digests:
+                continue
+            if digest in hq_captured:
+                hq_skipped += 1     # eerder gecontroleerd: een echte capture, geen call nodig
                 continue
             # Fetch full TX to check for CaptureEvent in same TX
             try:
                 tx_events = sg.tx_events(digest)
                 has_capture = any(CAPTURE_EVENT_TYPE in e.get("type","") for e in tx_events)
                 if has_capture:
-                    # attack_type 3 — real capture, skip
+                    # attack_type 3 — real capture, skip (and remember it)
+                    hq_captured.add(digest)
                     continue
                 # attack_type 2 — repelled, keep
                 parsed = ev.get("parsedJson") or {}
@@ -1194,9 +1220,19 @@ try:
             break
         cursor = result.get("nextCursor")
         time.sleep(DELAY)
-    print(f"  HeadquarterDestroyedEvent: {pages} page(s), {found} new (capture-filtered)")
+    hq_scan_ok = True
+    print(f"  HeadquarterDestroyedEvent: {pages} page(s), {found} new (capture-filtered), "
+          f"{hq_skipped} known captures skipped")
 except Exception as e:
     warn(f"HeadquarterDestroyedEvent failed: {e}")
+
+# Bewaar de cache. Na een complete scan alleen wat in het venster zat (digests daarbuiten
+# worden nooit meer opgevraagd), anders blijft alles staan. Alleen schrijven bij verschil.
+hq_keep = sorted(hq_captured & hq_window_seen) if hq_scan_ok else sorted(hq_captured)
+if hq_keep != sorted(hq_cache_loaded):
+    with open(HQ_CHECKED_FILE, "w", encoding="utf-8") as f:
+        json.dump({"version": 1, "captures": hq_keep}, f, separators=(",", ":"))
+    print(f"  hq_checked.json updated ({len(hq_keep)} known captures)")
 
 if new_hqd or existing_hqd:
     all_hqd = existing_hqd + new_hqd
