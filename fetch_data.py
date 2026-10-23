@@ -1385,7 +1385,7 @@ if _summary_path:
     try:
         _lines = [
             "### Map data update", "",
-            "| | |", "|---|---:|",
+            "| Metric | Value |", "|---|---:|",
             f"| GraphQL calls | {sg._call_no:,} |",
             f"| Duration | {_minutes:.1f} min |",
             f"| Players | {len(player_list):,} |",

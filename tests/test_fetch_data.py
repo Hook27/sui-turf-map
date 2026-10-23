@@ -501,6 +501,7 @@ class TestRunSummary(FetchBase):
         data = load(d, "data.json")
         calls = int(out.split(" GraphQL calls in ")[0].split()[-1])
         self.assertIn("### Map data update", md)
+        self.assertIn("| Metric | Value |\n|---|---:|\n| GraphQL calls |", md)   # a named header, not an empty row
         self.assertIn(f"| GraphQL calls | {calls:,} |", md)
         self.assertIn(f"| Players | {len(data['players']):,} |", md)
         self.assertIn(f"| Tiles (owned) | {data['total_tiles']:,} |", md)
