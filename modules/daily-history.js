@@ -21,7 +21,7 @@ function dhIsV2(h){
 
 /** Number of days the history covers (0 for anything unreadable). */
 function dhDayCount(h){
-  if(dhIsV2(h)) return 1 + h.changes.length;
+  if(dhIsV2(h)) return h.changes.length;
   return Array.isArray(h?.days) ? h.days.length : 0;
 }
 
