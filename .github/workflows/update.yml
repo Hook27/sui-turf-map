@@ -168,6 +168,10 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           touch hq_captures.json free_turf_attacks.json owned_turf_attacks.json hq_checked.json
-          git add data.json history.json snapshots/ hq_captures.json player_history.json raids.json player_activity.json player_history_daily.json hq_destroyed.json free_turf_attacks.json owned_turf_attacks.json field_cache.json hq_checked.json
+          # player_history_daily.json is replaced by the delta file player_history_daily_v2.json
+          # (daily_history.py converts it on the first run and deletes it). Stage that deletion;
+          # --ignore-unmatch keeps this a no-op once the file is gone from the repo.
+          git rm -q --ignore-unmatch player_history_daily.json
+          git add data.json history.json snapshots/ hq_captures.json player_history.json raids.json player_activity.json player_history_daily_v2.json hq_destroyed.json free_turf_attacks.json owned_turf_attacks.json field_cache.json hq_checked.json
           git status
           git diff --staged --quiet || (git commit -m "Update map data $(date -u +'%Y-%m-%d %H:%M UTC')" && git pull --rebase && git push)

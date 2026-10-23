@@ -104,6 +104,15 @@ have a specific reason to touch them.
   ~480 captures in the scan window cost a call each, every run. Failed lookups are never
   remembered, a missing or corrupt file only costs those calls again, and after a complete scan
   the file is trimmed to the scan window.
+  **`player_history_daily_v2.json`** is the long-term daily tile history (read by the 7d leaderboard and
+  the garrison chart through `modules/daily-history.js`). It is a delta file, written by the stdlib-only
+  `daily_history.py`: the first day in full as `base`, then one `changes` entry per day holding only the players whose
+  tile count changed (`null` = player absent that day); every day has an entry, even an empty one. It replaced
+  `player_history_daily.json`, which stored every player every day (~346 KB/day, 72 MB by Oct 2026, over GitHub's
+  100 MB file limit by Jan 2027, and downloaded in full on every page load). The first run after the switch converts the
+  legacy file (verified lossless on all 216 days), writes the v2 file and deletes the legacy file; `update.yml` stages
+  that deletion with `git rm --ignore-unmatch`. If anything fails the run still succeeds with a `::warning` and the legacy
+  file is untouched. The frontend falls back to the legacy file while it still exists. A quiet day costs ~30 bytes.
 - `.github/workflows/update.yml` — **once a day** since 24-09-2026, because the game has come to
   a standstill. The run is driven by a cron on the maintainer's Pi that fires a `workflow_dispatch`
   at **04:22 UTC**; the workflow's own `schedule` (`22 16 * * *`) is only a safety net for a missed

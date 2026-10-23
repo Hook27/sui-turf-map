@@ -388,6 +388,79 @@ class TestHqCaptureCache(FetchBase):
         self.assertEqual(load(d, "hq_destroyed.json"), [kept])   # the capture is gone, the repelled entry stays
 
 
+class TestDailyHistory(FetchBase):
+    """player_history_daily_v2.json: the delta file that replaced the 72 MB legacy daily history."""
+
+    V2, LEGACY = "player_history_daily_v2.json", "player_history_daily.json"
+
+    @staticmethod
+    def counts(d):
+        return {p["pid"]: p["tiles"] for p in load(d, "data.json")["players"]}
+
+    @staticmethod
+    def exists(d, name):
+        return os.path.exists(os.path.join(d, name))
+
+    @staticmethod
+    def legacy_days(counts, n=5):
+        """n past days whose last day equals today's counts, except that one player did not exist yet."""
+        pids = list(counts)
+        days = []
+        for i in range(n):
+            players = dict(counts)
+            if i < n - 1:
+                players.pop(pids[0], None)                       # joined on the last day
+                players[pids[1]] = counts[pids[1]] + (n - 1 - i)    # and another one shrank
+            days.append({"date": f"2026-03-{20 + i:02d}", "players": players})
+        return days
+
+    def test_fresh_run_writes_the_delta_file_and_no_legacy_file(self):
+        d, out, code, _ = run_fetch(self.world())
+        self.assertEqual(code, 0)
+        self.assertNotIn("::warning", out)
+        self.assertTrue(self.exists(d, self.V2))
+        self.assertFalse(self.exists(d, self.LEGACY))
+        h = load(d, self.V2)
+        self.assertEqual(h["format"], 2)
+        self.assertEqual(h["base"]["players"], self.counts(d))
+        self.assertEqual(h["changes"], [])
+        self.assertIn(f"{self.V2} created (1 days", out)
+
+    def test_the_legacy_file_is_converted_losslessly_extended_and_removed(self):
+        counts = self.counts(run_fetch(self.world())[0])
+        legacy_days = self.legacy_days(counts)
+        d, out, code, _ = run_fetch(self.world(), files={self.LEGACY: {"updated": "x", "days": legacy_days}})
+        self.assertEqual(code, 0)
+        self.assertNotIn("::warning", out)
+        self.assertFalse(self.exists(d, self.LEGACY))                       # converted and removed
+        self.assertIn("legacy file converted and removed", out)
+        import daily_history
+        days = daily_history.to_days(load(d, self.V2))
+        self.assertEqual(days[:len(legacy_days)], legacy_days)              # every old day, exactly
+        self.assertEqual(days[-1]["players"], counts)                       # plus today
+        self.assertEqual(len(days), len(legacy_days) + 1)
+
+    def test_second_run_on_the_same_day_replaces_today(self):
+        d1, _, _, _ = run_fetch(self.world())
+        first = load(d1, self.V2)
+        d2, out, code, _ = run_fetch(self.world(), files={self.V2: first})
+        self.assertEqual(code, 0)
+        self.assertIn(f"{self.V2} replaced (1 days", out)
+        self.assertEqual(load(d2, self.V2)["base"], first["base"])
+
+    def test_a_failing_update_is_loud_but_neither_kills_the_run_nor_touches_the_legacy_file(self):
+        counts = self.counts(run_fetch(self.world())[0])
+        legacy = {"updated": "x", "days": self.legacy_days(counts)}
+        with mock.patch("daily_history.update", side_effect=RuntimeError("disk full")):
+            d, out, code, _ = run_fetch(self.world(), files={self.LEGACY: legacy})
+        self.assertEqual(code, 0)
+        self.assertTrue(self.exists(d, "data.json"))                        # the rest of the data still got written
+        self.assertIn("::warning", out)
+        self.assertIn("daily history not updated", out)
+        self.assertEqual(load(d, self.LEGACY), legacy)                      # the old data is untouched
+        self.assertFalse(self.exists(d, self.V2))
+
+
 class TestFailureModes(FetchBase):
     def test_event_outage_is_loud_but_does_not_kill_the_run(self):
         err = urllib.error.HTTPError("u", 500, "down", {}, None)
